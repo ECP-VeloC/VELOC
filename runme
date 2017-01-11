@@ -5,7 +5,7 @@ set -x
 # left the arg there for now
 
 # flush every 10th checkpoint
-export SCR_FLUSH=1
+export SCR_FLUSH=10
 
 #totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
 srun -n4 -N4 ./hd.exe 4 config.fti
