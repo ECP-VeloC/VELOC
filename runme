@@ -1,3 +1,11 @@
 #!/bin/bash
 set -x
-totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
+
+# note: no need for config.fti (use SCR config instead)
+# left the arg there for now
+
+# flush every 10th checkpoint
+export SCR_FLUSH=1
+
+#totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
+srun -n4 -N4 ./hd.exe 4 config.fti
