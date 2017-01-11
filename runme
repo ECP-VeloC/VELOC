@@ -1,0 +1,3 @@
+#!/bin/bash
+set -x
+totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
