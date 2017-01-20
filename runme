@@ -8,4 +8,7 @@ set -x
 export SCR_FLUSH=10
 
 #totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
-srun -n4 -N4 ./hd.exe 4 config.fti
+#srun -n4 -N4 ./hd.exe 4 config.fti
+
+totalview srun -a -n4 -N4 ./hd_veloc.exe 4 config.fti
+#srun -n4 -N4 ./hd_veloc.exe 4 config.fti

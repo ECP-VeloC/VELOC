@@ -36,3 +36,4 @@ mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 ar cr libveloc.a veloc.o
 
 # TODO: create VELOC test cases
+mpicc -g -O0 -o hd_veloc.exe heatdis_veloc.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm

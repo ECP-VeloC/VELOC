@@ -74,16 +74,17 @@ int VELOC_Finalize();
  *************************/
 
 // define new memory type
+// FTI_InitType
 int VELOC_Mem_type(VELOCT_type* type, int size);
 
 // mark memory for checkpoint
+// FTI_Protect
 int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type);
 
 /**************************
  * File registration
  *************************/
 
-// like SCR_Route_file
 int VELOC_Route_file(const char* name, char* veloc_name);
 
 /**************************
@@ -96,6 +97,7 @@ int VELOC_Have_restart(int* flag);
 int VELOC_Start_restart();
 
 // reads protected memory from file
+// must be called between start/complete pair
 int VELOC_Mem_restart();
 
 int VELOC_Complete_restart();
@@ -110,6 +112,7 @@ int VELOC_Need_checkpoint(int* flag);
 int VELOC_Start_checkpoint();
 
 // writes protected memory to file
+// must be called between start/complete pair
 int VELOC_Mem_checkpoint();
 
 int VELOC_Complete_checkpoint(int valid);
@@ -119,10 +122,10 @@ int VELOC_Complete_checkpoint(int valid);
  * (can be implemented fully with above functions)
  ************************/
 
-// FTI_Checkpoint (without id and level params)
+// FTI_Checkpoint without id and level params
 int VELOC_Mem_save();
 
-// FTI_Recovery
+// FTI_Recover
 int VELOC_Mem_recover();
 
 // FTI_Snapshot

@@ -66,17 +66,17 @@ static int veloc_InitBasicTypes(VELOCT_dataset* VELOC_Data)
         VELOC_Data[i].id = -1;
     }
 
-    VELOC_InitType(&VELOC_CHAR, sizeof(char));
-    VELOC_InitType(&VELOC_SHRT, sizeof(short));
-    VELOC_InitType(&VELOC_INTG, sizeof(int));
-    VELOC_InitType(&VELOC_LONG, sizeof(long));
-    VELOC_InitType(&VELOC_UCHR, sizeof(unsigned char));
-    VELOC_InitType(&VELOC_USHT, sizeof(unsigned short));
-    VELOC_InitType(&VELOC_UINT, sizeof(unsigned int));
-    VELOC_InitType(&VELOC_ULNG, sizeof(unsigned long));
-    VELOC_InitType(&VELOC_SFLT, sizeof(float));
-    VELOC_InitType(&VELOC_DBLE, sizeof(double));
-    VELOC_InitType(&VELOC_LDBE, sizeof(long double));
+    VELOC_Mem_type(&VELOC_CHAR, sizeof(char));
+    VELOC_Mem_type(&VELOC_SHRT, sizeof(short));
+    VELOC_Mem_type(&VELOC_INTG, sizeof(int));
+    VELOC_Mem_type(&VELOC_LONG, sizeof(long));
+    VELOC_Mem_type(&VELOC_UCHR, sizeof(unsigned char));
+    VELOC_Mem_type(&VELOC_USHT, sizeof(unsigned short));
+    VELOC_Mem_type(&VELOC_UINT, sizeof(unsigned int));
+    VELOC_Mem_type(&VELOC_ULNG, sizeof(unsigned long));
+    VELOC_Mem_type(&VELOC_SFLT, sizeof(float));
+    VELOC_Mem_type(&VELOC_DBLE, sizeof(double));
+    VELOC_Mem_type(&VELOC_LDBE, sizeof(long double));
 
     return VELOC_SUCCESS;
 }
