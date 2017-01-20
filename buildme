@@ -30,3 +30,9 @@ ar cr libfti.a fti.o
 
 # compile heatdis code which uses FTI
 mpicc -g -O0 -o hd.exe heatdis.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libfti.a -lm
+
+# build VELOC library
+mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
+ar cr libveloc.a veloc.o
+
+# TODO: create VELOC test cases
