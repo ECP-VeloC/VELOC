@@ -46,6 +46,7 @@ VELOCT_type VELOC_LDBE;
 // initialize restart flag to assume we're not restarting
 static int g_recovery = 0;
 
+// our global rank
 static int g_rank = -1;
 
 // Number of protected variables
@@ -54,6 +55,7 @@ static unsigned int g_nbVar = 0;
 // Number of data types
 static unsigned int g_nbType = 0; 
 
+// current size of checkpoint in bytes
 static unsigned int g_ckptSize = 0;
 
 static int veloc_InitBasicTypes(VELOCT_dataset* VELOC_Data)
@@ -90,23 +92,24 @@ int VELOC_Init(char* configFile)
     // TODO: pass config file to SCR
     SCR_Init();
 
+    // create predefined VELOC types
     veloc_InitBasicTypes(VELOC_Data);
 
     // get our rank
     MPI_Comm_rank(MPI_COMM_WORLD, &g_rank);
 
-    // TODO: use SCR_Have_checkpoint or something like that
+    // TODO: use SCR_Have_checkpoint when available
     // check to see if we're restarting
     // we write a dummy file from rank 0 on each checkpoint and
     // use SCR_Route_file to look for that (ugly hack)
     if (g_rank == 0) {
         // build file name to dummy file
         char fn[VELOC_MAX_NAME];
-        char fn_scr[VELOC_MAX_NAME];
-        snprintf(fn, VELOC_MAX_NAME, "dummy.veloc");
+        snprintf(fn, VELOC_MAX_NAME, "marker.veloc");
 
         // look for the file (this is how SCR tells us whether
         // we're restarting from a checkpoint or starting over)
+        char fn_scr[VELOC_MAX_NAME];
         int rc = SCR_Route_file(fn, fn_scr);
         if (rc == SCR_SUCCESS) {
             // we've got the dummy file, so we're restarting
@@ -140,28 +143,35 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
 
 int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 {
-    int i, prevSize, updated = 0;
-    float ckptSize;
+    // search to see if we already registered this id
+    int i, updated = 0;
     for (i = 0; i < VELOC_BUFS; i++) {
         if (id == VELOC_Data[i].id) {
-            prevSize = VELOC_Data[i].size;
+            // found existing variable with this id, update fields
 
+            // subtract current size from total
+            g_ckptSize -= VELOC_Data[i].size;
+
+            // set fields to new values
             VELOC_Data[i].ptr     = ptr;
             VELOC_Data[i].count   = count;
             VELOC_Data[i].type    = type;
             VELOC_Data[i].eleSize = type.size;
             VELOC_Data[i].size    = type.size * count;
 
-            g_ckptSize += (type.size * count) - prevSize;
+            // add bytes to total
+            g_ckptSize += type.size * count;
 
             updated = 1;
         }
     }
 
+    float ckptSize;
     if (updated) {
         ckptSize = g_ckptSize / (1024.0 * 1024.0);
-        printf("Variable ID %d reseted. Current ckpt. size per rank is %.2fMB.\n", id, ckptSize);
+        printf("Variable ID %d reset. Current ckpt. size per rank is %.2fMB.\n", id, ckptSize);
     } else {
+        // check that user hasn't overflowed total allowed regions
         if (g_nbVar >= VELOC_BUFS) {
             printf("Too many variables registered.\n");
             MPI_Abort(MPI_COMM_WORLD, -1);
@@ -169,6 +179,7 @@ int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
             exit(1);
         }
 
+        // set fields for this memory region
         VELOC_Data[g_nbVar].id      = id;
         VELOC_Data[g_nbVar].ptr     = ptr;
         VELOC_Data[g_nbVar].count   = count;
@@ -176,6 +187,7 @@ int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
         VELOC_Data[g_nbVar].eleSize = type.size;
         VELOC_Data[g_nbVar].size    = type.size * count;
 
+        // increment region count and add bytes to total size
         g_nbVar++;
         g_ckptSize += type.size * count;
 
@@ -190,7 +202,6 @@ int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
  * File registration
  *************************/
 
-// like SCR_Route_file
 int VELOC_Route_file(const char* name, char* veloc_name)
 {
     SCR_Route_file(name, veloc_name);
@@ -272,6 +283,46 @@ int VELOC_Need_checkpoint(int* flag)
 int VELOC_Start_checkpoint()
 {
     SCR_Start_checkpoint();
+
+    // create our dummy file (we look for this file on restart)
+    if (g_rank == 0) {
+        // build file name to dummy file
+        char fn[VELOC_MAX_NAME];
+        snprintf(fn, VELOC_MAX_NAME, "marker.veloc");
+
+        // get SCR path to write this file
+        char fn_scr[VELOC_MAX_NAME];
+        SCR_Route_file(fn, fn_scr);
+
+        // open marker file for writing
+        FILE* fd = fopen(fn_scr, "wb");
+        if (fd == NULL) {
+            printf("VELOC checkpoint file could not be opened %s", fn_scr);
+            return VELOC_FAILURE;
+        }
+
+        // write a byte to marker file (necessary?)
+        char c = 'A';
+        if (fwrite(&c, 1, 1, fd) != 1) {
+            printf("Error writing to marker file %s\n", fn_scr);
+            fclose(fd);
+            return VELOC_FAILURE;
+        }
+
+        // flush data to disk
+        if (fflush(fd) != 0) {
+            printf("Error flushing marker file %s\n", fn_scr);
+            fclose(fd);
+            return VELOC_FAILURE;
+        }
+
+        // close the file
+        if (fclose(fd) != 0) {
+            printf("Error closing marker file %s\n", fn_scr);
+            return VELOC_FAILURE;
+        }
+    }
+
     return VELOC_SUCCESS;
 }
 
@@ -363,8 +414,9 @@ int VELOC_Mem_snapshot()
     VELOC_Need_checkpoint(&flag);
     if (flag) {
         // it's time, take a checkpoint
-        return VELOC_Mem_checkpoint();
+        return VELOC_Mem_save();
     }
 
+    // not a restart, but don't need to checkpoint yet
     return VELOC_SUCCESS;
 }
