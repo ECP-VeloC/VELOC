@@ -58,6 +58,15 @@ static unsigned int g_nbType = 0;
 // current size of checkpoint in bytes
 static unsigned int g_ckptSize = 0;
 
+typedef enum {
+    VELOC_STATE_UNINIT,
+    VELOC_STATE_INIT,
+    VELOC_STATE_RESTART,
+    VELOC_STATE_CHECKPOINT
+} VELOC_STATE;
+
+VELOC_STATE g_veloc_state = VELOC_STATE_UNINIT;
+
 static int veloc_InitBasicTypes(VELOCT_dataset* VELOC_Data)
 {
     // initialize our type count
@@ -89,6 +98,12 @@ static int veloc_InitBasicTypes(VELOCT_dataset* VELOC_Data)
 
 int VELOC_Init(char* configFile)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_UNINIT) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_INIT;
+
     // TODO: pass config file to SCR
     SCR_Init();
 
@@ -125,6 +140,12 @@ int VELOC_Init(char* configFile)
 
 int VELOC_Finalize()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_UNINIT;
+
     SCR_Finalize();
     return VELOC_SUCCESS;
 }
@@ -135,6 +156,11 @@ int VELOC_Finalize()
 
 int VELOC_Mem_type(VELOCT_type* type, int size)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     type->id   = g_nbType;
     type->size = size;
     g_nbType++;
@@ -143,6 +169,11 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
 
 int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     // search to see if we already registered this id
     int i, updated = 0;
     for (i = 0; i < VELOC_BUFS; i++) {
@@ -204,6 +235,13 @@ int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 
 int VELOC_Route_file(const char* name, char* veloc_name)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_RESTART &&
+        g_veloc_state != VELOC_STATE_CHECKPOINT)
+    {
+        // ERROR!
+    }
+
     SCR_Route_file(name, veloc_name);
     return VELOC_SUCCESS;
 }
@@ -214,12 +252,23 @@ int VELOC_Route_file(const char* name, char* veloc_name)
 
 int VELOC_Have_restart(int* flag)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     *flag = g_recovery;
     return VELOC_SUCCESS;
 }
 
 int VELOC_Start_restart()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_RESTART;
+
     // NOP for now
     return VELOC_SUCCESS;
 }
@@ -227,6 +276,11 @@ int VELOC_Start_restart()
 // reads protected memory from file
 int VELOC_Mem_restart()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_RESTART) {
+        // ERROR!
+    }
+
     // build checkpoint file name
     char fn[VELOC_MAX_NAME];
     snprintf(fn, VELOC_MAX_NAME, "Ckpt-Rank%d.fti", g_rank);
@@ -264,6 +318,12 @@ int VELOC_Mem_restart()
 
 int VELOC_Complete_restart()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_RESTART) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_INIT;
+
     // turn off recovery flag
     g_recovery = 0;
     return VELOC_SUCCESS;
@@ -276,12 +336,23 @@ int VELOC_Complete_restart()
 // flag returns 1 if checkpoint should be taken, 0 otherwise
 int VELOC_Need_checkpoint(int* flag)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     SCR_Need_checkpoint(flag);
     return VELOC_SUCCESS;
 }
 
 int VELOC_Start_checkpoint()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_CHECKPOINT;
+
     SCR_Start_checkpoint();
 
     // create our dummy file (we look for this file on restart)
@@ -329,6 +400,11 @@ int VELOC_Start_checkpoint()
 // writes protected memory to file
 int VELOC_Mem_checkpoint()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_CHECKPOINT) {
+        // ERROR!
+    }
+
     // build checkpoint file name
     char fn[VELOC_MAX_NAME];
     snprintf(fn, VELOC_MAX_NAME, "Ckpt-Rank%d.fti", g_rank);
@@ -372,6 +448,12 @@ int VELOC_Mem_checkpoint()
 
 int VELOC_Complete_checkpoint(int valid)
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_CHECKPOINT) {
+        // ERROR!
+    }
+    g_veloc_state = VELOC_STATE_INIT;
+
     SCR_Complete_checkpoint(valid);
     return VELOC_SUCCESS;
 }
@@ -383,6 +465,11 @@ int VELOC_Complete_checkpoint(int valid)
 
 int VELOC_Mem_save()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     // write protected memory to file
     VELOC_Start_checkpoint();
     int rc = VELOC_Mem_checkpoint();
@@ -392,6 +479,11 @@ int VELOC_Mem_save()
 
 int VELOC_Mem_recover()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     // read protected memory from file
     VELOC_Start_restart();
     VELOC_Mem_restart();
@@ -401,6 +493,11 @@ int VELOC_Mem_recover()
 
 int VELOC_Mem_snapshot()
 {
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
     // check whether this is a restart
     int have_restart;
     VELOC_Have_restart(&have_restart);
