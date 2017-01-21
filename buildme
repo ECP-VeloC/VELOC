@@ -36,6 +36,7 @@ mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 ar cr libveloc.a veloc.o
 
 # TODO: create VELOC test cases
-rm -rf hd_mem.exe hd_file.exe
+rm -rf hd_mem.exe hd_file.exe hd_memfile.exe
 mpicc -g -O0 -o hd_mem.exe  heatdis_mem.c  -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
 mpicc -g -O0 -o hd_file.exe heatdis_file.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
+mpicc -g -O0 -o hd_memfile.exe heatdis_memfile.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
