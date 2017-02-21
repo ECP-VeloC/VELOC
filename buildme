@@ -11,8 +11,8 @@ if [ ! -d scr-1.1.8 ]; then
     ./configure \
       --prefix=${SCR_PATH} \
       --with-scr-conf=${SCR_PATH}/scr.conf \
-      --with-cache-base=/tmp \
-      --with-cntl-base=/tmp \
+      --with-scr-cache-base=/tmp \
+      --with-scr-cntl-base=/tmp \
       --without-mysql \
       --without-yogrt \
       --without-dtcmp
