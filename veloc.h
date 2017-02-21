@@ -64,71 +64,89 @@ extern VELOCT_type VELOC_LDBE;
  * Init / Finalize
  *************************/
 
-// can set config == NULL
+// initialize the library
+//   IN config - specify path to config file, pass NULL if no config file
 int VELOC_Init(char *config);
 
+// shut down the library
 int VELOC_Finalize();
 
 /**************************
  * Memory registration
  *************************/
 
-// define new memory type
-// FTI_InitType
+// define new memory type for use in VELOC_Mem_protect
+//   OUT type - defines a VELOC type for use in calls to Mem_protect (handle)
+//   IN  size - size of type in bytes
 int VELOC_Mem_type(VELOCT_type* type, int size);
 
-// mark memory for checkpoint
-// FTI_Protect
+// registers a memory region for checkpoint/restart
+//   IN id    - application defined integer label for memory region
+//   IN ptr   - pointer to start of memory region
+//   IN count - number of consecutive elements in memory region
+//   IN type  - type of element in memory region
 int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type);
 
 /**************************
  * File registration
  *************************/
 
+// Informs application about path to open a file
+// This must either be called between VELOC_Start_restart/VELOC_Complete_restart
+// or between VELOC_Start_checkpoint/VELOC_Complete_checkpoint
+//   IN  name       - file name of checkpoint file
+//   OUT veloc_name - full path application should use when opening the file
 int VELOC_Route_file(const char* name, char* veloc_name);
 
 /**************************
  * Restart routines
  *************************/
 
-// flag returns 1 if there is a checkpoint available to read, 0 otherwise
+// determine whether application has checkpoint to read on restart
+//   OUT flag - flag returns 1 if there is a checkpoint available to read, 0 otherwise
 int VELOC_Have_restart(int* flag);
 
+// mark start of restart phase
 int VELOC_Start_restart();
 
-// reads protected memory from file
-// must be called between start/complete pair
+// read checkpoint file contents into registered memory regions
+// must be called between VELOC_Start_restart/VELOC_Complete_restart
 int VELOC_Mem_restart();
 
+// mark end of restart phase
 int VELOC_Complete_restart();
 
 /**************************
  * Checkpoint routines
  *************************/
 
-// flag returns 1 if checkpoint should be taken, 0 otherwise
+// determine whether application should checkpoint
+//   OUT flag - flag returns 1 if checkpoint should be taken, 0 otherwise
 int VELOC_Need_checkpoint(int* flag);
 
+// mark start of a new checkpoint
 int VELOC_Start_checkpoint();
 
-// writes protected memory to file
-// must be called between start/complete pair
+// write registered memory regions into a checkpoint file
+// must be called between VELOC_Start_checkpoint/VELOC_Complete_checkpoint
 int VELOC_Mem_checkpoint();
 
+// mark end of current checkpoint
+//   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully
 int VELOC_Complete_checkpoint(int valid);
 
 /**************************
  * convenience functions for existing FTI users
- * (can be implemented fully with above functions)
+ * (implemented with combinations of above functions)
  ************************/
 
-// FTI_Checkpoint without id and level params
+// substitute for FTI_Checkpoint
 int VELOC_Mem_save();
 
-// FTI_Recover
+// substitute for FTI_Recover
 int VELOC_Mem_recover();
 
-// FTI_Snapshot
+// substitute for FTI_Snapshot
 int VELOC_Mem_snapshot();
 
 #ifdef __cplusplus

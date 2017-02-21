@@ -113,7 +113,7 @@ int VELOC_Init(char* configFile)
     // get our rank
     MPI_Comm_rank(MPI_COMM_WORLD, &g_rank);
 
-    // TODO: use SCR_Have_checkpoint when available
+    // TODO: use SCR_Have_restart when it's available
     // check to see if we're restarting
     // we write a dummy file from rank 0 on each checkpoint and
     // use SCR_Route_file to look for that (ugly hack)
@@ -146,7 +146,9 @@ int VELOC_Finalize()
     }
     g_veloc_state = VELOC_STATE_UNINIT;
 
+    // shut down the library (flush final checkpoint if needed)
     SCR_Finalize();
+
     return VELOC_SUCCESS;
 }
 
@@ -161,9 +163,11 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
         // ERROR!
     }
 
+    // create a new memory datatype
     type->id   = g_nbType;
     type->size = size;
     g_nbType++;
+
     return VELOC_SUCCESS;
 }
 
@@ -242,7 +246,9 @@ int VELOC_Route_file(const char* name, char* veloc_name)
         // ERROR!
     }
 
+    // get full path we should use to open the file
     SCR_Route_file(name, veloc_name);
+
     return VELOC_SUCCESS;
 }
 
@@ -257,7 +263,10 @@ int VELOC_Have_restart(int* flag)
         // ERROR!
     }
 
+    // inform caller whether we have a checkpoint to read
+    // or whether this is a new run (no checkpoint)
     *flag = g_recovery;
+
     return VELOC_SUCCESS;
 }
 
@@ -324,8 +333,9 @@ int VELOC_Complete_restart()
     }
     g_veloc_state = VELOC_STATE_INIT;
 
-    // turn off recovery flag
+    // app read in its checkpoint, turn off recovery flag
     g_recovery = 0;
+
     return VELOC_SUCCESS;
 }
 
@@ -341,7 +351,9 @@ int VELOC_Need_checkpoint(int* flag)
         // ERROR!
     }
 
+    // determine whether app should checkpoint now
     SCR_Need_checkpoint(flag);
+
     return VELOC_SUCCESS;
 }
 
@@ -454,7 +466,12 @@ int VELOC_Complete_checkpoint(int valid)
     }
     g_veloc_state = VELOC_STATE_INIT;
 
+    // TODO: we should track success/failure of Mem_checkpoint
+
+    // mark the end of the checkpoint, indicate whether this process
+    // wrote its data successfully or not
     SCR_Complete_checkpoint(valid);
+
     return VELOC_SUCCESS;
 }
 
@@ -474,6 +491,7 @@ int VELOC_Mem_save()
     VELOC_Start_checkpoint();
     int rc = VELOC_Mem_checkpoint();
     VELOC_Complete_checkpoint((rc == VELOC_SUCCESS));
+
     return VELOC_SUCCESS;
 }
 
@@ -488,6 +506,7 @@ int VELOC_Mem_recover()
     VELOC_Start_restart();
     VELOC_Mem_restart();
     VELOC_Complete_restart();
+
     return VELOC_SUCCESS;
 }
 
