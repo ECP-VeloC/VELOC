@@ -9,6 +9,7 @@
 #define VELOC_VERSION_MAJOR (0)
 #define VELOC_VERSION_MINOR (0)
 #define VELOC_VERSION_PATCH (0)
+#define VELOC_VERSION "v0.0.0"
 
 /** Token returned if a VEOC function succeeds.                             */
 #define VELOC_SUCCESS (0)
