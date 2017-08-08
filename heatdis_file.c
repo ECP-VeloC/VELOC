@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
             // build file name for this rank
             char file[1024];
-            snprintf(file, sizeof(file), "ckpt.%d", rank);
+            snprintf(file, sizeof(file), "time.%d/ckpt.%d", i, rank);
 
             // get path to file from VELOC
             char veloc_file[VELOC_MAX_NAME];
