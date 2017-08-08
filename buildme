@@ -3,21 +3,41 @@ set -x
 
 SCR_PATH=`pwd`/scr-1.1.8/install
 
+rm -rf $SCR_PATH
+
+## download and build SCR
+#if [ ! -d scr-1.1.8 ]; then
+#  wget https://github.com/LLNL/scr/releases/download/v1.1.8/scr-1.1.8.tar.gz
+#  tar -zxf scr-1.1.8.tar.gz
+#  pushd scr-1.1.8
+#    ./configure \
+#      --prefix=${SCR_PATH} \
+#      --with-scr-conf=${SCR_PATH}/scr.conf \
+#      --with-scr-cache-base=/tmp \
+#      --with-scr-cntl-base=/tmp \
+#      --without-mysql \
+#      --without-yogrt \
+#      --without-dtcmp
+#    make
+#    make install
+#  popd
+#fi
+
 # download and build SCR
-if [ ! -d scr-1.1.8 ]; then
-  wget https://github.com/LLNL/scr/releases/download/v1.1.8/scr-1.1.8.tar.gz
-  tar -zxf scr-1.1.8.tar.gz
-  pushd scr-1.1.8
-    ./configure \
-      --prefix=${SCR_PATH} \
-      --with-scr-conf=${SCR_PATH}/scr.conf \
-      --with-scr-cache-base=/tmp \
-      --with-scr-cntl-base=/tmp \
-      --without-mysql \
-      --without-yogrt \
-      --without-dtcmp
-    make
-    make install
+if [ ! -d scr.git ]; then
+  git clone git@github.com:llnl/scr.git scr.git
+fi
+if [ ! -d $SCR_PATH ]; then
+  pushd scr.git
+    rm -rf build
+    mkdir build
+    pushd build
+      cmake \
+        -DCMAKE_INSTALL_PREFIX=${SCR_PATH} \
+        ..
+      make
+      make install
+    popd
   popd
 fi
 
@@ -29,7 +49,7 @@ mpicc -g -O0 -o fti.o -c api.c -I${SCR_PATH}/include
 ar cr libfti.a fti.o
 
 # compile heatdis code which uses FTI
-mpicc -g -O0 -o hd.exe heatdis.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libfti.a -lm
+mpicc -g -O0 -o hd.exe heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libfti.a -lm
 
 # build VELOC library
 mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
@@ -37,6 +57,6 @@ ar cr libveloc.a veloc.o
 
 # TODO: create VELOC test cases
 rm -rf hd_mem.exe hd_file.exe hd_memfile.exe
-mpicc -g -O0 -o hd_mem.exe  heatdis_mem.c  -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
-mpicc -g -O0 -o hd_file.exe heatdis_file.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
-mpicc -g -O0 -o hd_memfile.exe heatdis_memfile.c -I. -L${SCR_PATH}/lib -Wl,-rpath,${SCR_PATH}/lib -lscr libveloc.a -lm
+mpicc -g -O0 -o hd_mem.exe  heatdis_mem.c  -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+mpicc -g -O0 -o hd_file.exe heatdis_file.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+mpicc -g -O0 -o hd_memfile.exe heatdis_memfile.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
