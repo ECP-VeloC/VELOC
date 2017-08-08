@@ -28,6 +28,7 @@ if [ ! -d scr.git ]; then
 fi
 if [ ! -d $SCR_PATH ]; then
   pushd scr.git
+    git pull
     rm -rf build
     mkdir build
     pushd build
