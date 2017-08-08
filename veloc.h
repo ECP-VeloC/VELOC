@@ -77,6 +77,10 @@ int VELOC_Init(char *config);
 // shut down the library
 int VELOC_Finalize();
 
+// check whether job should exit
+//   OUT flag - flag returns 1 if job should exit, 0 otherwise
+int VELOC_Exit_test(int* flag);
+
 /**************************
  * Memory registration
  *************************/
@@ -110,17 +114,18 @@ int VELOC_Route_file(const char* name, char* veloc_name);
 
 // determine whether application has checkpoint to read on restart
 //   OUT flag - flag returns 1 if there is a checkpoint available to read, 0 otherwise
-int VELOC_Have_restart(int* flag);
+int VELOC_Restart_test(int* flag);
 
 // mark start of restart phase
-int VELOC_Start_restart();
+int VELOC_Restart_begin();
 
 // read checkpoint file contents into registered memory regions
-// must be called between VELOC_Start_restart/VELOC_Complete_restart
-int VELOC_Mem_restart();
+// must be called between VELOC_Restart_begin/VELOC_Restart_end
+int VELOC_Restart_mem();
 
 // mark end of restart phase
-int VELOC_Complete_restart();
+//   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise
+int VELOC_Restart_end(int valid);
 
 /**************************
  * Checkpoint routines
@@ -128,21 +133,21 @@ int VELOC_Complete_restart();
 
 // determine whether application should checkpoint
 //   OUT flag - flag returns 1 if checkpoint should be taken, 0 otherwise
-int VELOC_Need_checkpoint(int* flag);
+int VELOC_Checkpoint_test(int* flag);
 
-// mark start of a new checkpoint
-int VELOC_Start_checkpoint();
+// mark start of checkpoint phase
+int VELOC_Checkpoint_begin();
 
 // write registered memory regions into a checkpoint file
-// must be called between VELOC_Start_checkpoint/VELOC_Complete_checkpoint
-int VELOC_Mem_checkpoint();
+// must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
+int VELOC_Checkpoint_mem();
 
-// mark end of current checkpoint
+// mark end of checkpoint phase
 //   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully
-int VELOC_Complete_checkpoint(int valid);
+int VELOC_Checkpoint_end(int valid);
 
 /**************************
- * convenience functions for existing FTI users
+ * Convenience functions for existing FTI users
  * (implemented with combinations of above functions)
  ************************/
 

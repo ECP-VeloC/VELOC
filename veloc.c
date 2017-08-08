@@ -139,6 +139,19 @@ int VELOC_Finalize()
     return VELOC_SUCCESS;
 }
 
+int VELOC_Exit_test(int* flag)
+{
+    // manage state transition
+    if (g_veloc_state != VELOC_STATE_INIT) {
+        // ERROR!
+    }
+
+    // determine whether the job should exit now
+    SCR_Should_exit(flag);
+
+    return VELOC_SUCCESS;
+}
+
 /**************************
  * Memory registration
  *************************/
@@ -243,7 +256,7 @@ int VELOC_Route_file(const char* name, char* veloc_name)
  * Restart routines
  *************************/
 
-int VELOC_Have_restart(int* flag)
+int VELOC_Restart_test(int* flag)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -257,7 +270,7 @@ int VELOC_Have_restart(int* flag)
     return VELOC_SUCCESS;
 }
 
-int VELOC_Start_restart()
+int VELOC_Restart_begin()
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -273,7 +286,7 @@ int VELOC_Start_restart()
 }
 
 // reads protected memory from file
-int VELOC_Mem_restart()
+int VELOC_Restart_mem()
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_RESTART) {
@@ -315,7 +328,7 @@ int VELOC_Mem_restart()
     return VELOC_SUCCESS;
 }
 
-int VELOC_Complete_restart()
+int VELOC_Restart_end(int valid)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_RESTART) {
@@ -324,7 +337,7 @@ int VELOC_Complete_restart()
     g_veloc_state = VELOC_STATE_INIT;
 
     // complete restart phase
-    SCR_Complete_restart(1);
+    SCR_Complete_restart(valid);
 
     // app read in its checkpoint, turn off recovery flag
     g_recovery = 0;
@@ -337,7 +350,7 @@ int VELOC_Complete_restart()
  *************************/
 
 // flag returns 1 if checkpoint should be taken, 0 otherwise
-int VELOC_Need_checkpoint(int* flag)
+int VELOC_Checkpoint_test(int* flag)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -350,7 +363,7 @@ int VELOC_Need_checkpoint(int* flag)
     return VELOC_SUCCESS;
 }
 
-int VELOC_Start_checkpoint()
+int VELOC_Checkpoint_begin()
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -403,7 +416,7 @@ int VELOC_Start_checkpoint()
 }
 
 // writes protected memory to file
-int VELOC_Mem_checkpoint()
+int VELOC_Checkpoint_mem()
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_CHECKPOINT) {
@@ -451,7 +464,7 @@ int VELOC_Mem_checkpoint()
     return VELOC_SUCCESS;
 }
 
-int VELOC_Complete_checkpoint(int valid)
+int VELOC_Checkpoint_end(int valid)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_CHECKPOINT) {
@@ -481,9 +494,9 @@ int VELOC_Mem_save()
     }
 
     // write protected memory to file
-    VELOC_Start_checkpoint();
-    int rc = VELOC_Mem_checkpoint();
-    VELOC_Complete_checkpoint((rc == VELOC_SUCCESS));
+    VELOC_Checkpoint_begin();
+    int rc = VELOC_Checkpoint_mem();
+    VELOC_Checkpoint_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;
 }
@@ -496,9 +509,9 @@ int VELOC_Mem_recover()
     }
 
     // read protected memory from file
-    VELOC_Start_restart();
-    VELOC_Mem_restart();
-    VELOC_Complete_restart();
+    VELOC_Restart_begin();
+    VELOC_Restart_mem();
+    VELOC_Restart_end(1);
 
     return VELOC_SUCCESS;
 }
@@ -512,7 +525,7 @@ int VELOC_Mem_snapshot()
 
     // check whether this is a restart
     int have_restart;
-    VELOC_Have_restart(&have_restart);
+    VELOC_Restart_test(&have_restart);
     if (have_restart) {
         // If this is a recovery load checkpoint data
         return VELOC_Mem_recover();
@@ -520,7 +533,7 @@ int VELOC_Mem_snapshot()
 
     // otherwise checkpoint if it's time
     int flag;
-    VELOC_Need_checkpoint(&flag);
+    VELOC_Checkpoint_test(&flag);
     if (flag) {
         // it's time, take a checkpoint
         return VELOC_Mem_save();
