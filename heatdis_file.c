@@ -122,9 +122,9 @@ int main(int argc, char *argv[])
 
     // read checkpoint if we're restarting
     int flag;
-    VELOC_Have_restart(&flag);
+    VELOC_Restart_test(&flag);
     if (flag) {
-        VELOC_Start_restart();
+        VELOC_Restart_begin();
 
         // build file name for this rank
         char file[1024];
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
             valid = 0;
         }
 
-        VELOC_Complete_restart();
+        VELOC_Restart_end(valid);
     }
 
     wtime = MPI_Wtime();
@@ -155,9 +155,9 @@ int main(int argc, char *argv[])
     {
         // write checkpoint if needed
         int flag;
-        VELOC_Need_checkpoint(&flag);
+        VELOC_Checkpoint_test(&flag);
         if (flag) {
-            VELOC_Start_checkpoint();
+            VELOC_Checkpoint_begin();
 
             // build file name for this rank
             char file[1024];
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
                 valid = 0;
             }
 
-            VELOC_Complete_checkpoint(valid);
+            VELOC_Checkpoint_end(valid);
         }
 
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
