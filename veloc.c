@@ -113,27 +113,14 @@ int VELOC_Init(char* configFile)
     // get our rank
     MPI_Comm_rank(MPI_COMM_WORLD, &g_rank);
 
-    // TODO: use SCR_Have_restart when it's available
     // check to see if we're restarting
-    // we write a dummy file from rank 0 on each checkpoint and
-    // use SCR_Route_file to look for that (ugly hack)
-    if (g_rank == 0) {
-        // build file name to dummy file
-        char fn[VELOC_MAX_NAME];
-        snprintf(fn, VELOC_MAX_NAME, "marker.veloc");
-
-        // look for the file (this is how SCR tells us whether
-        // we're restarting from a checkpoint or starting over)
-        char fn_scr[VELOC_MAX_NAME];
-        int rc = SCR_Route_file(fn, fn_scr);
-        if (rc == SCR_SUCCESS) {
-            // we've got the dummy file, so we're restarting
-            g_recovery = 1;
-        }
+    int have_restart;
+    char name[SCR_MAX_FILENAME];
+    SCR_Have_restart(&have_restart, name);
+    if (have_restart) {
+        // got a checkpoint available, set our recovery flag
+        g_recovery = 1;
     }
-
-    // get flag from rank 0
-    MPI_Bcast(&g_recovery, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     return VELOC_SUCCESS;
 }
@@ -278,7 +265,10 @@ int VELOC_Start_restart()
     }
     g_veloc_state = VELOC_STATE_RESTART;
 
-    // NOP for now
+    // enter restart phase
+    char name[SCR_MAX_FILENAME];
+    SCR_Start_restart(name);
+
     return VELOC_SUCCESS;
 }
 
@@ -332,6 +322,9 @@ int VELOC_Complete_restart()
         // ERROR!
     }
     g_veloc_state = VELOC_STATE_INIT;
+
+    // complete restart phase
+    SCR_Complete_restart(1);
 
     // app read in its checkpoint, turn off recovery flag
     g_recovery = 0;
