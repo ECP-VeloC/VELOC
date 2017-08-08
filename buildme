@@ -2,8 +2,7 @@
 set -x
 
 SCR_PATH=`pwd`/scr-1.1.8/install
-
-rm -rf $SCR_PATH
+#rm -rf $SCR_PATH
 
 ## download and build SCR
 #if [ ! -d scr-1.1.8 ]; then
