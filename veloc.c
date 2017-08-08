@@ -46,6 +46,12 @@ VELOCT_type VELOC_LDBE;
 // initialize restart flag to assume we're not restarting
 static int g_recovery = 0;
 
+// checkpoint counter so we can create unique veloc directories for each one
+static int g_checkpoint_id = 0;
+
+// buffer to hold name of checkpoint (and checkpoint directory)
+static char g_checkpoint_dir[SCR_MAX_FILENAME];
+
 // our global rank
 static int g_rank = -1;
 
@@ -278,9 +284,12 @@ int VELOC_Restart_begin()
     }
     g_veloc_state = VELOC_STATE_RESTART;
 
-    // enter restart phase
-    char name[SCR_MAX_FILENAME];
-    SCR_Start_restart(name);
+    // enter restart phase, and get name of the checkpoint we're restarting from
+    // this name is also used as the directory where we wrote files
+    SCR_Start_restart(g_checkpoint_dir);
+
+    // extract id from name
+    sscanf(g_checkpoint_dir, "veloc.%d", &g_checkpoint_id);
 
     return VELOC_SUCCESS;
 }
@@ -295,7 +304,7 @@ int VELOC_Restart_mem()
 
     // build checkpoint file name
     char fn[VELOC_MAX_NAME];
-    snprintf(fn, VELOC_MAX_NAME, "Ckpt-Rank%d.fti", g_rank);
+    snprintf(fn, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
 
     // get SCR path to checkpoint file
     char fn_scr[SCR_MAX_FILENAME];
@@ -336,6 +345,7 @@ int VELOC_Restart_end(int valid)
     }
     g_veloc_state = VELOC_STATE_INIT;
 
+    // TODO: combiner user valid with memory file valid here
     // complete restart phase
     SCR_Complete_restart(valid);
 
@@ -371,46 +381,14 @@ int VELOC_Checkpoint_begin()
     }
     g_veloc_state = VELOC_STATE_CHECKPOINT;
 
-    SCR_Start_checkpoint();
+    // bump our checkpoint counter
+    g_checkpoint_id++;
 
-    // create our dummy file (we look for this file on restart)
-    if (g_rank == 0) {
-        // build file name to dummy file
-        char fn[VELOC_MAX_NAME];
-        snprintf(fn, VELOC_MAX_NAME, "marker.veloc");
+    // create a name for our checkpoint
+    sprintf(g_checkpoint_dir, "veloc.%d", g_checkpoint_id);
 
-        // get SCR path to write this file
-        char fn_scr[VELOC_MAX_NAME];
-        SCR_Route_file(fn, fn_scr);
-
-        // open marker file for writing
-        FILE* fd = fopen(fn_scr, "wb");
-        if (fd == NULL) {
-            printf("VELOC checkpoint file could not be opened %s", fn_scr);
-            return VELOC_FAILURE;
-        }
-
-        // write a byte to marker file (necessary?)
-        char c = 'A';
-        if (fwrite(&c, 1, 1, fd) != 1) {
-            printf("Error writing to marker file %s\n", fn_scr);
-            fclose(fd);
-            return VELOC_FAILURE;
-        }
-
-        // flush data to disk
-        if (fflush(fd) != 0) {
-            printf("Error flushing marker file %s\n", fn_scr);
-            fclose(fd);
-            return VELOC_FAILURE;
-        }
-
-        // close the file
-        if (fclose(fd) != 0) {
-            printf("Error closing marker file %s\n", fn_scr);
-            return VELOC_FAILURE;
-        }
-    }
+    // open our checkpoint phase
+    SCR_Start_output(g_checkpoint_dir, SCR_FLAG_CHECKPOINT);
 
     return VELOC_SUCCESS;
 }
@@ -425,7 +403,7 @@ int VELOC_Checkpoint_mem()
 
     // build checkpoint file name
     char fn[VELOC_MAX_NAME];
-    snprintf(fn, VELOC_MAX_NAME, "Ckpt-Rank%d.fti", g_rank);
+    snprintf(fn, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
 
     // get SCR path to checkpoint file
     char fn_scr[SCR_MAX_FILENAME];
@@ -476,7 +454,7 @@ int VELOC_Checkpoint_end(int valid)
 
     // mark the end of the checkpoint, indicate whether this process
     // wrote its data successfully or not
-    SCR_Complete_checkpoint(valid);
+    SCR_Complete_output(valid);
 
     return VELOC_SUCCESS;
 }
@@ -510,8 +488,8 @@ int VELOC_Mem_recover()
 
     // read protected memory from file
     VELOC_Restart_begin();
-    VELOC_Restart_mem();
-    VELOC_Restart_end(1);
+    int rc = VELOC_Restart_mem();
+    VELOC_Restart_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;
 }
