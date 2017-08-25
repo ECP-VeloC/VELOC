@@ -166,12 +166,11 @@ int FTI_Init(char* configFile, MPI_Comm globalComm)
     FTI_Try(FTI_InitBasicTypes(FTI_Data), "create the basic data types.");
 
     // check to see if we're restarting
-    char fn[FTI_BUFS];
-    char fn_scr[FTI_BUFS];
-    snprintf(fn, FTI_BUFS, "Ckpt-Rank%d.fti", FTI_Topo.myRank);
-    int rc = SCR_Route_file(fn, fn_scr);
-    if (rc == SCR_SUCCESS) {
-        // we've got checkpoints files, set reco to 1
+    int have_restart;
+    char name[SCR_MAX_FILENAME];
+    SCR_Have_restart(&have_restart, name);
+    if (have_restart) {
+        // got a checkpoint available, set our recovery flag
         FTI_Exec.reco = 1;
     }
 
@@ -359,8 +358,14 @@ int FTI_Recover()
     FILE* fd;
     int i;
 
+    /* open restart phase */
+    char ckpt_name[SCR_MAX_FILENAME];
+    SCR_Start_restart(ckpt_name);
+
+    /* build file name */
     snprintf(fn, FTI_BUFS, "Ckpt-Rank%d.fti", FTI_Topo.myRank);
 
+    /* get path to open our file */
     char fn_scr[SCR_MAX_FILENAME];
     SCR_Route_file(fn, fn_scr);
 
@@ -386,6 +391,10 @@ int FTI_Recover()
         FTI_Print("Could not close FTI checkpoint file.", FTI_EROR);
         return FTI_NSCS;
     }
+
+    /* close restart phase, assume success in reading if we got here,
+     * those procs that fail reading will return early and abort the job */
+    SCR_Complete_restart(1);
 
     FTI_Exec.reco = 0;
 
@@ -413,6 +422,7 @@ int FTI_Checkpoint(int id, int level)
     char str[FTI_BUFS];
     char catstr[FTI_BUFS];
 
+    /* open the checkpoint phase */
     SCR_Start_checkpoint();
 
     t1 = MPI_Wtime();
@@ -421,6 +431,7 @@ int FTI_Checkpoint(int id, int level)
 
     t2 = MPI_Wtime();
 
+    /* close the checkpoint phase, indicate whether this proc succeeded */
     SCR_Complete_checkpoint(res == FTI_SCES);
 
     t3 = MPI_Wtime();
