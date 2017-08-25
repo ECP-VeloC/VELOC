@@ -42,21 +42,21 @@ if [ ! -d $SCR_PATH ]; then
 fi
 
 # clear out existing build
-rm -rf fti.o libfti.a hd.exe
+rm -rf fti.o libfti.a heatdis_fti
 
 # build FTI library
-mpicc -g -O0 -o fti.o -c api.c -I${SCR_PATH}/include
+mpicc -g -O0 -o fti.o -c fti.c -I${SCR_PATH}/include
 ar cr libfti.a fti.o
 
 # compile heatdis code which uses FTI
-mpicc -g -O0 -o hd.exe heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libfti.a -lm
+mpicc -g -O0 -o heatdis_fti heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libfti.a -lm
 
 # build VELOC library
 mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 ar cr libveloc.a veloc.o
 
 # TODO: create VELOC test cases
-rm -rf hd_mem.exe hd_file.exe hd_memfile.exe
-mpicc -g -O0 -o hd_mem.exe  heatdis_mem.c  -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
-mpicc -g -O0 -o hd_file.exe heatdis_file.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
-mpicc -g -O0 -o hd_memfile.exe heatdis_memfile.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+rm -rf heatdis_mem heatdis_file heatdis_memfile
+mpicc -g -O0 -o heatdis_mem     heatdis_mem.c     -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+mpicc -g -O0 -o heatdis_file    heatdis_file.c    -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+mpicc -g -O0 -o heatdis_memfile heatdis_memfile.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm

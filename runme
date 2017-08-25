@@ -11,18 +11,18 @@ export SCR_DEBUG=1
 export SCR_CHECKPOINT_SECONDS=5
 
 # flush every 10th checkpoint
-export SCR_FLUSH=10
+export SCR_FLUSH=3
 
-#totalview srun -a -n4 -N4 ./hd.exe 4 config.fti
-#srun -n4 -N4 ./hd.exe 4 config.fti
+totalview srun -a -n4 -N4 ./heatdis_fti 4 config.fti
+#srun -n4 -N4 ./heatdis_fti 4 config.fti
 
-#totalview srun -a -n4 -N4 ./hd_mem.exe 4 config.fti
-#srun -n4 -N4 ./hd_mem.exe 4 config.fti
+#totalview srun -a -n4 -N4 ./heatdis_mem 4 config.fti
+#srun -n4 -N4 ./heatdis_mem 4 config.fti
 
-#totalview srun -a -n4 -N4 ./hd_file.exe 4 config.fti
-#srun -n4 -N4 ./hd_file.exe 4 config.fti
+#totalview srun -a -n4 -N4 ./heatdis_file 4 config.fti
+#srun -n4 -N4 ./heatdis_file 4 config.fti
 
-mpirun -np 4 ./hd_memfile.exe 4 config.fti
-#srun -n4 -N4 ./hd_memfile.exe 4 config.fti
-#totalview srun -a -n4 -N4 ./hd_memfile.exe 4 config.fti
-#srun -n4 -N4 ./hd_memfile.exe 4 config.fti
+#mpirun -np 4 ./heatdis_memfile 4 config.fti
+#srun -n4 -N4 ./heatdis_memfile 4 config.fti
+#totalview srun -a -n4 -N4 ./heatdis_memfile 4 config.fti
+#srun -n4 -N4 ./heatdis_memfile 4 config.fti
