@@ -41,16 +41,6 @@ if [ ! -d $SCR_PATH ]; then
   popd
 fi
 
-# clear out existing build
-rm -rf fti.o libfti.a heatdis_fti
-
-# build FTI library
-mpicc -g -O0 -o fti.o -c fti.c -I${SCR_PATH}/include
-ar cr libfti.a fti.o
-
-# compile heatdis code which uses FTI
-mpicc -g -O0 -o heatdis_fti heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libfti.a -lm
-
 # build VELOC library
 mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 ar cr libveloc.a veloc.o
