@@ -12,12 +12,12 @@ VELOC_ADD_TEST(heatdis_file "4;${CMAKE_CURRENT_SOURCE_DIR}/test.conf" "time.*")
 ## Memory Interface
 ADD_EXECUTABLE(heatdis_mem heatdis_mem.c heatdis_common.c)
 TARGET_LINK_LIBRARIES(heatdis_mem veloc)
-VELOC_ADD_TEST(heatdis_mem "4;${CMAKE_CURRENT_SOURCE_DIR}/test.conf" "time.*")
+VELOC_ADD_TEST(heatdis_mem "4;${CMAKE_CURRENT_SOURCE_DIR}/test.conf" "veloc.*")
 
 ## Both: File & Memory Interface
 ADD_EXECUTABLE(heatdis_memfile heatdis_memfile.c heatdis_common.c)
 TARGET_LINK_LIBRARIES(heatdis_memfile veloc)
-VELOC_ADD_TEST(heatdis_memfile "4;${CMAKE_CURRENT_SOURCE_DIR}/test.conf" "time.*")
+VELOC_ADD_TEST(heatdis_memfile "4;${CMAKE_CURRENT_SOURCE_DIR}/test.conf" "time.*;veloc.*")
 
 # TESTING
 
