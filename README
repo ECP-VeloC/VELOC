@@ -1,8 +1,0 @@
-Edit the buildme script if necessary.
-
-./buildme
-
-Edit the runme script if necessary.
-Allocate 4 nodes.
-
-./runme
