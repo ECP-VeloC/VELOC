@@ -3,7 +3,7 @@
 VELOC is a collaboration between Argonne National Laboratory and Lawrence Livermore National Laboratory as part of the Exascale Computing Project.
 It is under development by the [FTI](https://github.com/leobago/fti) and [SCR](https://github.com/llnl/scr) development teams.
 
-## Example Project
+## Project Setup
 
 This simple example downloads and builds the current version SCR.
 FTI functionality is implemented on top of SCR directly in the `veloc.c` file.
@@ -31,3 +31,6 @@ make test
 
 Currently, SCR requires the PDSH library.
 To automatically download and build PDSH as part of the CMake build, use the option `-DBUILD_PDSH=ON` when configuring CMake.
+
+## Testing
+
