@@ -34,3 +34,10 @@ To automatically download and build PDSH as part of the CMake build, use the opt
 
 ## Testing
 
+We currently test three ways to interact with the VeloC API:
+
+- Memory interface (similar to FTI)
+- File-based interface (similar to SCR)
+- A hybrid interface mixing FTI and SCR paradigms
+
+The tests can be run using `make test` or, for more verbose output, using `make check`.
