@@ -3,45 +3,11 @@
 
 #include "veloc.h"
 #include "mpi.h"
+#include "veloc_mem.h"
 #include "scr.h"
 
 /** Standard size of buffer and mas node size.                             */
 #define VELOC_BUFS 256
-
-typedef struct VELOCT_dataset {         /** Dataset metadata.              */
-    int             id;                 /** ID to search/update dataset.   */
-    void            *ptr;               /** Pointer to the dataset.        */
-    int             count;              /** Number of elements in dataset. */
-    VELOCT_type     type;               /** Data type for the dataset.     */
-    int             eleSize;            /** Element size for the dataset.  */
-    long            size;               /** Total size of the dataset.     */
-} VELOCT_dataset;
-
-/** Array of datasets and all their internal information.                  */
-static VELOCT_dataset VELOC_Data[VELOC_BUFS];
-
-/** VELOC data type for chars.                                               */
-VELOCT_type VELOC_CHAR;
-/** VELOC data type for short integers.                                      */
-VELOCT_type VELOC_SHRT;
-/** VELOC data type for integers.                                            */
-VELOCT_type VELOC_INTG;
-/** VELOC data type for long integers.                                       */
-VELOCT_type VELOC_LONG;
-/** VELOC data type for unsigned chars.                                      */
-VELOCT_type VELOC_UCHR;
-/** VELOC data type for unsigned short integers.                             */
-VELOCT_type VELOC_USHT;
-/** VELOC data type for unsigned integers.                                   */
-VELOCT_type VELOC_UINT;
-/** VELOC data type for unsigned long integers.                              */
-VELOCT_type VELOC_ULNG;
-/** VELOC data type for single floating point.                               */
-VELOCT_type VELOC_SFLT;
-/** VELOC data type for double floating point.                               */
-VELOCT_type VELOC_DBLE;
-/** VELOC data type for long doble floating point.                           */
-VELOCT_type VELOC_LDBE;
 
 // initialize restart flag to assume we're not restarting
 static int g_recovery = 0;
@@ -55,12 +21,6 @@ static char g_checkpoint_dir[SCR_MAX_FILENAME];
 // our global rank
 static int g_rank = -1;
 
-// Number of protected variables
-static unsigned int g_nbVar = 0;
-
-// Number of data types
-static unsigned int g_nbType = 0; 
-
 // current size of checkpoint in bytes
 static unsigned int g_ckptSize = 0;
 
@@ -73,7 +33,7 @@ typedef enum {
 
 VELOC_STATE g_veloc_state = VELOC_STATE_UNINIT;
 
-static int veloc_InitBasicTypes(VELOCT_dataset* VELOC_Data)
+static int VeloC_InitBasicTypes(VELOCT_dataset* VELOC_Data)
 {
     // initialize our type count
     g_nbType = 0;
@@ -128,6 +88,8 @@ int VELOC_Init(char* configFile)
         g_recovery = 1;
     }
 
+	VELOC_Mem_Init(configFile, MPI_COMM_WORLD);
+
     return VELOC_SUCCESS;
 }
 
@@ -141,6 +103,8 @@ int VELOC_Finalize()
 
     // shut down the library (flush final checkpoint if needed)
     SCR_Finalize();
+    
+    VELOC_Mem_Finalize();
 
     return VELOC_SUCCESS;
 }
@@ -170,9 +134,7 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
     }
 
     // create a new memory datatype
-    type->id   = g_nbType;
-    type->size = size;
-    g_nbType++;
+	VELOC_Mem_InitType(type, size);
 
     return VELOC_SUCCESS;
 }
@@ -180,7 +142,7 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
 int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 {
     // manage state transition
-    if (g_veloc_state != VELOC_STATE_INIT) {
+/*    if (g_veloc_state != VELOC_STATE_INIT) {
         // ERROR!
     }
 
@@ -234,7 +196,9 @@ int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 
         ckptSize = g_ckptSize / (1024.0 * 1024.0);
         printf("Variable ID %d to protect. Current ckpt. size per rank is %.2fMB.\n", id, ckptSize);
-    }
+    }*/
+    
+    
 
     return VELOC_SUCCESS;
 }
