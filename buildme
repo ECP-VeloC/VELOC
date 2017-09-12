@@ -56,18 +56,18 @@ mpicc -g -O0 -o ./obj/vmem/iniparser.o -c ./src/vmem/iniparser.c -I./src/vmem -I
 mpicc -g -O0 -o ./obj/vmem/galois.o -c ./src/vmem/galois.c -I./src/vmem -I./include
 mpicc -g -O0 -o ./obj/vmem/jerasure.o -c ./src/vmem/jerasure.c -I./src/vmem -I./include
 
-mpicc -g -O0 -o ./obj/vmem/conf.o -c ./src/vmem/conf.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/vmem_api.o -c ./src/vmem/vmem_api.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/checkpoint.o -c ./src/vmem/checkpoint.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/meta.o -c ./src/vmem/meta.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/postckpt.o -c ./src/vmem/postckpt.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/postreco.o -c ./src/vmem/postreco.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/recover.o -c ./src/vmem/recover.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/tools.o -c ./src/vmem/tools.c -I./vmem/include -I./src/vmem -I./include
-mpicc -g -O0 -o ./obj/vmem/topo.o -c ./src/vmem/topo.c -I./vmem/include -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/conf.o -c ./src/vmem/conf.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/checkpoint.o -c ./src/vmem/checkpoint.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/meta.o -c ./src/vmem/meta.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/postckpt.o -c ./src/vmem/postckpt.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/postreco.o -c ./src/vmem/postreco.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/recover.o -c ./src/vmem/recover.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/tools.o -c ./src/vmem/tools.c -I./src/vmem -I./include
+mpicc -g -O0 -o ./obj/vmem/topo.o -c ./src/vmem/topo.c -I./src/vmem -I./include
 
+mpicc -g -O0 -o ./obj/veloc.o -c ./src/veloc.c -I./src/vmem -I./include -I${SCR_PATH}/include
 #ar cr libvmem.a vmem.o
-ar cr ./obj/libvmem.a ./obj/vmem/conf.o ./obj/vmem/vmem_api.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o
+ar cr ./obj/libvmem.a ./obj/vmem/conf.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o ./obj/veloc.o
 
 # compile heatdis code which uses FTI
 #mpicc -g -O0 -o heatdis_vmem heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libvmem.a -lm

@@ -29,7 +29,7 @@ int VELOC_Mem_CheckFile(char* fn, unsigned long fs, char* checksum)
             if (fileStatus.st_size == fs) {
                 if (strlen(checksum)) {
                     int res = VELOC_Mem_VerifyChecksum(fn, checksum);
-                    if (res != VELOC_Mem_SCES) {
+                    if (res != VELOC_SUCCESS) {
                         return 1;
                     }
                     return 0;
@@ -59,7 +59,7 @@ int VELOC_Mem_CheckFile(char* fn, unsigned long fs, char* checksum)
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      erased          The array of erasures to fill.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function detects all the erasures for L1, L2 and L3. It return the
     results in the erased array. The search for erasures is done at the
@@ -118,7 +118,7 @@ int VELOC_Mem_CheckErasures(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
             MPI_Allgather(&buf, 1, MPI_INT, erased, 1, MPI_INT, VELOC_Mem_Exec->groupComm);
             break;
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -128,7 +128,7 @@ int VELOC_Mem_CheckErasures(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function launches the required action depending on the recovery
     level. The recovery level is detected from the checkpoint ID of the
@@ -136,10 +136,10 @@ int VELOC_Mem_CheckErasures(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                      VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
-   int r, tres = VELOC_Mem_SCES, id, level = 1;
+   int r, tres = VELOC_SUCCESS, id, level = 1;
    unsigned long fs, maxFs;
    char str[VELOC_Mem_BUFS];
    VELOC_Mem_LoadMeta(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
@@ -160,7 +160,7 @@ int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                          VELOC_Mem_Print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
-                         r = VELOC_Mem_RecoverL4(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+                         r = VELOC_Mem_recoverL4(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
                          break;
                       case 3:
                          sscanf(VELOC_Mem_Exec->meta[3].ckptFile, "Ckpt%d", &id);
@@ -168,7 +168,7 @@ int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                          VELOC_Mem_Print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
-                         r = VELOC_Mem_RecoverL3(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+                         r = VELOC_Mem_recoverL3(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
                          break;
                       case 2:
                          sscanf(VELOC_Mem_Exec->meta[2].ckptFile, "Ckpt%d", &id);
@@ -176,7 +176,7 @@ int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                          VELOC_Mem_Print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
-                         r = VELOC_Mem_RecoverL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+                         r = VELOC_Mem_recoverL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
                          break;
                       case 1:
                          sscanf(VELOC_Mem_Exec->meta[1].ckptFile, "Ckpt%d", &id);
@@ -184,7 +184,7 @@ int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                          VELOC_Mem_Print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
-                         r = VELOC_Mem_RecoverL1(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+                         r = VELOC_Mem_recoverL1(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
                          break;
                    }
                    MPI_Allreduce(&r, &tres, 1, MPI_INT, MPI_SUM, VELOC_Mem_COMM_WORLD);
@@ -194,10 +194,10 @@ int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                }
          }
 
-         if (tres == VELOC_Mem_SCES) {
+         if (tres == VELOC_SUCCESS) {
             sprintf(str, "Recovering successfully from level %d.", level);
             VELOC_Mem_Print(str, VELOC_Mem_INFO);
-            // This is to enable recovering from local for L4 case in VELOC_Mem_Recover
+            // This is to enable recovering from local for L4 case in VELOC_Mem_recover
             if (level == 4) {
                 VELOC_Mem_Exec->ckptLvel = 1;
                 if (VELOC_Mem_Topo->splitRank == 0) {

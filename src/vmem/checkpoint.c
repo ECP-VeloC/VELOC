@@ -14,7 +14,7 @@
 /**
     @brief      It updates the local and global mean iteration time.
     @param      VELOC_Mem_Exec        Execution metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function updates the local and global mean iteration time. It also
     recomputes the checkpoint interval in iterations and corrects the next
@@ -61,7 +61,7 @@ int VELOC_Mem_UpdateIterTime(VELOCT_execution* VELOC_Mem_Exec)
         }
     }
     VELOC_Mem_Exec->ckptIcnt++; // Increment checkpoint loop counter
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -72,7 +72,7 @@ int VELOC_Mem_UpdateIterTime(VELOCT_execution* VELOC_Mem_Exec)
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      VELOC_Mem_Data        Dataset metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function checks whether the checkpoint needs to be local or remote,
     opens the target file and writes dataset per dataset, the checkpoint data,
@@ -118,7 +118,7 @@ int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
               break;
 #endif
         }
-        if (res != VELOC_Mem_SCES) {
+        if (res != VELOC_SUCCESS) {
             return VELOC_Mem_NSCS;
         }
     }
@@ -148,7 +148,7 @@ int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     @param      level           Cleaning checkpoint level.
     @param      group           Must be groupID if App-proc. or 1 if Head.
     @param      pr              Must be 1 if App-proc. or nbApprocs if Head.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function cleans the checkpoints of a group or a single process.
     It does that for each group (application process in the node) if executed
@@ -172,7 +172,7 @@ int VELOC_Mem_GroupClean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
         }
         VELOC_Mem_Clean(VELOC_Mem_Conf, VELOC_Mem_Topo, VELOC_Mem_Ckpt, level, i + group, rank);
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -185,7 +185,7 @@ int VELOC_Mem_GroupClean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
     @param      group           Must be groupID if App-proc. or 1 if Head.
     @param      fo              Must be -1 if App-proc. or 0 if Head.
     @param      pr              Must be 1 if App-proc. or nbApprocs if Head.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function launches the required action dependeing on the ckpt. level.
     It does that for each group (application process in the node) if executed
@@ -206,9 +206,9 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
 
     t0 = MPI_Wtime();
 
-    res = (VELOC_Mem_Exec->ckptLvel == (VELOC_Mem_REJW - VELOC_Mem_BASE)) ? VELOC_Mem_NSCS : VELOC_Mem_SCES;
+    res = (VELOC_Mem_Exec->ckptLvel == (VELOC_Mem_REJW - VELOC_Mem_BASE)) ? VELOC_Mem_NSCS : VELOC_SUCCESS;
     MPI_Allreduce(&res, &tres, 1, MPI_INT, MPI_SUM, VELOC_Mem_COMM_WORLD);
-    if (tres != VELOC_Mem_SCES) {
+    if (tres != VELOC_SUCCESS) {
         VELOC_Mem_GroupClean(VELOC_Mem_Conf, VELOC_Mem_Topo, VELOC_Mem_Ckpt, 0, group, pr);
         return VELOC_Mem_NSCS;
     }
@@ -231,7 +231,7 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     }
 
     MPI_Allreduce(&res, &tres, 1, MPI_INT, MPI_SUM, VELOC_Mem_COMM_WORLD);
-    if (tres != VELOC_Mem_SCES) {
+    if (tres != VELOC_SUCCESS) {
         VELOC_Mem_GroupClean(VELOC_Mem_Conf, VELOC_Mem_Topo, VELOC_Mem_Ckpt, 0, group, pr);
         return VELOC_Mem_NSCS;
     }
@@ -271,7 +271,7 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     sprintf(catstr, "Post-checkpoint took %.2f sec.", t3 - t0);
     sprintf(str, "%s (Ag:%.2fs, Pt:%.2fs, Cl:%.2fs)", catstr, t1 - t0, t2 - t1, t3 - t2);
     VELOC_Mem_Print(str, VELOC_Mem_INFO);
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -281,7 +281,7 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function listens for notifications from the application processes
     and takes the required actions after notification. This function is only
@@ -319,7 +319,7 @@ int VELOC_Mem_Listen(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
         return VELOC_Mem_ENDW;
     }
     res = VELOC_Mem_Try(VELOC_Mem_PostCkpt(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, 1, 0, VELOC_Mem_Topo->nbApprocs), "postprocess the checkpoint.");
-    if (res == VELOC_Mem_SCES) {
+    if (res == VELOC_SUCCESS) {
         VELOC_Mem_Exec->wasLastOffline = 1;
         VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
         res = VELOC_Mem_Exec->ckptLvel;
@@ -327,7 +327,7 @@ int VELOC_Mem_Listen(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     for (i = 0; i < VELOC_Mem_Topo->nbApprocs; i++) { // Send msg. to avoid checkpoint collision
         MPI_Send(&res, 1, MPI_INT, VELOC_Mem_Topo->body[i], VELOC_Mem_Conf->tag, VELOC_Mem_Exec->globalComm);
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -338,7 +338,7 @@ int VELOC_Mem_Listen(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      VELOC_Mem_Data        Dataset metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
 **/
 /*-------------------------------------------------------------------------*/
@@ -394,7 +394,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
       return VELOC_Mem_NSCS;
    }
 
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 
 }
 
@@ -405,7 +405,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
   @param      VELOC_Mem_Exec        Execution metadata.
   @param      VELOC_Mem_Topo        Topology metadata.
   @param      VELOC_Mem_Data        Dataset metadata.
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
 	In here it is taken into account, that in MPIIO the count parameter
 	in both, MPI_Type_contiguous and MPI_File_write_at, are integer
@@ -493,7 +493,7 @@ int VELOC_Mem_WriteMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
    }
    MPI_File_close(&pfh);
    MPI_Info_free(&info);
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -503,7 +503,7 @@ int VELOC_Mem_WriteMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Data        Dataset metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
 **/
 /*-------------------------------------------------------------------------*/
@@ -589,6 +589,6 @@ int VELOC_Mem_WriteSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
    free(ranks);
    free(chunkSizes);
 
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 }
 #endif

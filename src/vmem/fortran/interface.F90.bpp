@@ -25,7 +25,7 @@ module VELOC_Mem
 
 
   !> Token returned if a VELOC_Mem function succeeds.
-  integer, parameter :: VELOC_Mem_SCES = 0
+  integer, parameter :: VELOC_SUCCESS = 0
   !> Token returned if a VELOC_Mem function fails.
   integer, parameter :: VELOC_Mem_NSCS = -1
 
@@ -37,12 +37,12 @@ module VELOC_Mem
 
 
 
-  public :: VELOC_Mem_SCES, VELOC_Mem_NSCS, &
+  public :: VELOC_SUCCESS, VELOC_Mem_NSCS, &
 !$SH for T in ${FORTTYPES}; do
       $(velec_mem_type ${T}), &
 !$SH done
-      VELOC_Mem_Init, VELOC_Mem_Status, VELOC_Mem_InitType, VELOC_Mem_Protect,  &
-      VELOC_Mem_Checkpoint, VELOC_Mem_Recover, VELOC_Mem_Snapshot, VELOC_Mem_Finalize
+      VELOC_Mem_Init, VELOC_Mem_Status, VELOC_Mem_type, VELOC_Mem_Protect,  &
+      VELOC_Mem_Checkpoint, VELOC_Mem_recover, VELOC_Mem_Snapshot, VELOC_Mem_Finalize
 
 
 
@@ -80,16 +80,16 @@ module VELOC_Mem
 
   interface
 
-    function VELOC_Mem_InitType_impl(type_F, size_F) &
-            bind(c, name='VELOC_Mem_InitType_wrapper')
+    function VELOC_Mem_type_impl(type_F, size_F) &
+            bind(c, name='VELOC_Mem_type_wrapper')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_InitType_impl
+      integer(c_int) :: VELOC_Mem_type_impl
       type(c_ptr), intent(OUT) :: type_F
       integer(c_int), value :: size_F
 
-    endfunction VELOC_Mem_InitType_impl
+    endfunction VELOC_Mem_type_impl
 
   endinterface
 
@@ -133,14 +133,14 @@ module VELOC_Mem
 
   interface
 
-    function VELOC_Mem_Recover_impl() &
-            bind(c, name='VELOC_Mem_Recover')
+    function VELOC_Mem_recover_impl() &
+            bind(c, name='VELOC_Mem_recover')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_Recover_impl
+      integer(c_int) :: VELOC_Mem_recover_impl
 
-    endfunction VELOC_Mem_Recover_impl
+    endfunction VELOC_Mem_recover_impl
 
   endinterface
 
@@ -210,13 +210,13 @@ contains
     global_comm_c = int(global_comm, c_int)
     err = int(VELOC_Mem_Init_impl(config_file_c, global_comm_c))
     global_comm = int(global_comm_c)
-    if (err /= VELOC_Mem_SCES ) then
+    if (err /= VELOC_SUCCESS ) then
       return
     endif
 
 !$SH for T in ${FORTTYPES}; do
-    call VELOC_Mem_InitType($(velec_mem_type ${T}), int($(fort_sizeof ${T})_C_int/8_c_int, C_int), err)
-    if (err /= VELOC_Mem_SCES ) then
+    call VELOC_Mem_type($(velec_mem_type ${T}), int($(fort_sizeof ${T})_C_int/8_c_int, C_int), err)
+    if (err /= VELOC_SUCCESS ) then
       return
     endif
 !$SH done
@@ -235,15 +235,15 @@ contains
 
 
 
-  subroutine VELOC_Mem_InitType(type_F, size_F, err)
+  subroutine VELOC_Mem_type(type_F, size_F, err)
 
     type(VELOC_Mem_type), intent(OUT) :: type_F
     integer, intent(IN) :: size_F
     integer, intent(OUT) :: err
 
-    err = int(VELOC_Mem_InitType_impl(type_F%raw_type, int(size_F, c_int)))
+    err = int(VELOC_Mem_type_impl(type_F%raw_type, int(size_F, c_int)))
 
-  endsubroutine VELOC_Mem_InitType
+  endsubroutine VELOC_Mem_type
 
 
 
@@ -306,13 +306,13 @@ contains
 
 
 
-  subroutine VELOC_Mem_Recover(err)
+  subroutine VELOC_Mem_recover(err)
 
     integer, intent(OUT) :: err
 
-    err = int(VELOC_Mem_Recover_impl())
+    err = int(VELOC_Mem_recover_impl())
 
-  endsubroutine VELOC_Mem_Recover
+  endsubroutine VELOC_Mem_recover
 
 
 

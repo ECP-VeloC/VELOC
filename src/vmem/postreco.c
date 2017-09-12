@@ -15,7 +15,7 @@
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      erased          The array of erasures.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the L3 ckpt. files missing using the
     RS decoding.
@@ -302,7 +302,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     free(dataTmp);
     free(coding);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -312,19 +312,19 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function detects all the erasures for L1. If there is at least one,
     L1 is not considered as recoverable.
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     int erased[VELOC_Mem_BUFS], buf, j; // VELOC_Mem_BUFS > 32*3
     unsigned long fs, maxFs;
-    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_Mem_SCES) {
+    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
         VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
@@ -338,7 +338,7 @@ int VELOC_Mem_RecoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         VELOC_Mem_Print("Checkpoint files missing at L1.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -349,7 +349,7 @@ int VELOC_Mem_RecoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      destination     destination group rank.
     @param      ptner           0 if sending Ckpt, 1 if PtnerCkpt.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function sends Ckpt or PtnerCkpt file from partner proccess.
 
@@ -400,7 +400,7 @@ int VELOC_Mem_SendCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     fclose(fileDesc);
     free(buffer);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -411,7 +411,7 @@ int VELOC_Mem_SendCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      source          Source group rank.
     @param      ptner           0 if receiving Ckpt, 1 if PtnerCkpt.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function receives Ckpt or PtnerCkpt file from partner proccess.
 
@@ -462,7 +462,7 @@ int VELOC_Mem_RecvCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     fclose(fileDesc);
     free(buffer);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -472,7 +472,7 @@ int VELOC_Mem_RecvCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the L2 ckpt. files missing using the
     partner copy. If a ckpt. file and its copy are both missing, then we
@@ -480,7 +480,7 @@ int VELOC_Mem_RecvCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     int erased[VELOC_Mem_BUFS];
@@ -496,7 +496,7 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     }
 
     // Checking erasures
-    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_Mem_SCES) {
+    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
         VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
@@ -510,10 +510,10 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
     if (i == 0) {
         VELOC_Mem_Print("Have all checkpoint files.", VELOC_Mem_DBUG);
-        return VELOC_Mem_SCES;
+        return VELOC_SUCCESS;
     }
 
-    res = VELOC_Mem_SCES;
+    res = VELOC_SUCCESS;
     if (erased[VELOC_Mem_Topo->groupRank] && erased[source + VELOC_Mem_Topo->groupSize]) {
         VELOC_Mem_Print("My checkpoint file and partner copy have been lost", VELOC_Mem_WARN);
         res = VELOC_Mem_NSCS;
@@ -525,7 +525,7 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     }
 
     MPI_Allreduce(&res, &tres, 1, MPI_INT, MPI_SUM, VELOC_Mem_Exec->groupComm);
-    if (tres != VELOC_Mem_SCES) {
+    if (tres != VELOC_SUCCESS) {
         return VELOC_Mem_NSCS;
     }
 
@@ -533,27 +533,27 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     if (VELOC_Mem_Topo->groupRank % 2) {
         if (erased[destination]) { //first send file
             res = VELOC_Mem_SendCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, 1);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
         if (erased[VELOC_Mem_Topo->groupRank]) { //then receive file
             res = VELOC_Mem_RecvCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, 0);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
     } else {
         if (erased[VELOC_Mem_Topo->groupRank]) { //first receive file
             res = VELOC_Mem_RecvCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, 0);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
 
         if (erased[destination]) { //then send file
             res = VELOC_Mem_SendCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, 1);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
@@ -563,33 +563,33 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     if (VELOC_Mem_Topo->groupRank % 2) {
         if (erased[source + VELOC_Mem_Topo->groupSize]) { //fisrst send file
             res = VELOC_Mem_SendCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, 0);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
         if (erased[VELOC_Mem_Topo->groupRank + VELOC_Mem_Topo->groupSize]) { //receive file
             res = VELOC_Mem_RecvCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, 1);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
     } else {
         if (erased[VELOC_Mem_Topo->groupRank + VELOC_Mem_Topo->groupSize]) { //first receive file
             res = VELOC_Mem_RecvCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, 1);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
 
         if (erased[source + VELOC_Mem_Topo->groupSize]) { //send file
             res = VELOC_Mem_SendCkptFileL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, 0);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
     }
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -599,7 +599,7 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the L3 ckpt. files missing using the
     RS decoding. If to many files are missing in the group, then we
@@ -607,7 +607,7 @@ int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     int erased[VELOC_Mem_BUFS], j;
@@ -621,7 +621,7 @@ int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     }
 
     // Checking erasures
-    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_Mem_SCES) {
+    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
         VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
@@ -652,7 +652,7 @@ int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         }
     }
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -662,7 +662,7 @@ int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the ckpt. files using the L4 ckpt. files
     stored in the PFS. If at least one ckpt. file is missing in the PFS, we
@@ -670,21 +670,21 @@ int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
    int res;
    if (!VELOC_Mem_Ckpt[4].isInline || VELOC_Mem_Conf->ioMode == VELOC_Mem_IO_POSIX) {
-       res = VELOC_Mem_RecoverL4Posix(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+       res = VELOC_Mem_recoverL4Posix(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
    }
    else {
        switch(VELOC_Mem_Conf->ioMode) {
           case VELOC_Mem_IO_MPI:
-             res = VELOC_Mem_RecoverL4Mpi(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+             res = VELOC_Mem_recoverL4Mpi(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
              break;
 #ifdef ENABLE_SIONLIB // --> If SIONlib is installed
           case VELOC_Mem_IO_SIONLIB:
-             res = VELOC_Mem_RecoverL4Sionlib(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
+             res = VELOC_Mem_recoverL4Sionlib(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
              break;
 #endif
        }
@@ -700,7 +700,7 @@ int VELOC_Mem_RecoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the ckpt. files using the L4 ckpt. files
     stored in the PFS. If at least one ckpt. file is missing in the PFS, we
@@ -708,7 +708,7 @@ int VELOC_Mem_RecoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
    int j, l, gs, erased[VELOC_Mem_BUFS];
@@ -724,7 +724,7 @@ int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
    }
    MPI_Barrier(VELOC_Mem_COMM_WORLD);
    // Checking erasures
-   if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_Mem_SCES) {
+   if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
       VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
       return VELOC_Mem_NSCS;
    }
@@ -801,7 +801,7 @@ int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
    fclose(gfd);
    fclose(lfd);
 
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -811,7 +811,7 @@ int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the ckpt. files using the L4 ckpt. files
     stored in the PFS. If at least one ckpt. file is missing in the PFS, we
@@ -819,7 +819,7 @@ int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_RecoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
       VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
    int i, buf;
@@ -922,7 +922,7 @@ int VELOC_Mem_RecoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
       return VELOC_Mem_NSCS;
    }
 
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -932,7 +932,7 @@ int VELOC_Mem_RecoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tries to recover the ckpt. files using the L4 ckpt. files
     stored in the PFS. If at least one ckpt. file is missing in the PFS, we
@@ -941,7 +941,7 @@ int VELOC_Mem_RecoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
  **/
 /*-------------------------------------------------------------------------*/
 #ifdef ENABLE_SIONLIB // --> If SIONlib is installed
-int VELOC_Mem_RecoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
       VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
    int res;
@@ -1050,6 +1050,6 @@ int VELOC_Mem_RecoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
    free(rank_map);
    free(chunkSizes);
 
-   return VELOC_Mem_SCES;
+   return VELOC_SUCCESS;
 }
 #endif

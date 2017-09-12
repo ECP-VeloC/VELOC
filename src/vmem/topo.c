@@ -13,7 +13,7 @@
     @param      VELOC_Mem_Conf        Configuration metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      nameList        The list of the node names.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function writes the topology of the system (List of nodes and their
     ID) in a topology file that will be read during recovery to detect which
@@ -85,7 +85,7 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
 
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      nodeList        The list of the nodes.
     @param      nameList        The list of the node names.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function writes the topology of the system (List of nodes and their
     ID) in a topology file that will be read during recovery to detect which
@@ -194,7 +194,7 @@ int VELOC_Mem_ReorderNodes(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     free(old);
     free(new);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -205,7 +205,7 @@ int VELOC_Mem_ReorderNodes(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      nodeList        The list of the nodes to fill.
     @param      nameList        The list of the node names to fill.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function makes all the processes to detect in which node are they
     located and distributes the information globally to create an uniform
@@ -270,7 +270,7 @@ int VELOC_Mem_BuildNodeList(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
 
     free(lhn);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -282,7 +282,7 @@ int VELOC_Mem_BuildNodeList(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
     @param      userProcList    The list of the app. processess.
     @param      distProcList    The list of the distributed processes.
     @param      nodeList        The list of the nodes to fill.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function makes all the processes to detect in which node are they
     located and distributes the information globally to create an uniform
@@ -329,7 +329,7 @@ int VELOC_Mem_CreateComms(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
     VELOC_Mem_Topo->left = (VELOC_Mem_Topo->groupRank + VELOC_Mem_Topo->groupSize - 1) % VELOC_Mem_Topo->groupSize;
     MPI_Group_free(&origGroup);
     MPI_Group_free(&newGroup);
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -338,7 +338,7 @@ int VELOC_Mem_CreateComms(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
     @param      VELOC_Mem_Conf        Configuration metadata.
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function builds the topology of the system, detects and replaces
     missing nodes in case of recovery and creates the communicators required
@@ -439,5 +439,5 @@ int VELOC_Mem_Topology(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     free(nameList);
     free(nodeList);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }

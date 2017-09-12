@@ -13,7 +13,7 @@
     @param      VELOC_Mem_Conf        Configuration metadata.
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      restart         Value to set in the conf. file (0 or 1).
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function sets the execution ID and failure parameters in the
     configuration file. This is to avoid forcing the user to change these
@@ -74,7 +74,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     // Free dictionary
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -84,8 +84,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @param      VELOC_Mem_Inje        Type to describe failure injections in VELOC_Mem.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the configuration given in the VELOC_Mem configuration
     file and sets other required parameters.
@@ -93,8 +92,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
  **/
 /*-------------------------------------------------------------------------*/
 int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
-                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
-                 VELOCT_injection* VELOC_Mem_Inje)
+                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     // Check access to VELOC_Mem configuration file and load dictionary
     dictionary* ini;
@@ -182,19 +180,12 @@ int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     VELOC_Mem_Topo->nbApprocs = VELOC_Mem_Topo->nodeSize - VELOC_Mem_Topo->nbHeads;
     VELOC_Mem_Topo->nbNodes = (VELOC_Mem_Topo->nodeSize) ? VELOC_Mem_Topo->nbProc / VELOC_Mem_Topo->nodeSize : 0;
 
-    // Reading/setting injection parameters
-    VELOC_Mem_Inje->rank = (int)iniparser_getint(ini, "Injection:rank", 0);
-    VELOC_Mem_Inje->index = (int)iniparser_getint(ini, "Injection:index", 0);
-    VELOC_Mem_Inje->position = (int)iniparser_getint(ini, "Injection:position", 0);
-    VELOC_Mem_Inje->number = (int)iniparser_getint(ini, "Injection:number", 0);
-    VELOC_Mem_Inje->frequency = (int)iniparser_getint(ini, "Injection:frequency", -1);
-
     // Synchronize after config reading and free dictionary
     MPI_Barrier(VELOC_Mem_Exec->globalComm);
 
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -203,7 +194,7 @@ int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     @param      VELOC_Mem_Conf        Configuration metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tests the VELOC_Mem configuration to make sure that all
     parameter's values are correct.
@@ -294,7 +285,7 @@ int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
 #endif
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -302,7 +293,7 @@ int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
     @brief      It tests that the directories given is correct.
     @param      VELOC_Mem_Conf        Configuration metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function tests that the directories given in the VELOC_Mem configuration
     are correct.
@@ -347,7 +338,7 @@ int VELOC_Mem_TestDirectories(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topol
     //Waiting for metadDir being created
     MPI_Barrier(VELOC_Mem_COMM_WORLD);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -357,7 +348,7 @@ int VELOC_Mem_TestDirectories(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topol
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function creates the temporary metadata, local and global
     directories required for the current execution.
@@ -416,7 +407,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     snprintf(VELOC_Mem_Ckpt[1].dir, VELOC_Mem_BUFS, "%s/l1", VELOC_Mem_Conf->localDir);
     snprintf(VELOC_Mem_Ckpt[2].dir, VELOC_Mem_BUFS, "%s/l2", VELOC_Mem_Conf->localDir);
     snprintf(VELOC_Mem_Ckpt[3].dir, VELOC_Mem_BUFS, "%s/l3", VELOC_Mem_Conf->localDir);
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -426,8 +417,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @param      VELOC_Mem_Inje        Type to describe failure injections in VELOC_Mem.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the configuration file. Then test that the
     configuration parameters are correct (including directories).
@@ -435,11 +425,10 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
  **/
 /*-------------------------------------------------------------------------*/
 int VELOC_Mem_LoadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
-                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
-                 VELOCT_injection *VELOC_Mem_Inje)
+                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     int res;
-    res = VELOC_Mem_Try(VELOC_Mem_ReadConf(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, VELOC_Mem_Inje), "read configuration.");
+    res = VELOC_Mem_Try(VELOC_Mem_ReadConf(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "read configuration.");
     if (res == VELOC_Mem_NSCS) {
         VELOC_Mem_Print("Impossible to read configuration.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
@@ -459,5 +448,5 @@ int VELOC_Mem_LoadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
         VELOC_Mem_Print("Problem creating the directories.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }

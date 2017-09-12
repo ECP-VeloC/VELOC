@@ -14,7 +14,7 @@
     @brief      It calculates checksum of the checkpoint file.
     @param      fileName        Filename of the checkpoint.
     @param      checksum        Checksum that is calculated.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function calculates checksum of the checkpoint file based on
     MD5 algorithm and saves it in checksum.
@@ -53,7 +53,7 @@ int VELOC_Mem_Checksum(char* fileName, char* checksum)
 
     fclose (fd);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -61,7 +61,7 @@ int VELOC_Mem_Checksum(char* fileName, char* checksum)
     @brief      It compares checksum of the checkpoint file.
     @param      fileName        Filename of the checkpoint.
     @param      checksumToCmp   Checksum to compare.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function calculates checksum of the checkpoint file based on
     MD5 algorithm. It compares calculated hash value with the one saved
@@ -107,7 +107,7 @@ int VELOC_Mem_VerifyChecksum(char* fileName, char* checksumToCmp)
 
     fclose (fd);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -125,7 +125,7 @@ int VELOC_Mem_VerifyChecksum(char* fileName, char* checksumToCmp)
 int VELOC_Mem_Try(int result, char* message)
 {
     char str[VELOC_Mem_BUFS];
-    if (result == VELOC_Mem_SCES || result == VELOC_Mem_DONE) {
+    if (result == VELOC_SUCCESS || result == VELOC_Mem_DONE) {
         sprintf(str, "VELOC_Mem succeeded to %s", message);
         VELOC_Mem_Print(str, VELOC_Mem_DBUG);
     }
@@ -196,7 +196,7 @@ void VELOC_Mem_FreeMeta(VELOCT_execution* VELOC_Mem_Exec)
 /**
     @brief      It creates the basic datatypes and the dataset array.
     @param      VELOC_Mem_Data        Dataset metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function creates the basic data types using VELOC_MemT_Type.
 
@@ -208,18 +208,18 @@ int VELOC_Mem_InitBasicTypes(VELOCT_dataset* VELOC_Mem_Data)
     for (i = 0; i < VELOC_Mem_BUFS; i++) {
         VELOC_Mem_Data[i].id = -1;
     }
-    VELOC_Mem_InitType(&VELOC_CHAR, sizeof(char));
-    VELOC_Mem_InitType(&VELOC_SHRT, sizeof(short));
-    VELOC_Mem_InitType(&VELOC_INTG, sizeof(int));
-    VELOC_Mem_InitType(&VELOC_LONG, sizeof(long));
-    VELOC_Mem_InitType(&VELOC_UCHR, sizeof(unsigned char));
-    VELOC_Mem_InitType(&VELOC_USHT, sizeof(unsigned short));
-    VELOC_Mem_InitType(&VELOC_UINT, sizeof(unsigned int));
-    VELOC_Mem_InitType(&VELOC_ULNG, sizeof(unsigned long));
-    VELOC_Mem_InitType(&VELOC_SFLT, sizeof(float));
-    VELOC_Mem_InitType(&VELOC_DBLE, sizeof(double));
-    VELOC_Mem_InitType(&VELOC_LDBE, sizeof(long double));
-    return VELOC_Mem_SCES;
+    VELOC_Mem_type(&VELOC_CHAR, sizeof(char));
+    VELOC_Mem_type(&VELOC_SHRT, sizeof(short));
+    VELOC_Mem_type(&VELOC_INTG, sizeof(int));
+    VELOC_Mem_type(&VELOC_LONG, sizeof(long));
+    VELOC_Mem_type(&VELOC_UCHR, sizeof(unsigned char));
+    VELOC_Mem_type(&VELOC_USHT, sizeof(unsigned short));
+    VELOC_Mem_type(&VELOC_UINT, sizeof(unsigned int));
+    VELOC_Mem_type(&VELOC_ULNG, sizeof(unsigned long));
+    VELOC_Mem_type(&VELOC_SFLT, sizeof(float));
+    VELOC_Mem_type(&VELOC_DBLE, sizeof(double));
+    VELOC_Mem_type(&VELOC_LDBE, sizeof(long double));
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -227,7 +227,7 @@ int VELOC_Mem_InitBasicTypes(VELOCT_dataset* VELOC_Mem_Data)
     @brief      It erases a directory and all its files.
     @param      path            Path to the directory we want to erase.
     @param      flag            Set to 1 to activate.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function erases a directory and all its files. It focusses on the
     checkpoint directories created by VELOC_Mem so it does NOT handle recursive
@@ -277,7 +277,7 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
             }
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -289,7 +289,7 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
     @param      level           Level of cleaning.
     @param      group           Group ID of the cleaning target process.
     @param      rank            Rank of the cleaning target process.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function erases previous checkpoint depending on the level of the
     current checkpoint. Level 5 means complete clean up. Level 6 means clean
@@ -356,5 +356,5 @@ int VELOC_Mem_Clean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC
         rmdir(VELOC_Mem_Conf->localDir);
     }
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }

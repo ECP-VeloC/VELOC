@@ -29,16 +29,16 @@ int VELOC_Mem_Init_fort_wrapper(char* configFile, int* globalComm)
  *   @brief      Initializes a data type.
  *   @param      type            The data type to be intialized.
  *   @param      size            The size of the data type to be intialized.
- *   @return     integer         VELOC_Mem_SCES if successful.
+ *   @return     integer         VELOC_SUCCESS if successful.
  *
  *   This function initalizes a data type. the only information needed is the
  *   size of the data type, the rest is black box for VELOC_Mem.
  *
  **/
-int VELOC_Mem_InitType_wrapper(VELOCT_type** type, int size)
+int VELOC_Mem_type_wrapper(VELOCT_type** type, int size)
 {
     *type = talloc(VELOCT_type, 1);
-    return VELOC_Mem_InitType(*type, size);
+    return VELOC_Mem_type(*type, size);
 }
 
 /**
@@ -47,7 +47,7 @@ int VELOC_Mem_InitType_wrapper(VELOCT_type** type, int size)
  @param      ptr             Pointer to the data structure.
  @param      count           Number of elements in the data structure.
  @param      type            Type of elements in the data structure.
- @return     integer         VELOC_Mem_SCES if successful.
+ @return     integer         VELOC_SUCCESS if successful.
 
  This function stores a pointer to a data structure, its size, its ID,
  its number of elements and the type of the elements. This list of

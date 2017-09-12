@@ -1,18 +1,47 @@
-/**
- *  @file   fti.h
- *  @author Leonardo A. Bautista Gomez (leobago@gmail.com)
- *  @date   July, 2013
- *  @brief  Header file for the VELOC_Mem library.
- */
+#ifndef _VELOC_H
+#define _VELOC_H
 
-#ifndef _VELOC_Mem_H
-#define _VELOC_Mem_H
+#include <stdint.h>
+
+#include "iniparser.h"
+#include "dictionary.h"
+
+#include "galois.h"
+#include "jerasure.h"
+
+#ifdef ENABLE_SIONLIB // --> If SIONlib is installed
+    #include <sion.h>
+#endif
+
+#include "md5.h"
+
+#include <sys/stat.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <errno.h>
+#include <math.h>
+#include <limits.h>
 
 #include <mpi.h>
 
 /*---------------------------------------------------------------------------
                                   Defines
 ---------------------------------------------------------------------------*/
+
+/** Compile-time macros to define API version */
+#define VELOC_VERSION_MAJOR (0)
+#define VELOC_VERSION_MINOR (0)
+#define VELOC_VERSION_PATCH (0)
+#define VELOC_VERSION "v0.0.0"
+
+/** Token returned if a VEOC function succeeds.                             */
+#define VELOC_SUCCESS (0)
+#define VELOC_FAILURE (1)
+
+#define VELOC_MAX_NAME (1024)
 
 /** Define RED color for VELOC_Mem output.                                       */
 #define RED   "\x1B[31m"
@@ -29,11 +58,9 @@
 #define VELOC_Mem_WORD 16
 /** Token returned when VELOC_Mem performs a checkpoint.                         */
 #define VELOC_Mem_DONE 1
-/** Token returned if a VELOC_Mem function succeeds.                             */
-#define VELOC_Mem_SCES 0
+
 /** Token returned if a VELOC_Mem function fails.                                */
 #define VELOC_Mem_NSCS -1
-
 /** Verbosity level to print only errors.                                  */
 #define VELOC_Mem_EROR 4
 /** Verbosity level to print only warning and errors.                      */
@@ -69,6 +96,10 @@
     /** Token for IO mode SIONlib.                                         */
     #define VELOC_Mem_IO_SIONLIB 1003
 #endif
+
+#define VELOC_RECOVER_SOME	0
+#define VELOC_RECOVER_REST	1
+#define VELOC_RECOVER_ALL	2
 
 #ifdef __cplusplus
 extern "C" {
@@ -239,67 +270,148 @@ typedef struct VELOCT_checkpoint {
 
 } VELOCT_checkpoint;
 
-/** @typedef    VELOCT_injection
- *  @brief      Type to describe failure injections in VELOC_Mem.
- *
- *  This type allows users to describe a SDC failure injection model.
- */
-typedef struct VELOCT_injection {
-    int             rank;               /**< Rank of proc. that injects     */
-    int             index;              /**< Array index of the bit-flip.   */
-    int             position;           /**< Bit position of the bit-flip.  */
-    int             number;             /**< Number of bit-flips to inject. */
-    int             frequency;          /**< Injection frequency (in min.)  */
-    int             counter;            /**< Injection counter.             */
-    double          timer;              /**< Timer to measure frequency     */
-} VELOCT_injection;
-
 /*---------------------------------------------------------------------------
                                   Global variables
 ---------------------------------------------------------------------------*/
 
-/** MPI communicator that splits the global one into app and VELOC_Mem appart.   */
+/** MPI communicator that splits the global one into app and FTI appart.   */
 extern MPI_Comm VELOC_Mem_COMM_WORLD;
 
-/** VELOC_Mem data type for chars.                                               */
+/** VELOC data type for chars.                                               */
 extern VELOCT_type VELOC_CHAR;
-/** VELOC_Mem data type for short integers.                                      */
+/** VELOC data type for short integers.                                      */
 extern VELOCT_type VELOC_SHRT;
-/** VELOC_Mem data type for integers.                                            */
+/** VELOC data type for integers.                                            */
 extern VELOCT_type VELOC_INTG;
-/** VELOC_Mem data type for long integers.                                       */
+/** VELOC data type for long integers.                                       */
 extern VELOCT_type VELOC_LONG;
-/** VELOC_Mem data type for unsigned chars.                                      */
+/** VELOC data type for unsigned chars.                                      */
 extern VELOCT_type VELOC_UCHR;
-/** VELOC_Mem data type for unsigned short integers.                             */
+/** VELOC data type for unsigned short integers.                             */
 extern VELOCT_type VELOC_USHT;
-/** VELOC_Mem data type for unsigned integers.                                   */
+/** VELOC data type for unsigned integers.                                   */
 extern VELOCT_type VELOC_UINT;
-/** VELOC_Mem data type for unsigned long integers.                              */
+/** VELOC data type for unsigned long integers.                              */
 extern VELOCT_type VELOC_ULNG;
-/** VELOC_Mem data type for single floating point.                               */
+/** VELOC data type for single floating point.                               */
 extern VELOCT_type VELOC_SFLT;
-/** VELOC_Mem data type for double floating point.                               */
+/** VELOC data type for double floating point.                               */
 extern VELOCT_type VELOC_DBLE;
-/** VELOC_Mem data type for long doble floating point.                           */
+/** VELOC data type for long doble floating point.                           */
 extern VELOCT_type VELOC_LDBE;
 
 /*---------------------------------------------------------------------------
-                            VELOC_Mem public functions
+                            VELOC public functions
 ---------------------------------------------------------------------------*/
 
+/**************************
+ * Init / Finalize
+ *************************/
+
+int VELOC_InitBasicTypes(VELOCT_dataset* VELOC_Data);
+
 int VELOC_Mem_Init(char *configFile, MPI_Comm globalComm);
-int VELOC_Mem_Status();
-int VELOC_Mem_InitType(VELOCT_type* type, int size);
-int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type);
-int VELOC_Mem_BitFlip(int datasetID);
-int VELOC_Mem_Checkpoint(int id, int level);
-int VELOC_Mem_Recover();
-int VELOC_Mem_Snapshot();
+
+// initialize the library
+//   IN config - specify path to config file, pass NULL if no config file
+int VELOC_Init(char *config);
+
 int VELOC_Mem_Finalize();
+
+// shut down the library
+int VELOC_Finalize();
+
+// check whether job should exit
+//   OUT flag - flag returns 1 if job should exit, 0 otherwise
+int VELOC_Exit_test(int* flag);
+
+/**************************
+ * Memory registration
+ *************************/
+
+// define new memory type for use in VELOC_Mem_protect
+//   OUT type - defines a VELOC type for use in calls to Mem_protect (handle)
+//   IN  size - size of type in bytes
+int VELOC_Mem_type(VELOCT_type* type, int size);
+
+// registers a memory region for checkpoint/restart
+//   IN id    - application defined integer label for memory region
+//   IN ptr   - pointer to start of memory region
+//   IN count - number of consecutive elements in memory region
+//   IN type  - type of element in memory region
+int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type);
+
+/**************************
+ * File registration
+ *************************/
+
+// Informs application about path to open a file
+// This must either be called between VELOC_Start_restart/VELOC_Complete_restart
+// or between VELOC_Start_checkpoint/VELOC_Complete_checkpoint
+//   IN  name       - file name of checkpoint file
+//   OUT veloc_name - full path application should use when opening the file
+int VELOC_Route_file(const char* name, char* veloc_name);
+
+/**************************
+ * Restart routines
+ *************************/
+
+// determine whether application has checkpoint to read on restart
+//   OUT flag - flag returns 1 if there is a checkpoint available to read, 0 otherwise
+int VELOC_Restart_test(int* flag);
+
+// mark start of restart phase
+int VELOC_Restart_begin();
+
+// read checkpoint file contents into registered memory regions
+// must be called between VELOC_Restart_begin/VELOC_Restart_end
+int VELOC_Restart_mem(int recovery_mode, int *id_list, int *id_count);
+
+// mark end of restart phase
+//   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise
+int VELOC_Restart_end(int valid);
+
+/**************************
+ * Checkpoint routines
+ *************************/
+
+// determine whether application should checkpoint
+//   OUT flag - flag returns 1 if checkpoint should be taken, 0 otherwise
+int VELOC_Checkpoint_test(int* flag);
+
+// mark start of checkpoint phase
+int VELOC_Checkpoint_begin();
+
+// write registered memory regions into a checkpoint file
+// must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
+int VELOC_Checkpoint_mem();
+
+// mark end of checkpoint phase
+//   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully
+int VELOC_Checkpoint_end(int valid);
+
+/**************************
+ * Convenience functions for existing FTI users
+ * (implemented with combinations of above functions)
+ ************************/
+
+// substitute for FTI_Checkpoint
+int VELOC_Mem_save(int id, int level);
+
+// substitute for FTI_Recover
+int VELOC_Mem_recover(int recovery_mode, int *id_list, int *id_count);
+
+// substitute for FTI_Snapshot
+int VELOC_Mem_snapshot();
+
+void VELOC_Mem_Abort();
+
+int VELOC_Mem_Status();
+
+void VELOC_Mem_Print(char *msg, int priority);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ----- #ifndef _VELOC_Mem_H  ----- */
+#endif /* ----- #ifndef _VELOC_H  ----- */

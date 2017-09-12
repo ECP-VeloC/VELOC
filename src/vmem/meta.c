@@ -18,7 +18,7 @@
     @param      rsChecksum      Pointer to fill the RS file checksum.
     @param      group           The group in the node.
     @param      level           The level of the ckpt or 0 if tmp.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the metadata file created during checkpointing and
     recovers the checkpoint checksum. If there is no RS file, rsChecksum
@@ -68,7 +68,7 @@ int VELOC_Mem_GetChecksums(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
 
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -80,7 +80,7 @@ int VELOC_Mem_GetChecksums(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      rank            global rank of the process
     @param      checksum        Pointer to the checksum.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function should be executed only by one process per group. It
     writes the RSed checksum to the metadata file.
@@ -104,7 +104,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
     MPI_Allgather(checksum, MD5_DIGEST_LENGTH, MPI_CHAR, checksums, MD5_DIGEST_LENGTH, MPI_CHAR, VELOC_Mem_Exec->groupComm);
     if (rankInGroup) {
         free(checksums);
-        return VELOC_Mem_SCES;
+        return VELOC_SUCCESS;
     }
 
     sprintf(fileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Topo->sectorID, groupID);
@@ -155,7 +155,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
 
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -167,7 +167,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
     @param      pfs             Pointer to fill the ptner file size.
     @param      group           The group in the node.
     @param      level           The level of the ckpt or 0 if tmp.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the metadata file created during checkpointing and
     reads partner file size.
@@ -201,7 +201,7 @@ int VELOC_Mem_GetPtnerSize(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     *pfs = iniparser_getlint(ini, str, -1);
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 
@@ -212,7 +212,7 @@ int VELOC_Mem_GetPtnerSize(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the temporary metadata file created during checkpointing and
     recovers the checkpoint file name, file size, partner file size and the size
@@ -303,7 +303,7 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
             }
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -313,7 +313,7 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function reads the metadata file created during checkpointing and
     recovers the checkpoint file name, file size, partner file size and the size
@@ -414,7 +414,7 @@ int VELOC_Mem_LoadMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
             }
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -426,7 +426,7 @@ int VELOC_Mem_LoadMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     @param      mfs             The maximum checkpoint file size.
     @param      fnl             Pointer to the list of checkpoint names.
     @param      checksums       Checksums array.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function should be executed only by one process per group. It
     writes the metadata file used to recover in case of failure.
@@ -512,7 +512,7 @@ int VELOC_Mem_WriteMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topolog
 
     iniparser_freedict(ini);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -522,7 +522,7 @@ int VELOC_Mem_WriteMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topolog
     @param      VELOC_Mem_Exec        Execution metadata.
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function gathers information about the checkpoint files in the
     group (name and sizes), and creates the metadata file used to recover in
@@ -534,7 +534,7 @@ int VELOC_Mem_CreateMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
                        VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     char str[VELOC_Mem_BUFS], lfn[VELOC_Mem_BUFS], checksum[MD5_DIGEST_LENGTH];
-    int i, res = VELOC_Mem_SCES;
+    int i, res = VELOC_SUCCESS;
     int level = VELOC_Mem_Exec->ckptLvel;
 
     VELOC_Mem_Exec->meta[level].fs[0] = VELOC_Mem_Exec->ckptSize;
@@ -594,5 +594,5 @@ int VELOC_Mem_CreateMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     free(ckptFileNames);
     free(checksums);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }

@@ -9,14 +9,14 @@
 
 /*-------------------------------------------------------------------------*/
 /**
-  @brief      It returns VELOC_Mem_SCES.
+  @brief      It returns VELOC_SUCCESS.
   @param      VELOC_Mem_Conf        Configuration metadata.
   @param      VELOC_Mem_Exec        Execution metadata.
   @param      VELOC_Mem_Topo        Topology metadata.
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-  @return     integer         VELOC_Mem_SCES.
+  @return     integer         VELOC_SUCCESS.
 
-  This function just returns VELOC_Mem_SCES to have homogeneous code.
+  This function just returns VELOC_SUCCESS to have homogeneous code.
 
  **/
 /*-------------------------------------------------------------------------*/
@@ -24,7 +24,7 @@ int VELOC_Mem_Local(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
               VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
     VELOC_Mem_Print("Starting checkpoint post-processing L1", VELOC_Mem_DBUG);
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -35,7 +35,7 @@ int VELOC_Mem_Local(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
   @param      destination     destination group rank
   @param      postFlag        0 if postckpt done by approc, > 0 if by head
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
   This function sends ckpt file to partner process. Partner should call
   VELOC_Mem_RecvPtner to receive this file.
@@ -87,7 +87,7 @@ int VELOC_Mem_SendCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     free(buffer);
     fclose(lfd);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -98,7 +98,7 @@ int VELOC_Mem_SendCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
   @param      source          souce group rank
   @param      postFlag        0 if postckpt done by approc, > 0 if by head
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
   This function receives ckpt file from partner process and saves it as
   Ptner file. Partner should call VELOC_Mem_SendCkpt to send file.
@@ -144,7 +144,7 @@ int VELOC_Mem_RecvPtner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     free(buffer);
     fclose(pfd);
 
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -154,7 +154,7 @@ int VELOC_Mem_RecvPtner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
   @param      VELOC_Mem_Exec        Execution metadata.
   @param      VELOC_Mem_Topo        Topology metadata.
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
   This function copies the checkpoint files into the partner node. It
   follows a ring, where the ring size is the group size given in the VELOC_Mem
@@ -183,25 +183,25 @@ int VELOC_Mem_Ptner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
     for (i = startProc; i < endProc; i++) {
         if (VELOC_Mem_Topo->groupRank % 2) { //first send, then receive
             res = VELOC_Mem_SendCkpt(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, i);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
             res = VELOC_Mem_RecvPtner(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, i);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         } else { //first receive, then send
             res = VELOC_Mem_RecvPtner(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, source, i);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
             res = VELOC_Mem_SendCkpt(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Ckpt, destination, i);
-            if (res != VELOC_Mem_SCES) {
+            if (res != VELOC_SUCCESS) {
                 return VELOC_Mem_NSCS;
             }
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -211,7 +211,7 @@ int VELOC_Mem_Ptner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
   @param      VELOC_Mem_Exec        Execution metadata.
   @param      VELOC_Mem_Topo        Topology metadata.
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
   This function performs the Reed-Solomon encoding for a given group. The
   checkpoint files are padded to the maximum size of the largest checkpoint
@@ -232,7 +232,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
 
     VELOC_Mem_Print("Starting checkpoint post-processing L3", VELOC_Mem_DBUG);
     res = VELOC_Mem_Try(VELOC_Mem_LoadTmpMeta(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "load temporary metadata.");
-    if (res != VELOC_Mem_SCES) {
+    if (res != VELOC_SUCCESS) {
         return VELOC_Mem_NSCS;
     }
 
@@ -385,7 +385,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
         //write checksum in metadata
         char checksum[MD5_DIGEST_LENGTH];
         res = VELOC_Mem_Checksum(efn, checksum);
-        if (res != VELOC_Mem_SCES) {
+        if (res != VELOC_SUCCESS) {
             return VELOC_Mem_NSCS;
         }
         res = VELOC_Mem_WriteRSedChecksum(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, rank, checksum);
@@ -403,7 +403,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
   @param      VELOC_Mem_Topo        Topology metadata.
   @param      VELOC_Mem_Ckpt        Checkpoint metadata.
   @param      level           The level from which ckpt. files are flushed.
-  @return     integer         VELOC_Mem_SCES if successful.
+  @return     integer         VELOC_SUCCESS if successful.
 
   This function flushes the local checkpoint files in to the PFS.
 
@@ -413,7 +413,7 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt, int level)
 {
     if (level == -1) {
-       return VELOC_Mem_SCES; // Fake call for inline PFS checkpoint
+       return VELOC_SUCCESS; // Fake call for inline PFS checkpoint
     }
     char str[VELOC_Mem_BUFS];
     sprintf(str, "Starting checkpoint post-processing L4 for level %d", level);
@@ -426,7 +426,7 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
        }
     }
     int res = VELOC_Mem_Try(VELOC_Mem_LoadMeta(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "load metadata.");
-    if (res != VELOC_Mem_SCES) {
+    if (res != VELOC_SUCCESS) {
         return VELOC_Mem_NSCS;
     }
     if (!VELOC_Mem_Ckpt[4].isInline || VELOC_Mem_Conf->ioMode == VELOC_Mem_IO_POSIX) {
@@ -444,7 +444,7 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
 #endif
         }
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -455,7 +455,7 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      level           The level from which ckpt. files are flushed.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function flushes the local checkpoint files in to the PFS.
 
@@ -540,7 +540,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
         fclose(lfd);
         fclose(gfd);
     }
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -551,7 +551,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      level           The level from which ckpt. files are flushed.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function flushes the local checkpoint files in to the PFS.
 
@@ -689,7 +689,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     free(allFileSizes);
     free(splitRanks);
     MPI_File_close(&pfh);
-    return VELOC_Mem_SCES;
+    return VELOC_SUCCESS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -700,7 +700,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     @param      VELOC_Mem_Topo        Topology metadata.
     @param      VELOC_Mem_Ckpt        Checkpoint metadata.
     @param      level           The level from which ckpt. files are flushed.
-    @return     integer         VELOC_Mem_SCES if successful.
+    @return     integer         VELOC_SUCCESS if successful.
 
     This function flushes the local checkpoint files in to the PFS.
 

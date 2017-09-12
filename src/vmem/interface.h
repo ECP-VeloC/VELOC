@@ -8,30 +8,7 @@
 #ifndef _VELOC_Mem_INTERFACE_H
 #define _VELOC_Mem_INTERFACE_H
 
-#include "veloc_mem.h"
-
-#include "iniparser.h"
-#include "dictionary.h"
-
-#include "galois.h"
-#include "jerasure.h"
-
-#ifdef ENABLE_SIONLIB // --> If SIONlib is installed
-    #include <sion.h>
-#endif
-
-#include <stdint.h>
-#include "md5.h"
-
-#include <sys/stat.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <time.h>
-#include <errno.h>
-#include <math.h>
-#include <limits.h>
+#include "veloc.h"
 
 /*---------------------------------------------------------------------------
                                   Defines
@@ -44,10 +21,6 @@
                             VELOC_Mem private functions
 ---------------------------------------------------------------------------*/
 void VELOC_Mem_PrintMeta(VELOCT_execution* VELOC_Mem_Exec, VELOCT_topology* VELOC_Mem_Topo);
-void VELOC_Mem_Abort();
-int VELOC_Mem_FloatBitFlip(float *target, int bit);
-int VELOC_Mem_DoubleBitFlip(double *target, int bit);
-void VELOC_Mem_Print(char *msg, int priority);
 
 int VELOC_Mem_UpdateIterTime(VELOCT_execution* VELOC_Mem_Exec);
 int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
@@ -75,16 +48,14 @@ int VELOC_Mem_Listen(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
 int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                    int restart);
 int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
-                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
-                 VELOCT_injection *VELOC_Mem_Inje);
+                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo,
                    VELOCT_checkpoint* VELOC_Mem_Ckpt);
 int VELOC_Mem_TestDirectories(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo);
 int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                    VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 int VELOC_Mem_LoadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
-                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
-                 VELOCT_injection *VELOC_Mem_Inje);
+                 VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 
 int VELOC_Mem_GetChecksums(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo,
                      VELOCT_checkpoint* VELOC_Mem_Ckpt, char* checksum, char* ptnerChecksum,
@@ -121,27 +92,27 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 #endif
 int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt, int *erased);
-int VELOC_Mem_RecoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
-int VELOC_Mem_RecoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
-int VELOC_Mem_RecoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
-int VELOC_Mem_RecoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
-int VELOC_Mem_RecoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
-int VELOC_Mem_RecoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 #ifdef ENABLE_SIONLIB // --> If SIONlib is installed
-int VELOC_Mem_RecoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                   VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 #endif
 int VELOC_Mem_CheckFile(char *fn, unsigned long fs, char* checksum);
 int VELOC_Mem_CheckErasures(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                       VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
                       int *erased);
-int VELOC_Mem_RecoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
+int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                      VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt);
 
 int VELOC_Mem_Checksum(char* fileName, char* checksum);
