@@ -358,3 +358,14 @@ int VELOC_Mem_Clean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC
 
     return VELOC_SUCCESS;
 }
+
+int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount)
+{
+	int i = 0;
+	for(i=0;i<varIDCount;i++)
+	{
+		if(varIDList[i] == targetID)
+			return 1;
+	}
+	return VELOC_SUCCESS;
+}

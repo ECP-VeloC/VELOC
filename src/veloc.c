@@ -462,7 +462,7 @@ int VELOC_Restart_begin()
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Restart_mem(int recovery_mode, int *id_list, int *id_count)
+int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 {
     char fn[VELOC_Mem_BUFS], str[VELOC_Mem_BUFS];
     FILE* fd;
@@ -477,14 +477,36 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int *id_count)
         VELOC_Mem_Print("Could not open VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
         return VELOC_Mem_NSCS;
     }
-    for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
-        size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
-        if (ferror(fd)) {
-            VELOC_Mem_Print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
-            fclose(fd);
-            return VELOC_Mem_NSCS;
-        }
-    }
+    
+    if(id_count<=0||id_list==NULL)
+    {
+		for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
+			size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
+			if (ferror(fd)) {
+				VELOC_Mem_Print("Could not read FTI checkpoint file.", VELOC_Mem_EROR);
+				fclose(fd);
+				return VELOC_Mem_NSCS;
+			}
+		}	
+	}
+	else
+	{
+		for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
+			if(VELOC_Mem_Check_ID_Exist(VELOC_Mem_Data[i].id, id_list, id_count))
+			{
+				size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
+				if (ferror(fd)) {
+					VELOC_Mem_Print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
+					fclose(fd);
+					return VELOC_SUCCESS;
+				}			
+			}
+			else
+			{
+				fseek(fd, VELOC_Mem_Data[i].size, SEEK_CUR);
+			}
+		}
+	}
     if (fclose(fd) != 0) {
         VELOC_Mem_Print("Could not close VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
         return VELOC_Mem_NSCS;
@@ -492,6 +514,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int *id_count)
     VELOC_Mem_Exec.reco = 0;
     return VELOC_SUCCESS;
 }
+
 
 int VELOC_Restart_end(int valid)
 {
@@ -665,7 +688,7 @@ int VELOC_Mem_save(int id, int level)
     return VELOC_SUCCESS;
 }
 
-int VELOC_Mem_recover(int recovery_mode, int *id_list, int *id_count)
+int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -698,7 +721,7 @@ int VELOC_Mem_snapshot()
     int i, res, level = -1;
 
     if (VELOC_Mem_Exec.reco) { // If this is a recovery load icheckpoint data
-        res = VELOC_Mem_Try(VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, NULL), "recover the checkpointed data.");
+        res = VELOC_Mem_Try(VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, 0), "recover the checkpointed data.");
         if (res == VELOC_Mem_NSCS) {
             VELOC_Mem_Print("Impossible to load the checkpoint data.", VELOC_Mem_EROR);
             VELOC_Mem_Clean(&VELOC_Mem_Conf, &VELOC_Mem_Topo, VELOC_Mem_Ckpt, 5, VELOC_Mem_Topo.groupID, VELOC_Mem_Topo.myRank);

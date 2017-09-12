@@ -365,7 +365,7 @@ int VELOC_Restart_begin();
 
 // read checkpoint file contents into registered memory regions
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-int VELOC_Restart_mem(int recovery_mode, int *id_list, int *id_count);
+int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count);
 
 // mark end of restart phase
 //   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise
@@ -399,7 +399,7 @@ int VELOC_Checkpoint_end(int valid);
 int VELOC_Mem_save(int id, int level);
 
 // substitute for FTI_Recover
-int VELOC_Mem_recover(int recovery_mode, int *id_list, int *id_count);
+int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count);
 
 // substitute for FTI_Snapshot
 int VELOC_Mem_snapshot();

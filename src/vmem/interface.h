@@ -124,6 +124,7 @@ int VELOC_Mem_InitBasicTypes(VELOCT_dataset* VELOC_Mem_Data);
 int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag);
 int VELOC_Mem_Clean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo,
               VELOCT_checkpoint* VELOC_Mem_Ckpt, int level, int group, int rank);
+int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount);
 
 int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo, char *nameList);
 int VELOC_Mem_ReorderNodes(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo,
