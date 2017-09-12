@@ -22,7 +22,7 @@ mkdir install
 git clone git@xgitlab.cels.anl.gov:ecp-veloc/veloc.git
 
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=../install ../veloc
+cmake -DCMAKE_INSTALL_PREFIX=../install -DBUILD_PDSH=ON ../veloc
 make -k
 make test
 ```
