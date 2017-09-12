@@ -13,10 +13,10 @@
 
 
 #define PRECISION   0.005
-#define ITER_TIMES  5000
-#define ITER_OUT    500
-#define WORKTAG     50
-#define REDUCE      5
+#define ITER_TIMES  500
+#define ITER_OUT    50
+#define WORKTAG     5
+#define REDUCE      1
 
 void initData(int nbLines, int M, int rank, double *h);
 double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h);
