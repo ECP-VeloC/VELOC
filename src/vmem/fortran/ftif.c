@@ -10,7 +10,7 @@
 #include "interface.h"
 #include "velec_memf.h"
 
-/** @brief Fortran wrapper for VELOC_Mem_Init, Initializes VELOC_Mem.
+/** @brief Fortran wrapper for VELOC_Mem_init, Initializes VELOC_Mem.
  * 
  * @return the error status of VELOC_Mem
  * @param configFile (IN) the name of the configuration file as a
@@ -18,9 +18,9 @@
  * @param globalComm (INOUT) the "world" communicator, VELOC_Mem will replace it
  *        with a communicator where its own processes have been removed.
  */
-int VELOC_Mem_Init_fort_wrapper(char* configFile, int* globalComm)
+int VELOC_Mem_init_fort_wrapper(char* configFile, int* globalComm)
 {
-    int ierr = VELOC_Mem_Init(configFile, MPI_Comm_f2c(*globalComm));
+    int ierr = VELOC_Mem_init(configFile, MPI_Comm_f2c(*globalComm));
     *globalComm = MPI_Comm_c2f(VELOC_Mem_COMM_WORLD);
     return ierr;
 }
@@ -56,7 +56,7 @@ int VELOC_Mem_type_wrapper(VELOCT_type** type, int size)
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_Protect_wrapper(int id, void* ptr, long count, VELOCT_type* type)
+int VELOC_Mem_protect_wrapper(int id, void* ptr, long count, VELOCT_type* type)
 {
-    return VELOC_Mem_Protect(id, ptr, count, *type);
+    return VELOC_Mem_protect(id, ptr, count, *type);
 }

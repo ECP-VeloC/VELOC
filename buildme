@@ -44,11 +44,11 @@ if [ ! -d $SCR_PATH ]; then
 fi
 
 # clear out existing build
-#rm -rf vmem.o libvmem.a heatdis_vmem
+#rm -rf vmem.o libveloc.a heatdis_vmem
 
 # build FTI library
 mkdir -p ./obj/vmem
-rm -rf ./obj/vmem/*.o
+rm -rf ./obj/vmem/*
 
 mpicc -g -O0 -o ./obj/vmem/md5.o -c ./src/vmem/md5.c -I./src/vmem -I./include
 mpicc -g -O0 -o ./obj/vmem/dictionary.o -c ./src/vmem/dictionary.c -I./src/vmem -I./include
@@ -66,12 +66,16 @@ mpicc -g -O0 -o ./obj/vmem/tools.o -c ./src/vmem/tools.c -I./src/vmem -I./includ
 mpicc -g -O0 -o ./obj/vmem/topo.o -c ./src/vmem/topo.c -I./src/vmem -I./include
 
 mpicc -g -O0 -o ./obj/veloc.o -c ./src/veloc.c -I./src/vmem -I./include -I${SCR_PATH}/include
-#ar cr libvmem.a vmem.o
-ar cr ./obj/libvmem.a ./obj/vmem/conf.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o ./obj/veloc.o
+
+mkdir -p ./lib
+ar cr ./lib/libveloc.a ./obj/vmem/conf.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o ./obj/veloc.o
 
 # compile heatdis code which uses FTI
-#mpicc -g -O0 -o heatdis_vmem heatdis.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libvmem.a -lm
+mpicc -g -O0 -o ./test/heatdis.o -c ./test/heatdis.c -I./src/vmem -I./test -I./include -lm
+mpicc -g -O0 -o ./test/heatdis_mem ./test/heatdis_mem.c ./test/heatdis.o -I./src/vmem -I./src/vmem -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
+mpicc -g -O0 -o ./test/heatdis_memfile ./test/heatdis_memfile.c ./test/heatdis.o -I./src/vmem -I./src/vmem -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
 
+mpicc -g -O0 -o ./test/heatdis_file ./test/heatdis_file.c ./test/heatdis.o -I./src/vmem -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
 # build VELOC library
 #mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 #ar cr libveloc.a veloc.o

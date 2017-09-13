@@ -12,6 +12,13 @@ int main(int argc, char *argv[])
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
+    if(argc < 2)
+    {
+        printf("Test case: heatdis_memfile [data_size (in MB)] [configuration_file]\n");
+        printf("Example: heatdis_memfile 10 config.vec\n");
+        exit(0);
+    }
+
     MPI_Init(&argc, &argv);
     VELOC_Init(argv[2]);
 
@@ -47,7 +54,7 @@ int main(int argc, char *argv[])
         VELOC_Restart_begin();
 
         // restore protected variables
-        VELOC_Restart_mem();
+        VELOC_Restart_mem(VELOC_RECOVER_ALL, NULL, 0);
 
         // build file name for this rank
         char file[1024];

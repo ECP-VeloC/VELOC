@@ -310,13 +310,13 @@ extern VELOCT_type VELOC_LDBE;
 
 int VELOC_InitBasicTypes(VELOCT_dataset* VELOC_Data);
 
-int VELOC_Mem_Init(char *configFile, MPI_Comm globalComm);
+int VELOC_Mem_init(char *configFile, MPI_Comm globalComm);
 
 // initialize the library
 //   IN config - specify path to config file, pass NULL if no config file
 int VELOC_Init(char *config);
 
-int VELOC_Mem_Finalize();
+int VELOC_Mem_finalize();
 
 // shut down the library
 int VELOC_Finalize();
@@ -339,7 +339,7 @@ int VELOC_Mem_type(VELOCT_type* type, int size);
 //   IN ptr   - pointer to start of memory region
 //   IN count - number of consecutive elements in memory region
 //   IN type  - type of element in memory region
-int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type);
+int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type);
 
 /**************************
  * File registration
@@ -406,9 +406,9 @@ int VELOC_Mem_snapshot();
 
 void VELOC_Mem_Abort();
 
-int VELOC_Mem_Status();
+int VELOC_Mem_status();
 
-void VELOC_Mem_Print(char *msg, int priority);
+void VELOC_Mem_print(char *msg, int priority);
 
 #ifdef __cplusplus
 }

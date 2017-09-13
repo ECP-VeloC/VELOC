@@ -51,12 +51,12 @@ int VELOC_Mem_UpdateIterTime(VELOCT_execution* VELOC_Mem_Exec)
             }
             sprintf(str, "Current iter : %d ckpt iter. : %d . Next ckpt. at iter. %d",
                     VELOC_Mem_Exec->ckptIcnt, VELOC_Mem_Exec->ckptIntv, VELOC_Mem_Exec->ckptNext);
-            VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+            VELOC_Mem_print(str, VELOC_Mem_DBUG);
             if (VELOC_Mem_Exec->syncIter < (VELOC_Mem_Exec->ckptIntv / 2)) {
                 VELOC_Mem_Exec->syncIter = VELOC_Mem_Exec->syncIter * 2;
                 sprintf(str, "Iteration frequency : %.2f sec/iter => %d iter/min. Resync every %d iter.",
                     VELOC_Mem_Exec->globMeanIter, VELOC_Mem_Exec->ckptIntv, VELOC_Mem_Exec->syncIter);
-                VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                VELOC_Mem_print(str, VELOC_Mem_DBUG);
             }
         }
     }
@@ -88,7 +88,7 @@ int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     char str[VELOC_Mem_BUFS];
     sprintf(str, "Starting writing checkpoint (ID: %d, Lvl: %d)",
                     VELOC_Mem_Exec->ckptID, VELOC_Mem_Exec->ckptLvel);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     double tt = MPI_Wtime();
 
@@ -100,7 +100,7 @@ int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         // create global temp directory
         if (mkdir(VELOC_Mem_Conf->gTmpDir, 0777) == -1) {
             if (errno != EEXIST) {
-                VELOC_Mem_Print("Cannot create global directory", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot create global directory", VELOC_Mem_EROR);
                 return VELOC_Mem_NSCS;
             }
         }
@@ -126,14 +126,14 @@ int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         // create local temp directory
         if (mkdir(VELOC_Mem_Conf->lTmpDir, 0777) == -1) {
             if (errno != EEXIST) {
-                VELOC_Mem_Print("Cannot create local directory", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot create local directory", VELOC_Mem_EROR);
             }
         }
         res = VELOC_Mem_Try(VELOC_Mem_WritePosix(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, VELOC_Mem_Data),"write checkpoint to PFS");
     }
 
     sprintf(str, "Time writing checkpoint file : %f seconds.", MPI_Wtime() - tt);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     res = VELOC_Mem_Try(VELOC_Mem_CreateMetadata(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "create metadata.");
     return res;
@@ -163,7 +163,7 @@ int VELOC_Mem_GroupClean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
 {
     int i, rank;
     if (level == 0) {
-        VELOC_Mem_Print("Error postprocessing checkpoint. Discarding checkpoint...", VELOC_Mem_WARN);
+        VELOC_Mem_print("Error postprocessing checkpoint. Discarding checkpoint...", VELOC_Mem_WARN);
     }
     rank = VELOC_Mem_Topo->myRank;
     for (i = 0; i < pr; i++) {
@@ -243,25 +243,25 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     if (nodeFlag) {
         //Debug message needed to test nodeFlag (./tests/nodeFlag/nodeFlag.c)
         sprintf(str, "Has nodeFlag = 1 and nodeID = %d. CkptLvel = %d.", VELOC_Mem_Topo->nodeID, VELOC_Mem_Exec->ckptLvel);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         if (!(VELOC_Mem_Ckpt[4].isInline && VELOC_Mem_Exec->ckptLvel == 4)) {
             level = (VELOC_Mem_Exec->ckptLvel != 4) ? VELOC_Mem_Exec->ckptLvel : 1;
             if (rename(VELOC_Mem_Conf->lTmpDir, VELOC_Mem_Ckpt[level].dir) == -1) {
-                VELOC_Mem_Print("Cannot rename local directory", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot rename local directory", VELOC_Mem_EROR);
             }
             else {
-                VELOC_Mem_Print("Local directory renamed", VELOC_Mem_DBUG);
+                VELOC_Mem_print("Local directory renamed", VELOC_Mem_DBUG);
             }
         }
     }
     if (globalFlag) {
         if (VELOC_Mem_Exec->ckptLvel == 4) {
             if (rename(VELOC_Mem_Conf->gTmpDir, VELOC_Mem_Ckpt[VELOC_Mem_Exec->ckptLvel].dir) == -1) {
-                VELOC_Mem_Print("Cannot rename global directory", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot rename global directory", VELOC_Mem_EROR);
             }
         }
         if (rename(VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Ckpt[VELOC_Mem_Exec->ckptLvel].metaDir) == -1) {
-            VELOC_Mem_Print("Cannot rename meta directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot rename meta directory", VELOC_Mem_EROR);
         }
     }
     MPI_Barrier(VELOC_Mem_COMM_WORLD);
@@ -270,7 +270,7 @@ int VELOC_Mem_PostCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
 
     sprintf(catstr, "Post-checkpoint took %.2f sec.", t3 - t0);
     sprintf(str, "%s (Ag:%.2fs, Pt:%.2fs, Cl:%.2fs)", catstr, t1 - t0, t2 - t1, t3 - t2);
-    VELOC_Mem_Print(str, VELOC_Mem_INFO);
+    VELOC_Mem_print(str, VELOC_Mem_INFO);
     return VELOC_SUCCESS;
 }
 
@@ -299,11 +299,11 @@ int VELOC_Mem_Listen(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     for (i = 0; i < 7; i++) { // Initialize flags
         flags[i] = 0;
     }
-    VELOC_Mem_Print("Head listening...", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Head listening...", VELOC_Mem_DBUG);
     for (i = 0; i < VELOC_Mem_Topo->nbApprocs; i++) { // Iterate on the application processes in the node
         MPI_Recv(&buf, 1, MPI_INT, VELOC_Mem_Topo->body[i], VELOC_Mem_Conf->tag, VELOC_Mem_Exec->globalComm, &status);
         sprintf(str, "The head received a %d message", buf);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         fflush(stdout);
         flags[buf - VELOC_Mem_BASE] = flags[buf - VELOC_Mem_BASE] + 1;
     }
@@ -346,7 +346,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
                     VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt,
                     VELOCT_dataset* VELOC_Mem_Data)
 {
-   VELOC_Mem_Print("I/O mode: Posix.", VELOC_Mem_DBUG);
+   VELOC_Mem_print("I/O mode: Posix.", VELOC_Mem_DBUG);
    char str[VELOC_Mem_BUFS], fn[VELOC_Mem_BUFS];
    int level = VELOC_Mem_Exec->ckptLvel;
    if (level == 4 && VELOC_Mem_Ckpt[4].isInline) {
@@ -360,7 +360,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
    FILE* fd = fopen(fn, "wb");
    if (fd == NULL) {
       sprintf(str, "VELOC_Mem checkpoint file (%s) could not be opened.", fn);
-      VELOC_Mem_Print(str, VELOC_Mem_EROR);
+      VELOC_Mem_print(str, VELOC_Mem_EROR);
 
       return VELOC_Mem_NSCS;
    }
@@ -381,7 +381,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
          error_msg[0] = 0;
          strerror_r(fwrite_errno, error_msg, VELOC_Mem_BUFS);
          sprintf(str, "Dataset #%d could not be written: %s.", VELOC_Mem_Data[i].id, error_msg);
-         VELOC_Mem_Print(str, VELOC_Mem_EROR);
+         VELOC_Mem_print(str, VELOC_Mem_EROR);
          fclose(fd);
          return VELOC_Mem_NSCS;
       }
@@ -389,7 +389,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 
    // close file
    if (fclose(fd) != 0) {
-      VELOC_Mem_Print("VELOC_Mem checkpoint file could not be closed.", VELOC_Mem_EROR);
+      VELOC_Mem_print("VELOC_Mem checkpoint file could not be closed.", VELOC_Mem_EROR);
 
       return VELOC_Mem_NSCS;
    }
@@ -418,7 +418,7 @@ int VELOC_Mem_WritePosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 int VELOC_Mem_WriteMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
       VELOCT_topology* VELOC_Mem_Topo, VELOCT_dataset* VELOC_Mem_Data)
 {
-   VELOC_Mem_Print("I/O mode: MPI-IO.", VELOC_Mem_DBUG);
+   VELOC_Mem_print("I/O mode: MPI-IO.", VELOC_Mem_DBUG);
    char str[VELOC_Mem_BUFS], mpi_err[VELOC_Mem_BUFS];
 
    // enable collective buffer optimization
@@ -450,7 +450,7 @@ int VELOC_Mem_WriteMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
       errno = 0;
       MPI_Error_string(res, mpi_err, NULL);
       snprintf(str, VELOC_Mem_BUFS, "unable to create file [MPI ERROR - %i] %s", res, mpi_err);
-      VELOC_Mem_Print(str, VELOC_Mem_EROR);
+      VELOC_Mem_print(str, VELOC_Mem_EROR);
       free(chunkSizes);
       return VELOC_Mem_NSCS;
    }
@@ -482,7 +482,7 @@ int VELOC_Mem_WriteMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
                errno = 0;
                MPI_Error_string(res, mpi_err, NULL);
                snprintf(str, VELOC_Mem_BUFS, "Failed to write protected_var[%i] to PFS  [MPI ERROR - %i] %s", i, res, mpi_err);
-               VELOC_Mem_Print(str, VELOC_Mem_EROR);
+               VELOC_Mem_print(str, VELOC_Mem_EROR);
                MPI_File_close(&pfh);
                return VELOC_Mem_NSCS;
            }
@@ -531,7 +531,7 @@ int VELOC_Mem_WriteSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
    // check if successful
    if (sid == -1) {
       errno = 0;
-      VELOC_Mem_Print("SIONlib: File could no be opened", VELOC_Mem_EROR);
+      VELOC_Mem_print("SIONlib: File could no be opened", VELOC_Mem_EROR);
 
       free(file_map);
       free(rank_map);
@@ -546,7 +546,7 @@ int VELOC_Mem_WriteSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
    // check if successful
    if (res != SION_SUCCESS) {
       errno = 0;
-      VELOC_Mem_Print("SIONlib: Could not set file pointer", VELOC_Mem_EROR);
+      VELOC_Mem_print("SIONlib: Could not set file pointer", VELOC_Mem_EROR);
       sion_parclose_mapped_mpi(sid);
       free(file_map);
       free(rank_map);
@@ -564,7 +564,7 @@ int VELOC_Mem_WriteSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
       // check if successful
       if (res < 0) {
          errno = 0;
-         VELOC_Mem_Print("SIONlib: Data could not be written", VELOC_Mem_EROR);
+         VELOC_Mem_print("SIONlib: Data could not be written", VELOC_Mem_EROR);
          res =  sion_parclose_mapped_mpi(sid);
          free(file_map);
          free(rank_map);
@@ -577,7 +577,7 @@ int VELOC_Mem_WriteSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 
    // close parallel file
    if (sion_parclose_mapped_mpi(sid) == -1) {
-       VELOC_Mem_Print("Cannot close sionlib file.", VELOC_Mem_WARN);
+       VELOC_Mem_print("Cannot close sionlib file.", VELOC_Mem_WARN);
        free(file_map);
        free(rank_map);
        free(ranks);

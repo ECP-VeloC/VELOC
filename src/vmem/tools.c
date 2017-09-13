@@ -34,7 +34,7 @@ int VELOC_Mem_Checksum(char* fileName, char* checksum)
     FILE *fd = fopen(fileName, "rb");
     if (fd == NULL) {
         sprintf(str, "VELOC_Mem failed to open file %s to calculate checksum.", fileName);
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -49,7 +49,7 @@ int VELOC_Mem_Checksum(char* fileName, char* checksum)
     checksum[i] = '\0'; //to get a proper string
 
     sprintf(str, "Checksum took %.2f sec.", MPI_Wtime() - startTime);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     fclose (fd);
 
@@ -82,7 +82,7 @@ int VELOC_Mem_VerifyChecksum(char* fileName, char* checksumToCmp)
     FILE *fd = fopen(fileName, "rb");
     if (fd == NULL) {
         sprintf(str, "VELOC_Mem failed to open file %s to calculate checksum.", fileName);
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -99,7 +99,7 @@ int VELOC_Mem_VerifyChecksum(char* fileName, char* checksumToCmp)
     if (memcmp(checksum, checksumToCmp, MD5_DIGEST_LENGTH - 1) != 0) {
         sprintf(str, "Checksum do not match. \"%s\" file is corrupted. %s != %s",
             fileName, checksum, checksumToCmp);
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
         fclose (fd);
 
         return VELOC_Mem_NSCS;
@@ -127,13 +127,13 @@ int VELOC_Mem_Try(int result, char* message)
     char str[VELOC_Mem_BUFS];
     if (result == VELOC_SUCCESS || result == VELOC_Mem_DONE) {
         sprintf(str, "VELOC_Mem succeeded to %s", message);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
     }
     else {
         sprintf(str, "VELOC_Mem failed to %s", message);
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
         sprintf(str, "Error => %s", strerror(errno));
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
     }
     return result;
 }
@@ -202,7 +202,7 @@ void VELOC_Mem_FreeMeta(VELOCT_execution* VELOC_Mem_Exec)
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_InitBasicTypes(VELOCT_dataset* VELOC_Mem_Data)
+int VELOC_Mem_initBasicTypes(VELOCT_dataset* VELOC_Mem_Data)
 {
     int i;
     for (i = 0; i < VELOC_Mem_BUFS; i++) {
@@ -244,7 +244,7 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
         struct dirent* ep = NULL;
 
         sprintf(buf, "Removing directory %s and its files.", path);
-        VELOC_Mem_Print(buf, VELOC_Mem_DBUG);
+        VELOC_Mem_print(buf, VELOC_Mem_DBUG);
 
         dp = opendir(path);
         if (dp != NULL) {
@@ -253,10 +253,10 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
                 if ((strcmp(fil, ".") != 0) && (strcmp(fil, "..") != 0)) {
                     sprintf(fn, "%s/%s", path, fil);
                     sprintf(buf, "File %s will be removed.", fn);
-                    VELOC_Mem_Print(buf, VELOC_Mem_DBUG);
+                    VELOC_Mem_print(buf, VELOC_Mem_DBUG);
                     if (remove(fn) == -1) {
                         if (errno != ENOENT) {
-                            VELOC_Mem_Print("Error removing target file.", VELOC_Mem_EROR);
+                            VELOC_Mem_print("Error removing target file.", VELOC_Mem_EROR);
                         }
                     }
                 }
@@ -264,7 +264,7 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
         }
         else {
             if (errno != ENOENT) {
-                VELOC_Mem_Print("Error with opendir.", VELOC_Mem_EROR);
+                VELOC_Mem_print("Error with opendir.", VELOC_Mem_EROR);
             }
         }
         if (dp != NULL) {
@@ -273,7 +273,7 @@ int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag)
 
         if (remove(path) == -1) {
             if (errno != ENOENT) {
-                VELOC_Mem_Print("Error removing target directory.", VELOC_Mem_EROR);
+                VELOC_Mem_print("Error removing target directory.", VELOC_Mem_EROR);
             }
         }
     }
@@ -344,7 +344,7 @@ int VELOC_Mem_Clean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC
         snprintf(buf, VELOC_Mem_BUFS, "%s/Topology.velec_mem", VELOC_Mem_Conf->metadDir);
         if (remove(buf) == -1) {
             if (errno != ENOENT) {
-                VELOC_Mem_Print("Cannot remove Topology.velec_mem", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot remove Topology.velec_mem", VELOC_Mem_EROR);
             }
         }
         rmdir(VELOC_Mem_Conf->metadDir);

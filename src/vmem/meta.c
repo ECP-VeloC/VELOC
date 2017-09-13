@@ -41,14 +41,14 @@ int VELOC_Mem_GetChecksums(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     }
 
     sprintf(str, "Getting VELOC_Mem metadata file (%s)...", mfn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     if (access(mfn, R_OK) != 0) {
-        VELOC_Mem_Print("VELOC_Mem metadata file NOT accessible.", VELOC_Mem_WARN);
+        VELOC_Mem_print("VELOC_Mem metadata file NOT accessible.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     ini = iniparser_load(mfn);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -110,7 +110,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
     sprintf(fileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Topo->sectorID, groupID);
     ini = iniparser_load(fileName);
     if (ini == NULL) {
-        VELOC_Mem_Print("Temporary metadata file could NOT be parsed", VELOC_Mem_WARN);
+        VELOC_Mem_print("Temporary metadata file could NOT be parsed", VELOC_Mem_WARN);
         free(checksums);
         return VELOC_Mem_NSCS;
     }
@@ -123,11 +123,11 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
     free(checksums);
 
     sprintf(str, "Recreating metadata file (%s)...", buf);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     FILE* fd = fopen(fileName, "w");
     if (fd == NULL) {
-        VELOC_Mem_Print("Metadata file could NOT be opened.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Metadata file could NOT be opened.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -138,7 +138,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
     iniparser_dump_ini(ini, fd);
 
     if (fflush(fd) != 0) {
-        VELOC_Mem_Print("Metadata file could NOT be flushed.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Metadata file could NOT be flushed.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
         fclose(fd);
@@ -146,7 +146,7 @@ int VELOC_Mem_WriteRSedChecksum(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exe
         return VELOC_Mem_NSCS;
     }
     if (fclose(fd) != 0) {
-        VELOC_Mem_Print("Metadata file could NOT be closed.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Metadata file could NOT be closed.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -186,14 +186,14 @@ int VELOC_Mem_GetPtnerSize(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
         sprintf(mfn, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Ckpt[level].metaDir, VELOC_Mem_Topo->sectorID, group);
     }
     sprintf(str, "Getting Ptner file size (%s)...", mfn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     if (access(mfn, R_OK) != 0) {
-        VELOC_Mem_Print("VELOC_Mem metadata file NOT accessible.", VELOC_Mem_WARN);
+        VELOC_Mem_print("VELOC_Mem metadata file NOT accessible.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     ini = iniparser_load(mfn);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     //get Ptner file size
@@ -228,11 +228,11 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
         char metaFileName[VELOC_Mem_BUFS], str[VELOC_Mem_BUFS];
         sprintf(metaFileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Topo->sectorID, VELOC_Mem_Topo->groupID);
         sprintf(str, "Getting VELOC_Mem metadata file (%s)...", metaFileName);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         if (access(metaFileName, R_OK) == 0) {
             ini = iniparser_load(metaFileName);
             if (ini == NULL) {
-                VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+                VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
                 return VELOC_Mem_NSCS;
             }
             else {
@@ -254,7 +254,7 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
             }
         }
         else {
-            VELOC_Mem_Print("Temporary metadata do not exist.", VELOC_Mem_WARN);
+            VELOC_Mem_print("Temporary metadata do not exist.", VELOC_Mem_WARN);
             return VELOC_Mem_NSCS;
         }
     }
@@ -265,11 +265,11 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
             char metaFileName[VELOC_Mem_BUFS], str[VELOC_Mem_BUFS];
             sprintf(metaFileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Topo->sectorID, j);
             sprintf(str, "Getting VELOC_Mem metadata file (%s)...", metaFileName);
-            VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+            VELOC_Mem_print(str, VELOC_Mem_DBUG);
             if (access(metaFileName, R_OK) == 0) {
                 ini = iniparser_load(metaFileName);
                 if (ini == NULL) {
-                    VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+                    VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
                     return VELOC_Mem_NSCS;
                 }
                 else {
@@ -298,7 +298,7 @@ int VELOC_Mem_LoadTmpMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution
             }
             else {
                 sprintf(str, "Temporary metadata do not exist for node process %d.", j);
-                VELOC_Mem_Print(str, VELOC_Mem_WARN);
+                VELOC_Mem_print(str, VELOC_Mem_WARN);
                 return VELOC_Mem_NSCS;
             }
         }
@@ -336,16 +336,16 @@ int VELOC_Mem_LoadMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
                 sprintf(metaFileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Ckpt[i].metaDir, VELOC_Mem_Topo->sectorID, VELOC_Mem_Topo->groupID);
             }
             sprintf(str, "Getting VELOC_Mem metadata file (%s)...", metaFileName);
-            VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+            VELOC_Mem_print(str, VELOC_Mem_DBUG);
             if (access(metaFileName, R_OK) == 0) {
                 ini = iniparser_load(metaFileName);
                 if (ini == NULL) {
-                    VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+                    VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
                     return VELOC_Mem_NSCS;
                 }
                 else {
                     sprintf(str, "Meta for level %d exists.", i);
-                    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                    VELOC_Mem_print(str, VELOC_Mem_DBUG);
                     VELOC_Mem_Exec->meta[i].exists[0] = 1;
 
                     sprintf(str, "%d:Ckpt_file_name", VELOC_Mem_Topo->groupRank);
@@ -378,16 +378,16 @@ int VELOC_Mem_LoadMeta(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
                     sprintf(metaFileName, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Ckpt[i].metaDir, VELOC_Mem_Topo->sectorID, j);
                 }
                 sprintf(str, "Getting VELOC_Mem metadata file (%s)...", metaFileName);
-                VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                VELOC_Mem_print(str, VELOC_Mem_DBUG);
                 if (access(metaFileName, R_OK) == 0) {
                     ini = iniparser_load(metaFileName);
                     if (ini == NULL) {
-                        VELOC_Mem_Print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
+                        VELOC_Mem_print("Iniparser failed to parse the metadata file.", VELOC_Mem_WARN);
                         return VELOC_Mem_NSCS;
                     }
                     else {
                         sprintf(str, "Meta for level %d exists.", i);
-                        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                        VELOC_Mem_print(str, VELOC_Mem_DBUG);
                         VELOC_Mem_Exec->meta[i].exists[j] = 1;
 
                         sprintf(str, "%d:Ckpt_file_name", VELOC_Mem_Topo->groupRank);
@@ -442,12 +442,12 @@ int VELOC_Mem_WriteMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topolog
 
     snprintf(buf, VELOC_Mem_BUFS, "%s/Topology.velec_mem", VELOC_Mem_Conf->metadDir);
     sprintf(str, "Temporary load of topology file (%s)...", buf);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     // To bypass iniparser bug while empty dict.
     ini = iniparser_load(buf);
     if (ini == NULL) {
-        VELOC_Mem_Print("Temporary topology file could NOT be parsed", VELOC_Mem_WARN);
+        VELOC_Mem_print("Temporary topology file could NOT be parsed", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -476,23 +476,23 @@ int VELOC_Mem_WriteMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topolog
     iniparser_unset(ini, "topology");
     if (mkdir(VELOC_Mem_Conf->mTmpDir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create directory", VELOC_Mem_EROR);
         }
     }
 
     sprintf(buf, "%s/sector%d-group%d.velec_mem", VELOC_Mem_Conf->mTmpDir, VELOC_Mem_Topo->sectorID, VELOC_Mem_Topo->groupID);
     if (remove(buf) == -1) {
         if (errno != ENOENT) {
-            VELOC_Mem_Print("Cannot remove sector-group.velec_mem", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot remove sector-group.velec_mem", VELOC_Mem_EROR);
         }
     }
 
     sprintf(str, "Creating metadata file (%s)...", buf);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     FILE* fd = fopen(buf, "w");
     if (fd == NULL) {
-        VELOC_Mem_Print("Metadata file could NOT be opened.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Metadata file could NOT be opened.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -503,7 +503,7 @@ int VELOC_Mem_WriteMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topolog
     iniparser_dump_ini(ini, fd);
 
     if (fclose(fd) != 0) {
-        VELOC_Mem_Print("Metadata file could NOT be closed.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Metadata file could NOT be closed.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -556,7 +556,7 @@ int VELOC_Mem_CreateMetadata(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     }
     VELOC_Mem_Exec->meta[VELOC_Mem_Exec->ckptLvel].maxFs[0] = mfs;
     sprintf(str, "Max. file size in group %lu.", mfs);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     char* ckptFileNames = talloc(char, VELOC_Mem_Topo->groupSize * VELOC_Mem_BUFS);
     strcpy(str, VELOC_Mem_Exec->meta[level].ckptFile); // Gather all the file names

@@ -41,7 +41,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
 
     if (mkdir(VELOC_Mem_Ckpt[3].dir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create directory", VELOC_Mem_EROR);
         }
     }
 
@@ -89,7 +89,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     }
     // Inversing the matrix
     if (jerasure_invert_matrix(tmpmat, decMatrix, k, VELOC_Mem_Conf->l3WordSize) < 0) {
-        VELOC_Mem_Print("Error inversing matrix", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Error inversing matrix", VELOC_Mem_DBUG);
 
         for (i = 0; i < m; i++) {
             free(coding[i]);
@@ -107,7 +107,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     }
     if (erased[VELOC_Mem_Topo->groupRank] == 0) { // Resize and open files
         if (truncate(fn, ps) == -1) {
-            VELOC_Mem_Print("Error with truncate on checkpoint file", VELOC_Mem_DBUG);
+            VELOC_Mem_print("Error with truncate on checkpoint file", VELOC_Mem_DBUG);
 
             for (i = 0; i < m; i++) {
                 free(coding[i]);
@@ -137,7 +137,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
         efd = fopen(efn, "wb");
     }
     if (fd == NULL) {
-        VELOC_Mem_Print("R3 cannot open checkpoint file.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("R3 cannot open checkpoint file.", VELOC_Mem_DBUG);
 
         if (efd) {
             fclose(efd);
@@ -157,7 +157,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
         return VELOC_Mem_NSCS;
     }
     if (efd == NULL) {
-        VELOC_Mem_Print("R3 cannot open encoded ckpt. file.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("R3 cannot open encoded ckpt. file.", VELOC_Mem_DBUG);
 
         fclose(fd);
 
@@ -183,7 +183,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
             fread(data[VELOC_Mem_Topo->groupRank] + 0, sizeof(char), bs, fd);
 
             if (ferror(fd)) {
-                VELOC_Mem_Print("R3 cannot from the ckpt. file.", VELOC_Mem_DBUG);
+                VELOC_Mem_print("R3 cannot from the ckpt. file.", VELOC_Mem_DBUG);
 
                 fclose(fd);
                 fclose(efd);
@@ -210,7 +210,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
         if (erased[VELOC_Mem_Topo->groupRank + VELOC_Mem_Topo->groupSize] == 0) {
             fread(coding[VELOC_Mem_Topo->groupRank] + 0, sizeof(char), bs, efd);
             if (ferror(efd)) {
-                VELOC_Mem_Print("R3 cannot from the encoded ckpt. file.", VELOC_Mem_DBUG);
+                VELOC_Mem_print("R3 cannot from the encoded ckpt. file.", VELOC_Mem_DBUG);
 
                 fclose(fd);
                 fclose(efd);
@@ -273,7 +273,7 @@ int VELOC_Mem_Decode(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VEL
     fclose(efd);
 
     if (truncate(fn, fs) == -1) {
-        VELOC_Mem_Print("R3 cannot re-truncate checkpoint file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("R3 cannot re-truncate checkpoint file.", VELOC_Mem_WARN);
 
         for (i = 0; i < m; i++) {
             free(coding[i]);
@@ -325,7 +325,7 @@ int VELOC_Mem_recoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     int erased[VELOC_Mem_BUFS], buf, j; // VELOC_Mem_BUFS > 32*3
     unsigned long fs, maxFs;
     if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
-        VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Error checking erasures.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
     buf = 0;
@@ -335,7 +335,7 @@ int VELOC_Mem_recoverL1(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         }
     }
     if (buf > 0) {
-        VELOC_Mem_Print("Checkpoint files missing at L1.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Checkpoint files missing at L1.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
     return VELOC_SUCCESS;
@@ -372,10 +372,10 @@ int VELOC_Mem_SendCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     }
 
     sprintf(str, "Opening file (rb) (%s) (L2).", filename);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     fileDesc = fopen(filename, "rb");
     if (fileDesc == NULL) {
-        VELOC_Mem_Print("R2 cannot open the partner ckpt. file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("R2 cannot open the partner ckpt. file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     char* buffer = talloc(char, VELOC_Mem_Conf->blockSize);
@@ -385,7 +385,7 @@ int VELOC_Mem_SendCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
         size_t bytes = fread(buffer, sizeof(char), sendSize, fileDesc);
 
         if (ferror(fileDesc)) {
-            VELOC_Mem_Print("Error reading the data from the ckpt. file.", VELOC_Mem_WARN);
+            VELOC_Mem_print("Error reading the data from the ckpt. file.", VELOC_Mem_WARN);
 
             fclose(fileDesc);
             free(buffer);
@@ -434,10 +434,10 @@ int VELOC_Mem_RecvCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
     }
 
     sprintf(str, "Opening file (wb) (%s) (L2).", filename);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     fileDesc = fopen(filename, "wb");
     if (fileDesc == NULL) {
-        VELOC_Mem_Print("R2 cannot open the file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("R2 cannot open the file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     char* buffer = talloc(char, VELOC_Mem_Conf->blockSize);
@@ -448,7 +448,7 @@ int VELOC_Mem_RecvCkptFileL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
         fwrite(buffer, sizeof(char), recvSize, fileDesc);
 
         if (ferror(fileDesc)) {
-            VELOC_Mem_Print("Error writing the data to the file.", VELOC_Mem_WARN);
+            VELOC_Mem_print("Error writing the data to the file.", VELOC_Mem_WARN);
 
             fclose(fileDesc);
             free(buffer);
@@ -491,13 +491,13 @@ int VELOC_Mem_recoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
     if (mkdir(VELOC_Mem_Ckpt[2].dir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create directory", VELOC_Mem_EROR);
         }
     }
 
     // Checking erasures
     if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
-        VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Error checking erasures.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -509,18 +509,18 @@ int VELOC_Mem_recoverL2(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     }
 
     if (i == 0) {
-        VELOC_Mem_Print("Have all checkpoint files.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Have all checkpoint files.", VELOC_Mem_DBUG);
         return VELOC_SUCCESS;
     }
 
     res = VELOC_SUCCESS;
     if (erased[VELOC_Mem_Topo->groupRank] && erased[source + VELOC_Mem_Topo->groupSize]) {
-        VELOC_Mem_Print("My checkpoint file and partner copy have been lost", VELOC_Mem_WARN);
+        VELOC_Mem_print("My checkpoint file and partner copy have been lost", VELOC_Mem_WARN);
         res = VELOC_Mem_NSCS;
     }
 
     if (erased[VELOC_Mem_Topo->groupRank + VELOC_Mem_Topo->groupSize] && erased[destination]) {
-        VELOC_Mem_Print("My Ptner checkpoint file and his checkpoint file have been lost", VELOC_Mem_WARN);
+        VELOC_Mem_print("My Ptner checkpoint file and his checkpoint file have been lost", VELOC_Mem_WARN);
         res = VELOC_Mem_NSCS;
     }
 
@@ -616,13 +616,13 @@ int VELOC_Mem_recoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
 
     if (mkdir(VELOC_Mem_Ckpt[3].dir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create directory", VELOC_Mem_EROR);
         }
     }
 
     // Checking erasures
     if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
-        VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Error checking erasures.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
 
@@ -638,16 +638,16 @@ int VELOC_Mem_recoverL3(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         }
     }
     if (l > gs) {
-        VELOC_Mem_Print("Too many erasures at L3.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("Too many erasures at L3.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
 
     // Reed-Solomon decoding
     if (l > 0) {
         sprintf(str, "There are %d encoded/checkpoint files missing in this group.", l);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         if (VELOC_Mem_Decode(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) == VELOC_Mem_NSCS) {
-            VELOC_Mem_Print("RS-decoding could not regenerate the missing data.", VELOC_Mem_DBUG);
+            VELOC_Mem_print("RS-decoding could not regenerate the missing data.", VELOC_Mem_DBUG);
             return VELOC_Mem_NSCS;
         }
     }
@@ -719,13 +719,13 @@ int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
    if (VELOC_Mem_Topo->nodeRank == 0 || VELOC_Mem_Topo->nodeRank == 1) {
       if (mkdir(VELOC_Mem_Ckpt[1].dir, 0777) == -1) {
          if (errno != EEXIST)
-            VELOC_Mem_Print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
+            VELOC_Mem_print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
       }
    }
    MPI_Barrier(VELOC_Mem_COMM_WORLD);
    // Checking erasures
    if (VELOC_Mem_CheckErasures(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt, erased) != VELOC_SUCCESS) {
-      VELOC_Mem_Print("Error checking erasures.", VELOC_Mem_DBUG);
+      VELOC_Mem_print("Error checking erasures.", VELOC_Mem_DBUG);
       return VELOC_Mem_NSCS;
    }
 
@@ -736,7 +736,7 @@ int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
          l++;
    }
    if (l > 0) {
-      VELOC_Mem_Print("Checkpoint file missing at L4.", VELOC_Mem_DBUG);
+      VELOC_Mem_print("Checkpoint file missing at L4.", VELOC_Mem_DBUG);
       return VELOC_Mem_NSCS;
    }
 
@@ -748,13 +748,13 @@ int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
 
    gfd = fopen(gfn, "rb");
    if (gfd == NULL) {
-      VELOC_Mem_Print("R4 cannot open the ckpt. file in the PFS.", VELOC_Mem_WARN);
+      VELOC_Mem_print("R4 cannot open the ckpt. file in the PFS.", VELOC_Mem_WARN);
       return VELOC_Mem_NSCS;
    }
 
    lfd = fopen(lfn, "wb");
    if (lfd == NULL) {
-      VELOC_Mem_Print("R4 cannot open the local ckpt. file.", VELOC_Mem_WARN);
+      VELOC_Mem_print("R4 cannot open the local ckpt. file.", VELOC_Mem_WARN);
       fclose(gfd);
       return VELOC_Mem_NSCS;
    }
@@ -771,7 +771,7 @@ int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
 
       size_t bytes = fread(readData, sizeof(char), bSize, gfd);
       if (ferror(gfd)) {
-         VELOC_Mem_Print("R4 cannot read from the ckpt. file in the PFS.", VELOC_Mem_DBUG);
+         VELOC_Mem_print("R4 cannot read from the ckpt. file in the PFS.", VELOC_Mem_DBUG);
 
          free(readData);
 
@@ -783,7 +783,7 @@ int VELOC_Mem_recoverL4Posix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execut
 
       fwrite(readData, sizeof(char), bytes, lfd);
       if (ferror(lfd)) {
-         VELOC_Mem_Print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
+         VELOC_Mem_print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
 
          free(readData);
 
@@ -848,7 +848,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
       MPI_Error_string(buf, mpi_err, NULL);
       if (buf != MPI_ERR_NO_SUCH_FILE) {
          snprintf(str, VELOC_Mem_BUFS, "Unable to access file [MPI ERROR - %i] %s", buf, mpi_err);
-         VELOC_Mem_Print(str, VELOC_Mem_EROR);
+         VELOC_Mem_print(str, VELOC_Mem_EROR);
       }
       return VELOC_Mem_NSCS;
    }
@@ -856,7 +856,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
    // create local directories
    if (mkdir(VELOC_Mem_Ckpt[1].dir, 0777) == -1) {
       if (errno != EEXIST) {
-          VELOC_Mem_Print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
+          VELOC_Mem_print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
       }
    }
 
@@ -873,7 +873,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 
    FILE *lfd = fopen(lfn, "wb");
    if (lfd == NULL) {
-      VELOC_Mem_Print("R4 cannot open the local ckpt. file.", VELOC_Mem_DBUG);
+      VELOC_Mem_print("R4 cannot open the local ckpt. file.", VELOC_Mem_DBUG);
       MPI_File_close(&pfh);
       return VELOC_Mem_NSCS;
    }
@@ -894,7 +894,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
          errno = 0;
          MPI_Error_string(buf, mpi_err, NULL);
          snprintf(str, VELOC_Mem_BUFS, "R4 cannot read from the ckpt. file in the PFS. [MPI ERROR - %i] %s", buf, mpi_err);
-         VELOC_Mem_Print(str, VELOC_Mem_EROR);
+         VELOC_Mem_print(str, VELOC_Mem_EROR);
          free(readData);
          MPI_File_close(&pfh);
          fclose(lfd);
@@ -903,7 +903,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 
       fwrite(readData, sizeof(char), bSize, lfd);
       if (ferror(lfd)) {
-         VELOC_Mem_Print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
+         VELOC_Mem_print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
          free(readData);
          fclose(lfd);
          MPI_File_close(&pfh);
@@ -918,7 +918,7 @@ int VELOC_Mem_recoverL4Mpi(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
    fclose(lfd);
 
    if (MPI_File_close(&pfh) != 0) {
-      VELOC_Mem_Print("Cannot close MPI file.", VELOC_Mem_WARN);
+      VELOC_Mem_print("Cannot close MPI file.", VELOC_Mem_WARN);
       return VELOC_Mem_NSCS;
    }
 
@@ -949,7 +949,7 @@ int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
 
    if (mkdir(VELOC_Mem_Ckpt[1].dir, 0777) == -1) {
        if (errno != EEXIST) {
-           VELOC_Mem_Print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
+           VELOC_Mem_print("Directory L1 could NOT be created.", VELOC_Mem_WARN);
        }
    }
 
@@ -977,7 +977,7 @@ int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
 
    FILE* lfd = fopen(lfn, "wb");
    if (lfd == NULL) {
-      VELOC_Mem_Print("R4 cannot open the local ckpt. file.", VELOC_Mem_DBUG);
+      VELOC_Mem_print("R4 cannot open the local ckpt. file.", VELOC_Mem_DBUG);
       sion_parclose_mapped_mpi(sid);
       free(file_map);
       free(ranks);
@@ -989,7 +989,7 @@ int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
    res = sion_seek(sid, VELOC_Mem_Topo->splitRank, SION_CURRENT_BLK, SION_CURRENT_POS);
    // check if successful
    if (res != SION_SUCCESS) {
-      VELOC_Mem_Print("SIONlib: Could not set file pointer", VELOC_Mem_EROR);
+      VELOC_Mem_print("SIONlib: Could not set file pointer", VELOC_Mem_EROR);
       sion_parclose_mapped_mpi(sid);
       free(file_map);
       free(ranks);
@@ -1013,7 +1013,7 @@ int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
          res = sion_fread(readData, sizeof(char), bSize, sid);
          if (res != bSize) {
             sprintf(str, "SIONlib: Unable to read %lu Bytes from file", bSize);
-            VELOC_Mem_Print(str, VELOC_Mem_EROR);
+            VELOC_Mem_print(str, VELOC_Mem_EROR);
             sion_parclose_mapped_mpi(sid);
             free(file_map);
             free(ranks);
@@ -1026,7 +1026,7 @@ int VELOC_Mem_recoverL4Sionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_exec
 
          fwrite(readData, sizeof(char), bSize, lfd);
          if (ferror(lfd)) {
-            VELOC_Mem_Print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
+            VELOC_Mem_print("R4 cannot write to the local ckpt. file.", VELOC_Mem_DBUG);
             free(readData);
             fclose(lfd);
             sion_parclose_mapped_mpi(sid);

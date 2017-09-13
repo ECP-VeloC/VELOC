@@ -41,23 +41,23 @@ module VELOC_Mem
 !$SH for T in ${FORTTYPES}; do
       $(velec_mem_type ${T}), &
 !$SH done
-      VELOC_Mem_Init, VELOC_Mem_Status, VELOC_Mem_type, VELOC_Mem_Protect,  &
-      VELOC_Mem_Checkpoint, VELOC_Mem_recover, VELOC_Mem_Snapshot, VELOC_Mem_Finalize
+      VELOC_Mem_init, VELOC_Mem_status, VELOC_Mem_type, VELOC_Mem_protect,  &
+      VELOC_Mem_Checkpoint, VELOC_Mem_recover, VELOC_Mem_Snapshot, VELOC_Mem_finalize
 
 
 
   interface
 
-    function VELOC_Mem_Init_impl(config_file, global_comm) &
-            bind(c, name='VELOC_Mem_Init_fort_wrapper')
+    function VELOC_Mem_init_impl(config_file, global_comm) &
+            bind(c, name='VELOC_Mem_init_fort_wrapper')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_Init_impl
+      integer(c_int) :: VELOC_Mem_init_impl
       character(c_char), intent(IN) :: config_file(*)
       integer(c_int), intent(INOUT) :: global_comm
 
-    endfunction VELOC_Mem_Init_impl
+    endfunction VELOC_Mem_init_impl
 
   endinterface
 
@@ -65,14 +65,14 @@ module VELOC_Mem
 
   interface
 
-    function VELOC_Mem_Status_impl() &
-            bind(c, name='VELOC_Mem_Status')
+    function VELOC_Mem_status_impl() &
+            bind(c, name='VELOC_Mem_status')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_Status_impl
+      integer(c_int) :: VELOC_Mem_status_impl
 
-    endfunction VELOC_Mem_Status_impl
+    endfunction VELOC_Mem_status_impl
 
   endinterface
 
@@ -97,18 +97,18 @@ module VELOC_Mem
 
   interface
 
-    function VELOC_Mem_Protect_impl(id_F, ptr, count_F, type_F) &
-            bind(c, name='VELOC_Mem_Protect_wrapper')
+    function VELOC_Mem_protect_impl(id_F, ptr, count_F, type_F) &
+            bind(c, name='VELOC_Mem_protect_wrapper')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_Protect_impl
+      integer(c_int) :: VELOC_Mem_protect_impl
       integer(c_int), value :: id_F
       type(c_ptr), value :: ptr
       integer(c_long), value :: count_F
       type(c_ptr), value :: type_F
 
-    endfunction VELOC_Mem_Protect_impl
+    endfunction VELOC_Mem_protect_impl
 
   endinterface
 
@@ -163,34 +163,34 @@ module VELOC_Mem
 
   interface
 
-    function VELOC_Mem_Finalize_impl() &
-            bind(c, name='VELOC_Mem_Finalize')
+    function VELOC_Mem_finalize_impl() &
+            bind(c, name='VELOC_Mem_finalize')
 
       use ISO_C_BINDING
 
-      integer(c_int) :: VELOC_Mem_Finalize_impl
+      integer(c_int) :: VELOC_Mem_finalize_impl
 
-    endfunction VELOC_Mem_Finalize_impl
+    endfunction VELOC_Mem_finalize_impl
 
   endinterface
 
 
 
-  interface VELOC_Mem_Protect
+  interface VELOC_Mem_protect
 
-    module procedure VELOC_Mem_Protect_Ptr
+    module procedure VELOC_Mem_protect_Ptr
 !$SH for T in ${FORTTYPES}; do
 !$SH   for D in $(seq 0 ${MAXDIM}); do
-    module procedure VELOC_Mem_Protect_${T}${D}
+    module procedure VELOC_Mem_protect_${T}${D}
 !$SH   done
 !$SH done
 
-  endinterface VELOC_Mem_Protect
+  endinterface VELOC_Mem_protect
 
 
 contains
 
-  subroutine VELOC_Mem_Init(config_file, global_comm, err)
+  subroutine VELOC_Mem_init(config_file, global_comm, err)
 
     include 'mpif.h'
 
@@ -208,7 +208,7 @@ contains
     enddo
     config_file_c(ll+1) = c_null_char
     global_comm_c = int(global_comm, c_int)
-    err = int(VELOC_Mem_Init_impl(config_file_c, global_comm_c))
+    err = int(VELOC_Mem_init_impl(config_file_c, global_comm_c))
     global_comm = int(global_comm_c)
     if (err /= VELOC_SUCCESS ) then
       return
@@ -221,17 +221,17 @@ contains
     endif
 !$SH done
 
-  endsubroutine VELOC_Mem_Init
+  endsubroutine VELOC_Mem_init
 
 
 
-  subroutine VELOC_Mem_Status(status)
+  subroutine VELOC_Mem_status(status)
 
     integer, intent(OUT) :: status
 
-    status = int(VELOC_Mem_Status_impl())
+    status = int(VELOC_Mem_status_impl())
 
-  endsubroutine VELOC_Mem_Status
+  endsubroutine VELOC_Mem_status
 
 
 
@@ -247,7 +247,7 @@ contains
 
 
 
-  subroutine VELOC_Mem_Protect_Ptr(id_F, ptr, count_F, type_F, err)
+  subroutine VELOC_Mem_protect_Ptr(id_F, ptr, count_F, type_F, err)
 
     integer, intent(IN) :: id_F
     type(c_ptr), value :: ptr
@@ -255,28 +255,28 @@ contains
     type(VELOC_Mem_type), intent(IN) :: type_F
     integer, intent(OUT) :: err
 
-    err = int(VELOC_Mem_Protect_impl(int(id_F, c_int), ptr, int(count_F, c_long), &
+    err = int(VELOC_Mem_protect_impl(int(id_F, c_int), ptr, int(count_F, c_long), &
             type_F%raw_type))
 
-  endsubroutine VELOC_Mem_Protect_Ptr
+  endsubroutine VELOC_Mem_protect_Ptr
 
 
 !$SH for T in ${FORTTYPES}; do
 
-  subroutine VELOC_Mem_Protect_${T}0(id_F, data, err)
+  subroutine VELOC_Mem_protect_${T}0(id_F, data, err)
 
     integer, intent(IN) :: id_F
     $(fort_type ${T}), pointer :: data
     integer, intent(OUT) :: err
 
-    call VELOC_Mem_Protect_Ptr(id_F, c_loc(data), 1, $(velec_mem_type ${T}), err)
+    call VELOC_Mem_protect_Ptr(id_F, c_loc(data), 1, $(velec_mem_type ${T}), err)
 
-  endsubroutine VELOC_Mem_Protect_${T}0
+  endsubroutine VELOC_Mem_protect_${T}0
 
 
 !$SH   for D in $(seq 1 ${MAXDIM}); do
 
-  subroutine VELOC_Mem_Protect_${T}${D}(id_F, data, err)
+  subroutine VELOC_Mem_protect_${T}${D}(id_F, data, err)
 
     integer, intent(IN) :: id_F
     $(fort_type ${T}), pointer :: data$(str_repeat ':' 1 ${D} ',' '(' ')')
@@ -284,11 +284,11 @@ contains
 
     ! workaround, we take the address of the first array element and hope for
     ! the best since not much better can be done
-    call VELOC_Mem_Protect_Ptr(id_F, &
+    call VELOC_Mem_protect_Ptr(id_F, &
             c_loc(data$(str_repeat 'lbound(data, @N)' 1 ${D} $',&\n' '(' ')')), &
             size(data), $(velec_mem_type ${T}), err)
 
-  endsubroutine VELOC_Mem_Protect_${T}${D}
+  endsubroutine VELOC_Mem_protect_${T}${D}
 
 
 !$SH   done
@@ -326,12 +326,12 @@ contains
 
 
 
-  subroutine VELOC_Mem_Finalize(err)
+  subroutine VELOC_Mem_finalize(err)
 
     integer, intent(OUT) :: err
 
-    err = int(VELOC_Mem_Finalize_impl())
+    err = int(VELOC_Mem_finalize_impl())
 
-  endsubroutine VELOC_Mem_Finalize
+  endsubroutine VELOC_Mem_finalize
 
 endmodule VELOC_Mem

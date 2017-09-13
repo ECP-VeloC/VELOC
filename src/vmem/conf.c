@@ -32,9 +32,9 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     // Load dictionary
     ini = iniparser_load(VELOC_Mem_Conf->cfgFile);
     sprintf(str, "Updating configuration file (%s)...", VELOC_Mem_Conf->cfgFile);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser failed to parse the conf. file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser failed to parse the conf. file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -46,7 +46,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 
     FILE* fd = fopen(VELOC_Mem_Conf->cfgFile, "w");
     if (fd == NULL) {
-        VELOC_Mem_Print("VELOC_Mem failed to open the configuration file.", VELOC_Mem_EROR);
+        VELOC_Mem_print("VELOC_Mem failed to open the configuration file.", VELOC_Mem_EROR);
 
         iniparser_freedict(ini);
 
@@ -56,7 +56,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     // Write new configuration
     iniparser_dump_ini(ini, fd);
     if (fflush(fd) != 0) {
-        VELOC_Mem_Print("VELOC_Mem failed to flush the configuration file.", VELOC_Mem_EROR);
+        VELOC_Mem_print("VELOC_Mem failed to flush the configuration file.", VELOC_Mem_EROR);
 
         iniparser_freedict(ini);
         fclose(fd);
@@ -64,7 +64,7 @@ int VELOC_Mem_UpdateConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
         return VELOC_Mem_NSCS;
     }
     if (fclose(fd) != 0) {
-        VELOC_Mem_Print("VELOC_Mem failed to close the configuration file.", VELOC_Mem_EROR);
+        VELOC_Mem_print("VELOC_Mem failed to close the configuration file.", VELOC_Mem_EROR);
 
         iniparser_freedict(ini);
 
@@ -98,14 +98,14 @@ int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     dictionary* ini;
     char *par, str[VELOC_Mem_BUFS];
     sprintf(str, "Reading VELOC_Mem configuration file (%s)...", VELOC_Mem_Conf->cfgFile);
-    VELOC_Mem_Print(str, VELOC_Mem_INFO);
+    VELOC_Mem_print(str, VELOC_Mem_INFO);
     if (access(VELOC_Mem_Conf->cfgFile, F_OK) != 0) {
-        VELOC_Mem_Print("VELOC_Mem configuration file NOT accessible.", VELOC_Mem_WARN);
+        VELOC_Mem_print("VELOC_Mem configuration file NOT accessible.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     ini = iniparser_load(VELOC_Mem_Conf->cfgFile);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser failed to parse the conf. file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser failed to parse the conf. file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -164,13 +164,13 @@ int VELOC_Mem_ReadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
             n->tm_year + 1900, n->tm_mon + 1, n->tm_mday, n->tm_hour, n->tm_min, n->tm_sec);
         MPI_Bcast(VELOC_Mem_Exec->id, VELOC_Mem_BUFS, MPI_CHAR, 0, VELOC_Mem_Exec->globalComm);
         sprintf(str, "The execution ID is: %s", VELOC_Mem_Exec->id);
-        VELOC_Mem_Print(str, VELOC_Mem_INFO);
+        VELOC_Mem_print(str, VELOC_Mem_INFO);
     }
     else {
         par = iniparser_getstring(ini, "restart:exec_id", NULL);
         snprintf(VELOC_Mem_Exec->id, VELOC_Mem_BUFS, "%s", par);
         sprintf(str, "This is a restart. The execution ID is: %s", VELOC_Mem_Exec->id);
-        VELOC_Mem_Print(str, VELOC_Mem_INFO);
+        VELOC_Mem_print(str, VELOC_Mem_INFO);
     }
 
     // Reading/setting topology metadata
@@ -209,43 +209,43 @@ int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
     int RSreq = (VELOC_Mem_Ckpt[3].ckptIntv > 0) ? 1 : 0;
     // Check requirements.
     if (VELOC_Mem_Topo->nbHeads != 0 && VELOC_Mem_Topo->nbHeads != 1) {
-        VELOC_Mem_Print("The number of heads needs to be set to 0 or 1.", VELOC_Mem_WARN);
+        VELOC_Mem_print("The number of heads needs to be set to 0 or 1.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Topo->nbProc % VELOC_Mem_Topo->nodeSize != 0) {
-        VELOC_Mem_Print("Number of ranks is not a multiple of the node size.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Number of ranks is not a multiple of the node size.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Topo->nbNodes % VELOC_Mem_Topo->groupSize != 0) {
-        VELOC_Mem_Print("The number of nodes is not multiple of the group size.", VELOC_Mem_WARN);
+        VELOC_Mem_print("The number of nodes is not multiple of the group size.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Topo->groupSize <= 2 && (L2req || RSreq)) {
-        VELOC_Mem_Print("The group size must be bigger than 2", VELOC_Mem_WARN);
+        VELOC_Mem_print("The group size must be bigger than 2", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Topo->groupSize >= 32 && RSreq) {
-        VELOC_Mem_Print("The group size must be lower than 32", VELOC_Mem_WARN);
+        VELOC_Mem_print("The group size must be lower than 32", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Conf->verbosity > 3 || VELOC_Mem_Conf->verbosity < 1) {
-        VELOC_Mem_Print("Verbosity needs to be set to 1, 2 or 3.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Verbosity needs to be set to 1, 2 or 3.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Conf->blockSize > (2048 * 1024) || VELOC_Mem_Conf->blockSize < (1 * 1024)) {
-        VELOC_Mem_Print("Block size needs to be set between 1 and 2048.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Block size needs to be set between 1 and 2048.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Conf->transferSize > (1024 * 1024 * 64) || VELOC_Mem_Conf->transferSize < (1024 * 1024 * 8)) {
-        VELOC_Mem_Print("Transfer size (default = 16MB) not set in Cofiguration file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Transfer size (default = 16MB) not set in Cofiguration file.", VELOC_Mem_WARN);
         VELOC_Mem_Conf->transferSize = 16 * 1024 * 1024;
     }
     if (VELOC_Mem_Conf->test != 0 && VELOC_Mem_Conf->test != 1) {
-        VELOC_Mem_Print("Local test size needs to be set to 0 or 1.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Local test size needs to be set to 0 or 1.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     if (VELOC_Mem_Conf->saveLastCkpt != 0 && VELOC_Mem_Conf->saveLastCkpt != 1) {
-        VELOC_Mem_Print("Keep last ckpt. needs to be set to 0 or 1.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Keep last ckpt. needs to be set to 0 or 1.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     int l;
@@ -257,7 +257,7 @@ int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
             VELOC_Mem_Ckpt[l].isInline = 1;
         }
         if (VELOC_Mem_Ckpt[l].isInline == 0 && VELOC_Mem_Topo->nbHeads != 1) {
-            VELOC_Mem_Print("If inline is set to 0 then head should be set to 1.", VELOC_Mem_WARN);
+            VELOC_Mem_print("If inline is set to 0 then head should be set to 1.", VELOC_Mem_WARN);
             return VELOC_Mem_NSCS;
         }
     }
@@ -270,18 +270,18 @@ int VELOC_Mem_TestConfig(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* 
     if (VELOC_Mem_Conf->ioMode < VELOC_Mem_IO_POSIX || VELOC_Mem_Conf->ioMode > VELOC_Mem_IO_MPI) {
 #endif
         VELOC_Mem_Conf->ioMode = VELOC_Mem_IO_POSIX;
-        VELOC_Mem_Print("No I/O selected. Set to default (POSIX)", VELOC_Mem_WARN);
+        VELOC_Mem_print("No I/O selected. Set to default (POSIX)", VELOC_Mem_WARN);
     } else {
         switch(VELOC_Mem_Conf->ioMode) {
             case VELOC_Mem_IO_POSIX:
-                VELOC_Mem_Print("Selected Ckpt I/O is POSIX", VELOC_Mem_INFO);
+                VELOC_Mem_print("Selected Ckpt I/O is POSIX", VELOC_Mem_INFO);
                 break;
             case VELOC_Mem_IO_MPI:
-                VELOC_Mem_Print("Selected Ckpt I/O is MPI-I/O", VELOC_Mem_INFO);
+                VELOC_Mem_print("Selected Ckpt I/O is MPI-I/O", VELOC_Mem_INFO);
                 break;
 #ifdef ENABLE_SIONLIB // --> If SIONlib is installed
             case VELOC_Mem_IO_SIONLIB:
-                VELOC_Mem_Print("Selected Ckpt I/O is SIONLIB", VELOC_Mem_INFO);
+                VELOC_Mem_print("Selected Ckpt I/O is SIONLIB", VELOC_Mem_INFO);
 #endif
         }
     }
@@ -306,10 +306,10 @@ int VELOC_Mem_TestDirectories(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topol
 
     // Checking local directory
     sprintf(str, "Checking the local directory (%s)...", VELOC_Mem_Conf->localDir);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     if (mkdir(VELOC_Mem_Conf->localDir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("The local directory could NOT be created.", VELOC_Mem_WARN);
+            VELOC_Mem_print("The local directory could NOT be created.", VELOC_Mem_WARN);
             return VELOC_Mem_NSCS;
         }
     }
@@ -317,20 +317,20 @@ int VELOC_Mem_TestDirectories(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topol
     if (VELOC_Mem_Topo->myRank == 0) {
         // Checking metadata directory
         sprintf(str, "Checking the metadata directory (%s)...", VELOC_Mem_Conf->metadDir);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         if (mkdir(VELOC_Mem_Conf->metadDir, 0777) == -1) {
             if (errno != EEXIST) {
-                VELOC_Mem_Print("The metadata directory could NOT be created.", VELOC_Mem_WARN);
+                VELOC_Mem_print("The metadata directory could NOT be created.", VELOC_Mem_WARN);
                 return VELOC_Mem_NSCS;
             }
         }
 
         // Checking global directory
         sprintf(str, "Checking the global directory (%s)...", VELOC_Mem_Conf->glbalDir);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         if (mkdir(VELOC_Mem_Conf->glbalDir, 0777) == -1) {
             if (errno != EEXIST) {
-                VELOC_Mem_Print("The global directory could NOT be created.", VELOC_Mem_WARN);
+                VELOC_Mem_print("The global directory could NOT be created.", VELOC_Mem_WARN);
                 return VELOC_Mem_NSCS;
             }
         }
@@ -364,7 +364,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     snprintf(fn, VELOC_Mem_BUFS, "%s/%s", VELOC_Mem_Conf->metadDir, VELOC_Mem_Exec->id);
     if (mkdir(fn, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create metadata timestamp directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create metadata timestamp directory", VELOC_Mem_EROR);
         }
     }
     snprintf(VELOC_Mem_Conf->metadDir, VELOC_Mem_BUFS, "%s", fn);
@@ -379,7 +379,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     snprintf(VELOC_Mem_Conf->glbalDir, VELOC_Mem_BUFS, "%s/%s", fn, VELOC_Mem_Exec->id);
     if (mkdir(VELOC_Mem_Conf->glbalDir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create global checkpoint timestamp directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create global checkpoint timestamp directory", VELOC_Mem_EROR);
         }
     }
     snprintf(VELOC_Mem_Conf->gTmpDir, VELOC_Mem_BUFS, "%s/tmp", VELOC_Mem_Conf->glbalDir);
@@ -390,7 +390,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
         snprintf(fn, VELOC_Mem_BUFS, "%s/node%d", VELOC_Mem_Conf->localDir, VELOC_Mem_Topo->myRank / VELOC_Mem_Topo->nodeSize);
         if (mkdir(fn, 0777) == -1) {
             if (errno != EEXIST) {
-                VELOC_Mem_Print("Cannot create local checkpoint timestamp directory", VELOC_Mem_EROR);
+                VELOC_Mem_print("Cannot create local checkpoint timestamp directory", VELOC_Mem_EROR);
             }
         }
     }
@@ -400,7 +400,7 @@ int VELOC_Mem_CreateDirs(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     snprintf(VELOC_Mem_Conf->localDir, VELOC_Mem_BUFS, "%s/%s", fn, VELOC_Mem_Exec->id);
     if (mkdir(VELOC_Mem_Conf->localDir, 0777) == -1) {
         if (errno != EEXIST) {
-            VELOC_Mem_Print("Cannot create local checkpoint timestamp directory", VELOC_Mem_EROR);
+            VELOC_Mem_print("Cannot create local checkpoint timestamp directory", VELOC_Mem_EROR);
         }
     }
     snprintf(VELOC_Mem_Conf->lTmpDir, VELOC_Mem_BUFS, "%s/tmp", VELOC_Mem_Conf->localDir);
@@ -430,22 +430,22 @@ int VELOC_Mem_LoadConf(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     int res;
     res = VELOC_Mem_Try(VELOC_Mem_ReadConf(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "read configuration.");
     if (res == VELOC_Mem_NSCS) {
-        VELOC_Mem_Print("Impossible to read configuration.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Impossible to read configuration.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     res = VELOC_Mem_Try(VELOC_Mem_TestConfig(VELOC_Mem_Conf, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "pass the configuration test.");
     if (res == VELOC_Mem_NSCS) {
-        VELOC_Mem_Print("Wrong configuration.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Wrong configuration.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     res = VELOC_Mem_Try(VELOC_Mem_TestDirectories(VELOC_Mem_Conf, VELOC_Mem_Topo), "pass the directories test.");
     if (res == VELOC_Mem_NSCS) {
-        VELOC_Mem_Print("Problem with the directories.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Problem with the directories.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     res = VELOC_Mem_Try(VELOC_Mem_CreateDirs(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "create checkpoint directories.");
     if (res == VELOC_Mem_NSCS) {
-        VELOC_Mem_Print("Problem creating the directories.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Problem creating the directories.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
     return VELOC_SUCCESS;

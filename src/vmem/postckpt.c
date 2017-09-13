@@ -23,7 +23,7 @@
 int VELOC_Mem_Local(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
               VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt)
 {
-    VELOC_Mem_Print("Starting checkpoint post-processing L1", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Starting checkpoint post-processing L1", VELOC_Mem_DBUG);
     return VELOC_SUCCESS;
 }
 
@@ -57,11 +57,11 @@ int VELOC_Mem_SendCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
     else {
         sprintf(str, "L2 trying to access local ckpt. file (%s).", lfn);
     }
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     lfd = fopen(lfn, "rb");
     if (lfd == NULL) {
-        VELOC_Mem_Print("VELOC_Mem failed to open L2 Ckpt. file.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("VELOC_Mem failed to open L2 Ckpt. file.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
 
@@ -72,7 +72,7 @@ int VELOC_Mem_SendCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
         bytes = fread(buffer, sizeof(char), sendSize, lfd);
 
         if (ferror(lfd)) {
-            VELOC_Mem_Print("Error reading data from L2 ckpt file", VELOC_Mem_DBUG);
+            VELOC_Mem_print("Error reading data from L2 ckpt file", VELOC_Mem_DBUG);
 
             free(buffer);
             fclose(lfd);
@@ -115,11 +115,11 @@ int VELOC_Mem_RecvPtner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
     sscanf(&VELOC_Mem_Exec->meta[0].ckptFile[postFlag * VELOC_Mem_BUFS], "Ckpt%d-Rank%d.velec_mem", &ckptID, &rank);
     sprintf(pfn, "%s/Ckpt%d-Pcof%d.velec_mem", VELOC_Mem_Conf->lTmpDir, ckptID, rank);
     sprintf(str, "L2 trying to access Ptner file (%s).", pfn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     FILE* pfd = fopen(pfn, "wb");
     if (pfd == NULL) {
-        VELOC_Mem_Print("VELOC_Mem failed to open L2 ptner file.", VELOC_Mem_DBUG);
+        VELOC_Mem_print("VELOC_Mem failed to open L2 ptner file.", VELOC_Mem_DBUG);
         return VELOC_Mem_NSCS;
     }
 
@@ -131,7 +131,7 @@ int VELOC_Mem_RecvPtner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* 
         fwrite(buffer, sizeof(char), recvSize, pfd);
 
         if (ferror(pfd)) {
-            VELOC_Mem_Print("Error writing data to L2 ptner file", VELOC_Mem_DBUG);
+            VELOC_Mem_print("Error writing data to L2 ptner file", VELOC_Mem_DBUG);
 
             free(buffer);
             fclose(pfd);
@@ -168,7 +168,7 @@ int VELOC_Mem_Ptner(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
     int source = VELOC_Mem_Topo->left; //receive Ckpt file from this process
     int destination = VELOC_Mem_Topo->right; //send Ckpt file to this process
     int res;
-    VELOC_Mem_Print("Starting checkpoint post-processing L2", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Starting checkpoint post-processing L2", VELOC_Mem_DBUG);
     VELOC_Mem_LoadTmpMeta(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
     int startProc, endProc;
     if (VELOC_Mem_Topo->amIaHead) { //post-processing for every process in the node
@@ -230,7 +230,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
     int remBsize = bs;
     FILE *lfd, *efd;
 
-    VELOC_Mem_Print("Starting checkpoint post-processing L3", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Starting checkpoint post-processing L3", VELOC_Mem_DBUG);
     res = VELOC_Mem_Try(VELOC_Mem_LoadTmpMeta(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt), "load temporary metadata.");
     if (res != VELOC_SUCCESS) {
         return VELOC_Mem_NSCS;
@@ -261,23 +261,23 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
         sprintf(efn, "%s/Ckpt%d-RSed%d.velec_mem", VELOC_Mem_Conf->lTmpDir, VELOC_Mem_Exec->ckptID, rank);
 
         sprintf(str, "L3 trying to access local ckpt. file (%s).", lfn);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
         //all files in group must have the same size
         if (truncate(lfn, maxFs) == -1) {
-            VELOC_Mem_Print("Error with truncate on checkpoint file", VELOC_Mem_WARN);
+            VELOC_Mem_print("Error with truncate on checkpoint file", VELOC_Mem_WARN);
             return VELOC_Mem_NSCS;
         }
 
         lfd = fopen(lfn, "rb");
         if (lfd == NULL) {
-            VELOC_Mem_Print("VELOC_Mem failed to open L3 checkpoint file.", VELOC_Mem_EROR);
+            VELOC_Mem_print("VELOC_Mem failed to open L3 checkpoint file.", VELOC_Mem_EROR);
             return VELOC_Mem_NSCS;
         }
 
         efd = fopen(efn, "wb");
         if (efd == NULL) {
-            VELOC_Mem_Print("VELOC_Mem failed to open encoded ckpt. file.", VELOC_Mem_EROR);
+            VELOC_Mem_print("VELOC_Mem failed to open encoded ckpt. file.", VELOC_Mem_EROR);
 
             fclose(lfd);
 
@@ -304,7 +304,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
             // Reading checkpoint files
             size_t bytes = fread(myData, sizeof(char), remBsize, lfd);
             if (ferror(lfd)) {
-                VELOC_Mem_Print("VELOC_Mem failed to read from L3 ckpt. file.", VELOC_Mem_EROR);
+                VELOC_Mem_print("VELOC_Mem failed to read from L3 ckpt. file.", VELOC_Mem_EROR);
 
                 free(data);
                 free(matrix);
@@ -378,7 +378,7 @@ int VELOC_Mem_RSenc(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
         fclose(efd);
 
         if (truncate(lfn, fs) == -1) {
-            VELOC_Mem_Print("Error with re-truncate on checkpoint file", VELOC_Mem_WARN);
+            VELOC_Mem_print("Error with re-truncate on checkpoint file", VELOC_Mem_WARN);
             return VELOC_Mem_NSCS;
         }
 
@@ -417,11 +417,11 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
     }
     char str[VELOC_Mem_BUFS];
     sprintf(str, "Starting checkpoint post-processing L4 for level %d", level);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
     // create global temp directory
     if (mkdir(VELOC_Mem_Conf->gTmpDir, 0777) == -1) {
        if (errno != EEXIST) {
-          VELOC_Mem_Print("Cannot create global directory", VELOC_Mem_EROR);
+          VELOC_Mem_print("Cannot create global directory", VELOC_Mem_EROR);
           return VELOC_Mem_NSCS;
        }
     }
@@ -464,7 +464,7 @@ int VELOC_Mem_Flush(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELO
 int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                     VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt, int level)
 {
-    VELOC_Mem_Print("Starting checkpoint post-processing L4 using Posix IO.", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Starting checkpoint post-processing L4 using Posix IO.", VELOC_Mem_DBUG);
     int startProc, endProc, proc;
     if (VELOC_Mem_Topo->amIaHead) {
         startProc = 1;
@@ -478,15 +478,15 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
     for (proc = startProc; proc < endProc; proc++) {
         char str[VELOC_Mem_BUFS];
         sprintf(str, "Post-processing for proc %d started.", proc);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         char lfn[VELOC_Mem_BUFS], gfn[VELOC_Mem_BUFS];
         sprintf(gfn, "%s/%s", VELOC_Mem_Conf->gTmpDir, &VELOC_Mem_Exec->meta[level].ckptFile[proc * VELOC_Mem_BUFS]);
         sprintf(str, "Global temporary file name for proc %d: %s", proc, gfn);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         FILE* gfd = fopen(gfn, "wb");
 
         if (gfd == NULL) {
-           VELOC_Mem_Print("L4 cannot open ckpt. file in the PFS.", VELOC_Mem_EROR);
+           VELOC_Mem_print("L4 cannot open ckpt. file in the PFS.", VELOC_Mem_EROR);
            return VELOC_Mem_NSCS;
         }
 
@@ -497,11 +497,11 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
             sprintf(lfn, "%s/%s", VELOC_Mem_Ckpt[level].dir, &VELOC_Mem_Exec->meta[level].ckptFile[proc * VELOC_Mem_BUFS]);
         }
         sprintf(str, "Local file name for proc %d: %s", proc, lfn);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         // Open local file
         FILE* lfd = fopen(lfn, "rb");
         if (lfd == NULL) {
-            VELOC_Mem_Print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
+            VELOC_Mem_print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
             fclose(gfd);
             return VELOC_Mem_NSCS;
         }
@@ -510,7 +510,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
         long bSize = VELOC_Mem_Conf->transferSize;
         long fs = VELOC_Mem_Exec->meta[level].fs[proc];
         sprintf(str, "Local file size for proc %d: %ld", proc, fs);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
         long pos = 0;
         // Checkpoint files exchange
         while (pos < fs) {
@@ -519,7 +519,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 
             size_t bytes = fread(readData, sizeof(char), bSize, lfd);
             if (ferror(lfd)) {
-                VELOC_Mem_Print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
+                VELOC_Mem_print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
                 free(readData);
                 fclose(lfd);
                 fclose(gfd);
@@ -528,7 +528,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 
             fwrite(readData, sizeof(char), bytes, gfd);
             if (ferror(gfd)) {
-                VELOC_Mem_Print("L4 cannot write to the ckpt. file in the PFS.", VELOC_Mem_EROR);
+                VELOC_Mem_print("L4 cannot write to the ckpt. file in the PFS.", VELOC_Mem_EROR);
                 free(readData);
                 fclose(lfd);
                 fclose(gfd);
@@ -560,7 +560,7 @@ int VELOC_Mem_FlushPosix(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution*
 int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
                     VELOCT_topology* VELOC_Mem_Topo, VELOCT_checkpoint* VELOC_Mem_Ckpt, int level)
 {
-    VELOC_Mem_Print("Starting checkpoint post-processing L4 using MPI-IO.", VELOC_Mem_DBUG);
+    VELOC_Mem_print("Starting checkpoint post-processing L4 using MPI-IO.", VELOC_Mem_DBUG);
     // enable collective buffer optimization
     MPI_Info info;
     MPI_Info_create(&info);
@@ -581,7 +581,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
        int reslen;
        MPI_Error_string(res, mpi_err, &reslen);
        snprintf(str, VELOC_Mem_BUFS, "Unable to create file during MPI-IO flush [MPI ERROR - %i] %s", res, mpi_err);
-       VELOC_Mem_Print(str, VELOC_Mem_EROR);
+       VELOC_Mem_print(str, VELOC_Mem_EROR);
        MPI_Info_free(&info);
        return VELOC_Mem_NSCS;
     }
@@ -629,7 +629,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
 
         FILE* lfd = fopen(&localFileNames[VELOC_Mem_BUFS * proc], "rb");
         if (lfd == NULL) {
-           VELOC_Mem_Print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
+           VELOC_Mem_print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
            free(localFileNames);
            free(allFileSizes);
            free(splitRanks);
@@ -649,7 +649,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
 
             size_t bytes = fread(readData, sizeof(char), bSize, lfd);
             if (ferror(lfd)) {
-              VELOC_Mem_Print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
+              VELOC_Mem_print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
               free(localFileNames);
               free(allFileSizes);
               free(splitRanks);
@@ -670,7 +670,7 @@ int VELOC_Mem_FlushMPI(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* V
                 char mpi_err[VELOC_Mem_BUFS];
                 MPI_Error_string(res, mpi_err, &reslen);
                 snprintf(str, VELOC_Mem_BUFS, "Failed to write data to PFS during MPIIO Flush [MPI ERROR - %i] %s", res, mpi_err);
-                VELOC_Mem_Print(str, VELOC_Mem_EROR);
+                VELOC_Mem_print(str, VELOC_Mem_EROR);
                 free(localFileNames);
                 free(splitRanks);
                 free(allFileSizes);
@@ -762,7 +762,7 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
     }
     int sid = sion_paropen_mapped_mpi(fn, "wb,posix", &numFiles, VELOC_Mem_COMM_WORLD, &nlocaltasks, &ranks, &chunkSizes, &file_map, &rank_map, &fsblksize, NULL);
     if (sid == -1) {
-       VELOC_Mem_Print("Cannot open with sion_paropen_mapped_mpi.", VELOC_Mem_EROR);
+       VELOC_Mem_print("Cannot open with sion_paropen_mapped_mpi.", VELOC_Mem_EROR);
 
        free(file_map);
        free(ranks);
@@ -775,7 +775,7 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
     for (proc = startProc; proc < endProc; proc++) {
         FILE* lfd = fopen(&localFileNames[VELOC_Mem_BUFS * proc], "rb");
         if (lfd == NULL) {
-           VELOC_Mem_Print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
+           VELOC_Mem_print("L4 cannot open the checkpoint file.", VELOC_Mem_EROR);
            free(localFileNames);
            free(splitRanks);
            sion_parclose_mapped_mpi(sid);
@@ -791,7 +791,7 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
         if (res != SION_SUCCESS) {
             errno = 0;
             sprintf(str, "SIONlib: unable to set file pointer");
-            VELOC_Mem_Print(str, VELOC_Mem_EROR);
+            VELOC_Mem_print(str, VELOC_Mem_EROR);
             free(localFileNames);
             free(splitRanks);
             fclose(lfd);
@@ -815,7 +815,7 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 
             size_t bytes = fread(readData, sizeof(char), bSize, lfd);
             if (ferror(lfd)) {
-                VELOC_Mem_Print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
+                VELOC_Mem_print("L4 cannot read from the ckpt. file.", VELOC_Mem_EROR);
                 free(localFileNames);
                 free(splitRanks);
                 free(readData);
@@ -831,7 +831,7 @@ int VELOC_Mem_FlushSionlib(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
             long data_written = sion_fwrite(readData, sizeof(char), bytes, sid);
 
             if (data_written < 0) {
-                VELOC_Mem_Print("Sionlib: could not write data", VELOC_Mem_EROR);
+                VELOC_Mem_print("Sionlib: could not write data", VELOC_Mem_EROR);
                 free(localFileNames);
                 free(splitRanks);
                 free(readData);

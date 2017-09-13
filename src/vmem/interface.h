@@ -20,7 +20,7 @@
 /*---------------------------------------------------------------------------
                             VELOC_Mem private functions
 ---------------------------------------------------------------------------*/
-void VELOC_Mem_PrintMeta(VELOCT_execution* VELOC_Mem_Exec, VELOCT_topology* VELOC_Mem_Topo);
+void VELOC_Mem_printMeta(VELOCT_execution* VELOC_Mem_Exec, VELOCT_topology* VELOC_Mem_Topo);
 
 int VELOC_Mem_UpdateIterTime(VELOCT_execution* VELOC_Mem_Exec);
 int VELOC_Mem_WriteCkpt(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_execution* VELOC_Mem_Exec,
@@ -120,7 +120,7 @@ int VELOC_Mem_VerifyChecksum(char* fileName, char* checksumToCmp);
 int VELOC_Mem_Try(int result, char* message);
 void VELOC_Mem_MallocMeta(VELOCT_execution* VELOC_Mem_Exec, VELOCT_topology* VELOC_Mem_Topo);
 void VELOC_Mem_FreeMeta(VELOCT_execution* VELOC_Mem_Exec);
-int VELOC_Mem_InitBasicTypes(VELOCT_dataset* VELOC_Mem_Data);
+int VELOC_Mem_initBasicTypes(VELOCT_dataset* VELOC_Mem_Data);
 int VELOC_Mem_RmDir(char path[VELOC_Mem_BUFS], int flag);
 int VELOC_Mem_Clean(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VELOC_Mem_Topo,
               VELOCT_checkpoint* VELOC_Mem_Ckpt, int level, int group, int rank);

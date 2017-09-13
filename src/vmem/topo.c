@@ -28,11 +28,11 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
     int i;
 
     sprintf(str, "Trying to load configuration file (%s) to create topology.", VELOC_Mem_Conf->cfgFile);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     ini = iniparser_load(VELOC_Mem_Conf->cfgFile);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser cannot parse the configuration file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser cannot parse the configuration file.", VELOC_Mem_WARN);
         return VELOC_Mem_NSCS;
     }
 
@@ -53,11 +53,11 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
 
     sprintf(mfn, "%s/Topology.velec_mem", VELOC_Mem_Conf->metadDir);
     sprintf(str, "Creating topology file (%s)...", mfn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     FILE* fd = fopen(mfn, "w");
     if (fd == NULL) {
-        VELOC_Mem_Print("Topology file could NOT be opened", VELOC_Mem_WARN);
+        VELOC_Mem_print("Topology file could NOT be opened", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -68,7 +68,7 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
     iniparser_dump_ini(ini, fd);
 
     if (fflush(fd) != 0) {
-        VELOC_Mem_Print("Topology file could NOT be flushed.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Topology file could NOT be flushed.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
         fclose(fd);
@@ -76,7 +76,7 @@ int VELOC_Mem_SaveTopo(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology* VE
         return VELOC_Mem_NSCS;
     }
     if (fclose(fd) != 0) {
-        VELOC_Mem_Print("Topology file could NOT be closed.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Topology file could NOT be closed.", VELOC_Mem_WARN);
 
         iniparser_freedict(ini);
 
@@ -119,11 +119,11 @@ int VELOC_Mem_ReorderNodes(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
 
     sprintf(mfn, "%s/Topology.velec_mem", VELOC_Mem_Conf->metadDir);
     sprintf(str, "Loading VELOC_Mem topology file (%s) to reorder nodes...", mfn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     // Checking that the topology file exist
     if (access(mfn, F_OK) != 0) {
-        VELOC_Mem_Print("The topology file is NOT accessible.", VELOC_Mem_WARN);
+        VELOC_Mem_print("The topology file is NOT accessible.", VELOC_Mem_WARN);
 
         free(nl);
         free(old);
@@ -135,7 +135,7 @@ int VELOC_Mem_ReorderNodes(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_topology
     dictionary* ini;
     ini = iniparser_load(mfn);
     if (ini == NULL) {
-        VELOC_Mem_Print("Iniparser could NOT parse the topology file.", VELOC_Mem_WARN);
+        VELOC_Mem_print("Iniparser could NOT parse the topology file.", VELOC_Mem_WARN);
 
         free(nl);
         free(old);
@@ -262,7 +262,7 @@ int VELOC_Mem_BuildNodeList(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
     for (i = 0; i < VELOC_Mem_Topo->nbProc; i++) { // Checking that all nodes have nodeSize processes
         if (nodeList[i] == -1) {
             sprintf(str, "Node %d has no %d processes", i / VELOC_Mem_Topo->nodeSize, VELOC_Mem_Topo->nodeSize);
-            VELOC_Mem_Print(str, VELOC_Mem_WARN);
+            VELOC_Mem_print(str, VELOC_Mem_WARN);
             free(lhn);
             return VELOC_Mem_NSCS;
         }

@@ -46,7 +46,7 @@ int VELOC_Mem_CheckFile(char* fn, unsigned long fs, char* checksum)
     }
     else {
         sprintf(str, "Missing file: \"%s\"", fn);
-        VELOC_Mem_Print(str, VELOC_Mem_WARN);
+        VELOC_Mem_print(str, VELOC_Mem_WARN);
         return 1;
     }
 }
@@ -87,7 +87,7 @@ int VELOC_Mem_CheckErasures(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executi
         VELOC_Mem_GetChecksums(VELOC_Mem_Conf, VELOC_Mem_Topo, VELOC_Mem_Ckpt, checksum, ptnerChecksum, rsChecksum, VELOC_Mem_Topo->groupID, level);
     }
     sprintf(fn, "Checking file %s and its erasures.", ckptFile);
-    VELOC_Mem_Print(fn, VELOC_Mem_DBUG);
+    VELOC_Mem_print(fn, VELOC_Mem_DBUG);
     switch (level) {
         case 1:
             sprintf(fn, "%s/%s", VELOC_Mem_Ckpt[1].dir, ckptFile);
@@ -157,7 +157,7 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                          MPI_Barrier(VELOC_Mem_COMM_WORLD);
                          sscanf(VELOC_Mem_Exec->meta[4].ckptFile, "Ckpt%d", &id);
                          sprintf(str, "Trying recovery with Ckpt. %d at level %d.", id, level);
-                         VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                         VELOC_Mem_print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
                          r = VELOC_Mem_recoverL4(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
@@ -165,7 +165,7 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                       case 3:
                          sscanf(VELOC_Mem_Exec->meta[3].ckptFile, "Ckpt%d", &id);
                          sprintf(str, "Trying recovery with Ckpt. %d at level %d.", id, level);
-                         VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                         VELOC_Mem_print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
                          r = VELOC_Mem_recoverL3(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
@@ -173,7 +173,7 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                       case 2:
                          sscanf(VELOC_Mem_Exec->meta[2].ckptFile, "Ckpt%d", &id);
                          sprintf(str, "Trying recovery with Ckpt. %d at level %d.", id, level);
-                         VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                         VELOC_Mem_print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
                          r = VELOC_Mem_recoverL2(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
@@ -181,7 +181,7 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
                       case 1:
                          sscanf(VELOC_Mem_Exec->meta[1].ckptFile, "Ckpt%d", &id);
                          sprintf(str, "Trying recovery with Ckpt. %d at level %d.", id, level);
-                         VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+                         VELOC_Mem_print(str, VELOC_Mem_DBUG);
                          VELOC_Mem_Exec->ckptID = id;
                          VELOC_Mem_Exec->lastCkptLvel = VELOC_Mem_Exec->ckptLvel;
                          r = VELOC_Mem_recoverL1(VELOC_Mem_Conf, VELOC_Mem_Exec, VELOC_Mem_Topo, VELOC_Mem_Ckpt);
@@ -196,13 +196,13 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
 
          if (tres == VELOC_SUCCESS) {
             sprintf(str, "Recovering successfully from level %d.", level);
-            VELOC_Mem_Print(str, VELOC_Mem_INFO);
+            VELOC_Mem_print(str, VELOC_Mem_INFO);
             // This is to enable recovering from local for L4 case in VELOC_Mem_recover
             if (level == 4) {
                 VELOC_Mem_Exec->ckptLvel = 1;
                 if (VELOC_Mem_Topo->splitRank == 0) {
                     if (rename(VELOC_Mem_Ckpt[4].metaDir, VELOC_Mem_Ckpt[1].metaDir) == -1) {
-                        VELOC_Mem_Print("Cannot rename L4 metadata folder to L1", VELOC_Mem_WARN);
+                        VELOC_Mem_print("Cannot rename L4 metadata folder to L1", VELOC_Mem_WARN);
                     }
                 }
             }
@@ -210,7 +210,7 @@ int VELOC_Mem_recoverFiles(VELOCT_configuration* VELOC_Mem_Conf, VELOCT_executio
          }
          else {
             sprintf(str, "No possible to restart from level %d.", level);
-            VELOC_Mem_Print(str, VELOC_Mem_INFO);
+            VELOC_Mem_print(str, VELOC_Mem_INFO);
             level++;
          }
       }

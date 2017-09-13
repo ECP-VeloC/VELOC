@@ -12,6 +12,13 @@ int main(int argc, char *argv[])
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
+	if(argc < 2)
+	{
+		printf("Test case: heatdis_mem [data_size (in MB)] [configuration_file]\n");
+		printf("Example: heatdis_mem 10 config.vec\n");
+		exit(0);
+	}
+
     MPI_Init(&argc, &argv);
     VELOC_Init(argv[2]);
 

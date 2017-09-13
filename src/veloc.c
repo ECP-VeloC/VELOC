@@ -116,7 +116,7 @@ int VELOC_InitBasicTypes(VELOCT_dataset* VELOC_Data)
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_Init(char* configFile, MPI_Comm globalComm)
+int VELOC_Mem_init(char* configFile, MPI_Comm globalComm)
 {
     VELOC_Mem_Exec.globalComm = globalComm;
     MPI_Comm_rank(VELOC_Mem_Exec.globalComm, &VELOC_Mem_Topo.myRank);
@@ -133,7 +133,7 @@ int VELOC_Mem_Init(char* configFile, MPI_Comm globalComm)
     if (res == VELOC_Mem_NSCS) {
         VELOC_Mem_Abort();
     }
-    VELOC_Mem_Try(VELOC_Mem_InitBasicTypes(VELOC_Mem_Data), "create the basic data types.");
+    VELOC_Mem_Try(VELOC_Mem_initBasicTypes(VELOC_Mem_Data), "create the basic data types.");
     if (VELOC_Mem_Topo.myRank == 0) {
         VELOC_Mem_Try(VELOC_Mem_UpdateConf(&VELOC_Mem_Conf, &VELOC_Mem_Exec, VELOC_Mem_Exec.reco), "update configuration file.");
     }
@@ -154,8 +154,8 @@ int VELOC_Mem_Init(char* configFile, MPI_Comm globalComm)
         while (res != VELOC_Mem_ENDW) {
             res = VELOC_Mem_Listen(&VELOC_Mem_Conf, &VELOC_Mem_Exec, &VELOC_Mem_Topo, VELOC_Mem_Ckpt);
         }
-        VELOC_Mem_Print("Head stopped listening.", VELOC_Mem_DBUG);
-        VELOC_Mem_Finalize();
+        VELOC_Mem_print("Head stopped listening.", VELOC_Mem_DBUG);
+        VELOC_Mem_finalize();
     }
     else { // If I am an application process
         if (VELOC_Mem_Exec.reco) {
@@ -167,7 +167,7 @@ int VELOC_Mem_Init(char* configFile, MPI_Comm globalComm)
             VELOC_Mem_Exec.ckptCnt++;
         }
     }
-    VELOC_Mem_Print("VELOC_Mem has been initialized.", VELOC_Mem_INFO);
+    VELOC_Mem_print("VELOC_Mem has been initialized.", VELOC_Mem_INFO);
     return VELOC_SUCCESS;
 }
 
@@ -197,7 +197,7 @@ int VELOC_Init(char* configFile)
         g_recovery = 1;
     }
 
-	VELOC_Mem_Init(configFile, MPI_COMM_WORLD);
+	VELOC_Mem_init(configFile, MPI_COMM_WORLD);
 
     return VELOC_SUCCESS;
 }
@@ -213,7 +213,7 @@ int VELOC_Init(char* configFile)
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_Finalize()
+int VELOC_Mem_finalize()
 {
     int isCkpt;
 
@@ -258,10 +258,10 @@ int VELOC_Mem_Finalize()
                     VELOC_Mem_RmDir(VELOC_Mem_Ckpt[4].metaDir, 1);
                 }
                 if (rename(VELOC_Mem_Ckpt[VELOC_Mem_Exec.lastCkptLvel].metaDir, VELOC_Mem_Ckpt[4].metaDir) == -1) {
-                    VELOC_Mem_Print("cannot save last ckpt. metaDir", VELOC_Mem_EROR);
+                    VELOC_Mem_print("cannot save last ckpt. metaDir", VELOC_Mem_EROR);
                 }
                 if (rename(VELOC_Mem_Conf.gTmpDir, VELOC_Mem_Ckpt[4].dir) == -1) {
-                    VELOC_Mem_Print("cannot save last ckpt. dir", VELOC_Mem_EROR);
+                    VELOC_Mem_print("cannot save last ckpt. dir", VELOC_Mem_EROR);
                 }
             }
         }
@@ -272,7 +272,7 @@ int VELOC_Mem_Finalize()
     }
     else {
         if (VELOC_Mem_Conf.saveLastCkpt && !isCkpt) {
-            VELOC_Mem_Print("No ckpt. to keep.", VELOC_Mem_INFO);
+            VELOC_Mem_print("No ckpt. to keep.", VELOC_Mem_INFO);
         }
         if (VELOC_Mem_Topo.splitRank == 0) {
             VELOC_Mem_Try(VELOC_Mem_UpdateConf(&VELOC_Mem_Conf, &VELOC_Mem_Exec, 0), "update configuration file to 0.");
@@ -282,7 +282,7 @@ int VELOC_Mem_Finalize()
     VELOC_Mem_FreeMeta(&VELOC_Mem_Exec);
     MPI_Barrier(VELOC_Mem_Exec.globalComm);
     VELOC_Mem_Try(VELOC_Mem_Clean(&VELOC_Mem_Conf, &VELOC_Mem_Topo, VELOC_Mem_Ckpt, buff, VELOC_Mem_Topo.groupID, VELOC_Mem_Topo.myRank), "do final clean.");
-    VELOC_Mem_Print("VELOC_Mem has been finalized.", VELOC_Mem_INFO);
+    VELOC_Mem_print("VELOC_Mem has been finalized.", VELOC_Mem_INFO);
     return VELOC_SUCCESS;
 }
 
@@ -297,7 +297,7 @@ int VELOC_Finalize()
     // shut down the library (flush final checkpoint if needed)
     SCR_Finalize();
     
-    VELOC_Mem_Finalize();
+    VELOC_Mem_finalize();
 
     return VELOC_SUCCESS;
 }
@@ -352,7 +352,7 @@ int VELOC_Mem_type(VELOCT_type* type, int size)
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type)
+int VELOC_Mem_protect(int id, void* ptr, long count, VELOCT_type type)
 {
     int i, prevSize, updated = 0;
     char str[VELOC_Mem_BUFS];
@@ -372,11 +372,11 @@ int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type)
     if (updated) {
         ckptSize = VELOC_Mem_Exec.ckptSize / (1024.0 * 1024.0);
         sprintf(str, "Variable ID %d reseted. Current ckpt. size per rank is %.2fMB.", id, ckptSize);
-        VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+        VELOC_Mem_print(str, VELOC_Mem_DBUG);
     }
     else {
         if (VELOC_Mem_Exec.nbVar >= VELOC_Mem_BUFS) {
-            VELOC_Mem_Print("Too many variables registered.", VELOC_Mem_EROR);
+            VELOC_Mem_print("Too many variables registered.", VELOC_Mem_EROR);
             VELOC_Mem_Clean(&VELOC_Mem_Conf, &VELOC_Mem_Topo, VELOC_Mem_Ckpt, 5, VELOC_Mem_Topo.groupID, VELOC_Mem_Topo.myRank);
             MPI_Abort(MPI_COMM_WORLD, -1);
             MPI_Finalize();
@@ -392,7 +392,7 @@ int VELOC_Mem_Protect(int id, void* ptr, long count, VELOCT_type type)
         VELOC_Mem_Exec.ckptSize = VELOC_Mem_Exec.ckptSize + (type.size * count);
         ckptSize = VELOC_Mem_Exec.ckptSize / (1024.0 * 1024.0);
         sprintf(str, "Variable ID %d to protect. Current ckpt. size per rank is %.2fMB.", id, ckptSize);
-        VELOC_Mem_Print(str, VELOC_Mem_INFO);
+        VELOC_Mem_print(str, VELOC_Mem_INFO);
     }
     return VELOC_SUCCESS;
 }
@@ -466,37 +466,38 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 {
     char fn[VELOC_Mem_BUFS], str[VELOC_Mem_BUFS];
     FILE* fd;
-    int i;
+    int i, status;
     sprintf(fn, "%s/%s", VELOC_Mem_Ckpt[VELOC_Mem_Exec.ckptLvel].dir, VELOC_Mem_Exec.meta[VELOC_Mem_Exec.ckptLvel].ckptFile);
     printf("level %d, fn==%s/%s\n", VELOC_Mem_Exec.ckptLvel, VELOC_Mem_Ckpt[VELOC_Mem_Exec.ckptLvel].dir, VELOC_Mem_Exec.meta[VELOC_Mem_Exec.ckptLvel].ckptFile);
     sprintf(str, "Trying to load VELOC_Mem checkpoint file (%s)...", fn);
-    VELOC_Mem_Print(str, VELOC_Mem_DBUG);
+    VELOC_Mem_print(str, VELOC_Mem_DBUG);
 
     fd = fopen(fn, "rb");
     if (fd == NULL) {
-        VELOC_Mem_Print("Could not open VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
+        VELOC_Mem_print("Could not open VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
         return VELOC_Mem_NSCS;
     }
     
-    if(id_count<=0||id_list==NULL)
+    if(recovery_mode==VELOC_RECOVER_ALL)
     {
 		for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
 			size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
 			if (ferror(fd)) {
-				VELOC_Mem_Print("Could not read FTI checkpoint file.", VELOC_Mem_EROR);
+				VELOC_Mem_print("Could not read FTI checkpoint file.", VELOC_Mem_EROR);
 				fclose(fd);
 				return VELOC_Mem_NSCS;
 			}
 		}	
+		status = VELOC_SUCCESS;
 	}
-	else
+	else if(recovery_mode==VELOC_RECOVER_REST)
 	{
 		for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
-			if(VELOC_Mem_Check_ID_Exist(VELOC_Mem_Data[i].id, id_list, id_count))
+			if(VELOC_SUCCESS != VELOC_Mem_Check_ID_Exist(VELOC_Mem_Data[i].id, id_list, id_count))
 			{
 				size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
 				if (ferror(fd)) {
-					VELOC_Mem_Print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
+					VELOC_Mem_print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
 					fclose(fd);
 					return VELOC_SUCCESS;
 				}			
@@ -505,14 +506,45 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 			{
 				fseek(fd, VELOC_Mem_Data[i].size, SEEK_CUR);
 			}
+		}		
+		status = VELOC_SUCCESS;
+	}
+	else if(recovery_mode==VELOC_RECOVER_SOME)
+	{
+		if(id_count<=0||id_list==NULL)
+			status = VELOC_Mem_NSCS;
+		else
+		{
+			for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
+				if(VELOC_Mem_Check_ID_Exist(VELOC_Mem_Data[i].id, id_list, id_count))
+				{
+					size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
+					if (ferror(fd)) {
+						VELOC_Mem_print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
+						fclose(fd);
+						return VELOC_SUCCESS;
+					}			
+				}
+				else
+				{
+					fseek(fd, VELOC_Mem_Data[i].size, SEEK_CUR);
+				}
+			}
+			status = VELOC_SUCCESS;			
 		}
 	}
+	else 
+	{
+		status = VELOC_Mem_NSCS;
+	}
     if (fclose(fd) != 0) {
-        VELOC_Mem_Print("Could not close VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
-        return VELOC_Mem_NSCS;
+        VELOC_Mem_print("Could not close VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
+        status = VELOC_Mem_NSCS;
     }
+    if(status == VELOC_Mem_NSCS)
+		VELOC_Mem_print("Error occurs in VELOC_Restart_mem() of veloc.c.", VELOC_Mem_EROR);
     VELOC_Mem_Exec.reco = 0;
-    return VELOC_SUCCESS;
+    return status;
 }
 
 
@@ -637,7 +669,7 @@ int VELOC_Checkpoint_mem(int id, int level)
         t3 = MPI_Wtime();
         sprintf(catstr, "%s taken in %.2f sec.", str, t3 - t0);
         sprintf(str, "%s (Wt:%.2fs, Wr:%.2fs, Ps:%.2fs)", catstr, t1 - t0, t2 - t1, t3 - t2);
-        VELOC_Mem_Print(str, VELOC_Mem_INFO);
+        VELOC_Mem_print(str, VELOC_Mem_INFO);
         if (res != VELOC_Mem_NSCS) {
             res = VELOC_Mem_DONE;
             if (ckptFirst && VELOC_Mem_Topo.splitRank == 0) {
@@ -723,7 +755,7 @@ int VELOC_Mem_snapshot()
     if (VELOC_Mem_Exec.reco) { // If this is a recovery load icheckpoint data
         res = VELOC_Mem_Try(VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, 0), "recover the checkpointed data.");
         if (res == VELOC_Mem_NSCS) {
-            VELOC_Mem_Print("Impossible to load the checkpoint data.", VELOC_Mem_EROR);
+            VELOC_Mem_print("Impossible to load the checkpoint data.", VELOC_Mem_EROR);
             VELOC_Mem_Clean(&VELOC_Mem_Conf, &VELOC_Mem_Topo, VELOC_Mem_Ckpt, 5, VELOC_Mem_Topo.groupID, VELOC_Mem_Topo.myRank);
             MPI_Abort(MPI_COMM_WORLD, -1);
             MPI_Finalize();
@@ -734,7 +766,7 @@ int VELOC_Mem_snapshot()
         res = VELOC_SUCCESS;
         VELOC_Mem_UpdateIterTime(&VELOC_Mem_Exec);
         if (VELOC_Mem_Exec.ckptNext == VELOC_Mem_Exec.ckptIcnt) { // If it is time to check for possible ckpt. (every minute)
-            VELOC_Mem_Print("Checking if it is time to checkpoint.", VELOC_Mem_DBUG);
+            VELOC_Mem_print("Checking if it is time to checkpoint.", VELOC_Mem_DBUG);
             if (VELOC_Mem_Exec.globMeanIter > 60) {
                 VELOC_Mem_Exec.minuteCnt = VELOC_Mem_Exec.totalIterTime/60;
             }
@@ -786,7 +818,7 @@ void VELOC_Mem_Abort()
 
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Mem_Status()
+int VELOC_Mem_status()
 {
     return VELOC_Mem_Exec.reco;
 }
@@ -805,7 +837,7 @@ int VELOC_Mem_Status()
 
  **/
 /*-------------------------------------------------------------------------*/
-void VELOC_Mem_Print(char* msg, int priority)
+void VELOC_Mem_print(char* msg, int priority)
 {
     if (priority >= VELOC_Mem_Conf.verbosity) {
         if (msg != NULL) {
