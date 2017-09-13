@@ -3,7 +3,7 @@
 
 #include "veloc.h"
 #include "mpi.h"
-#include "vmem/interface.h"
+#include "interface.h"
 #include "scr.h"
 
 
