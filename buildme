@@ -25,23 +25,23 @@ echo SCR_PATH=$SCR_PATH
 #fi
 
 # download and build SCR
-if [ ! -d scr.git ]; then
-  git clone git@github.com:llnl/scr.git scr.git
-fi
-if [ ! -d $SCR_PATH ]; then
-  pushd scr.git
-    git pull
-    rm -rf build
-    mkdir build
-    pushd build
-      cmake \
-        -DCMAKE_INSTALL_PREFIX=${SCR_PATH} \
-        ..
-      make
-      make install
-    popd
-  popd
-fi
+#if [ ! -d scr.git ]; then
+#  git clone git@github.com:llnl/scr.git scr.git
+#fi
+#if [ ! -d $SCR_PATH ]; then
+#  pushd scr.git
+#    git pull
+#    rm -rf build
+#    mkdir build
+#    pushd build
+#      cmake \
+#        -DCMAKE_INSTALL_PREFIX=${SCR_PATH} \
+#        ..
+#      make
+#      make install
+#    popd
+#  popd
+#fi
 
 # clear out existing build
 #rm -rf vmem.o libveloc.a heatdis_vmem
@@ -50,39 +50,42 @@ fi
 mkdir -p ./obj/vmem
 rm -rf ./obj/vmem/*
 
-mpicc -g -O0 -o ./obj/vmem/md5.o -c ./src/vmem/md5.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/dictionary.o -c ./src/vmem/dictionary.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/iniparser.o -c ./src/vmem/iniparser.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/galois.o -c ./src/vmem/galois.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/jerasure.o -c ./src/vmem/jerasure.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/md5.o -c ./src/vmem/md5.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/dictionary.o -c ./src/vmem/dictionary.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/iniparser.o -c ./src/vmem/iniparser.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/galois.o -c ./src/vmem/galois.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/jerasure.o -c ./src/vmem/jerasure.c  -I./include
 
-mpicc -g -O0 -o ./obj/vmem/conf.o -c ./src/vmem/conf.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/checkpoint.o -c ./src/vmem/checkpoint.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/meta.o -c ./src/vmem/meta.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/postckpt.o -c ./src/vmem/postckpt.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/postreco.o -c ./src/vmem/postreco.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/recover.o -c ./src/vmem/recover.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/tools.o -c ./src/vmem/tools.c  -I./include
-mpicc -g -O0 -o ./obj/vmem/topo.o -c ./src/vmem/topo.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/conf.o -c ./src/vmem/conf.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/checkpoint.o -c ./src/vmem/checkpoint.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/meta.o -c ./src/vmem/meta.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/postckpt.o -c ./src/vmem/postckpt.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/postreco.o -c ./src/vmem/postreco.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/recover.o -c ./src/vmem/recover.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/tools.o -c ./src/vmem/tools.c  -I./include
+mpicc -fPIC -O0 -o ./obj/vmem/topo.o -c ./src/vmem/topo.c  -I./include
 
-mpicc -g -O0 -o ./obj/veloc.o -c ./src/veloc.c  -I./include -I${SCR_PATH}/include
+mpicc -fPIC -O0 -o ./obj/veloc.o -c ./src/veloc.c  -I./include -I${SCR_PATH}/include
 
 mkdir -p ./lib
 ar cr ./lib/libveloc.a ./obj/vmem/conf.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o ./obj/veloc.o
 
-# compile heatdis code which uses FTI
-#mpicc -g -O0 -o ./test/heatdis.o -c ./test/heatdis.c  -I./test -I./include -lm
-mpicc -g -O0 -o ./test/heatdis.o -c ./test/heatdis.c -I./test -I./include -lm
-mpicc -g -O0 -o ./test/heatdis_mem ./test/heatdis_mem.c ./test/heatdis.o   -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
-mpicc -g -O0 -o ./test/heatdis_memfile ./test/heatdis_memfile.c ./test/heatdis.o   -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
+gcc -fPIC -shared -o ./lib/libveloc.so ./obj/vmem/conf.o ./obj/vmem/checkpoint.o ./obj/vmem/meta.o ./obj/vmem/postckpt.o ./obj/vmem/postreco.o ./obj/vmem/recover.o ./obj/vmem/tools.o ./obj/vmem/topo.o ./obj/vmem/md5.o ./obj/vmem/dictionary.o ./obj/vmem/iniparser.o ./obj/vmem/galois.o ./obj/vmem/jerasure.o ./obj/veloc.o -lc
 
-mpicc -g -O0 -o ./test/heatdis_file ./test/heatdis_file.c ./test/heatdis.o  -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
+
+# compile heatdis code which uses FTI
+#mpicc -fPIC -O0 -o ./test/heatdis.o -c ./test/heatdis.c  -I./test -I./include -lm
+mpicc -fPIC -O0 -o ./test/heatdis.o -c ./test/heatdis.c -I./test -I./include -lm
+mpicc -fPIC -O0 -o ./test/heatdis_mem ./test/heatdis_mem.c ./test/heatdis.o   -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
+mpicc -fPIC -O0 -o ./test/heatdis_memfile ./test/heatdis_memfile.c ./test/heatdis.o   -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
+
+mpicc -fPIC -O0 -o ./test/heatdis_file ./test/heatdis_file.c ./test/heatdis.o  -I./test -I./include -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr ./lib/libveloc.a -lm
 # build VELOC library
-#mpicc -g -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
+#mpicc -fPIC -O0 -o veloc.o -c veloc.c -I${SCR_PATH}/include
 #ar cr libveloc.a veloc.o
 
 # TODO: create VELOC test cases
 #rm -rf heatdis_mem heatdis_file heatdis_memfile
-#mpicc -g -O0 -o heatdis_mem     heatdis_mem.c     -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
-#mpicc -g -O0 -o heatdis_file    heatdis_file.c    -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
-#mpicc -g -O0 -o heatdis_memfile heatdis_memfile.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+#mpicc -fPIC -O0 -o heatdis_mem     heatdis_mem.c     -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+#mpicc -fPIC -O0 -o heatdis_file    heatdis_file.c    -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
+#mpicc -fPIC -O0 -o heatdis_memfile heatdis_memfile.c -I. -L${SCR_PATH}/lib64 -Wl,-rpath,${SCR_PATH}/lib64 -lscr libveloc.a -lm
