@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[])
 {
-    int rank, nbProcs, nbLines, i, M, arg;
+    int rank, nbProcs, nbLines, i, M, arg, status;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
 	if(argc < 2)
@@ -38,12 +38,36 @@ int main(int argc, char *argv[])
     if (rank == 0) printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
-    VELOC_Mem_protect(1, h, M*nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M*nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(1, &M, 1, VELOC_INTG);
+    VELOC_Mem_protect(2, h, M*nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(3, g, M*nbLines, VELOC_DBLE);
 
     wtime = MPI_Wtime();
     for(i = 0; i < ITER_TIMES; i++)
     {
+		
+		if (VELOC_Mem_Exec.reco) 
+		{ 
+			int varIDList[3];
+			varIDList[0] = 0;
+			status = VELOC_Mem_recover(VELOC_RECOVER_SOME, varIDList, 1);
+			if(i>=100)
+			{
+				//printf("time step %d : Recover the simulation based on 'some' variables.\n", i);			
+				//int* varIDList = (int*)malloc(sizeof(int)*3);
+				varIDList[0] = 0;
+				varIDList[1] = 2;
+				varIDList[2] = 3;	
+				status = VELOC_Mem_recover(VELOC_RECOVER_SOME, varIDList, 3);
+			}
+			else
+			{
+				//printf("time step %d: Recover the simulation based on 'all' variables.\n", i);
+				status = VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, 0);
+			}
+		}
+				
+		
         int checkpointed = VELOC_Mem_snapshot();
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i%ITER_OUT) == 0) && (rank == 0)) printf("Step : %d, error = %f\n", i, globalerror);

@@ -8,7 +8,7 @@ set -x
 export SCR_DEBUG=1
 
 # number of seconds between checkpoints
-export SCR_CHECKPOINT_SECONDS=5
+export SCR_CHECKPOINT_SECONDS=60
 
 # flush every 10th checkpoint
 export SCR_FLUSH=10
@@ -24,6 +24,6 @@ export SCR_FLUSH=10
 
 #mpirun -np 8 heatdis_mem 30 config.vec
 
-mpirun -np 8 heatdis_file 30 config.vec
+#mpirun -np 8 heatdis_file 30 config.vec
 
-#mpirun -np 8 heatdis_memfile 30 config.vec
+mpirun -np 8 heatdis_memfile 30 config.vec

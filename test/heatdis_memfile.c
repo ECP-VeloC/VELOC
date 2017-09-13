@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
             VELOC_Checkpoint_begin();
 
             // save protected variables
-            VELOC_Checkpoint_mem();
+            VELOC_Checkpoint_mem(0, 1); //ID=0, level=1
 
             // build file name for this rank
             char file[1024];

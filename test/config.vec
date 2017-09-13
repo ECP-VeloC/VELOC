@@ -1,0 +1,31 @@
+
+[basic]
+head                           = 0
+node_size                      = 2
+ckpt_dir                       = ./Local
+glbl_dir                       = ./Global
+meta_dir                       = ./Meta
+ckpt_l1                        = 1
+ckpt_l2                        = 2
+ckpt_l3                        = 3
+ckpt_l4                        = 4
+inline_l2                      = 1
+inline_l3                      = 1
+inline_l4                      = 1
+keep_last_ckpt                 = 0
+group_size                     = 4
+verbosity                      = 2
+
+
+[restart]
+failure                        = 1
+exec_id                        = 2017-09-13_15-05-25
+
+
+[advanced]
+block_size                     = 1024
+transfer_size                  = 16
+mpi_tag                        = 2612
+local_test                     = 1
+
+

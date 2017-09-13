@@ -300,6 +300,8 @@ extern VELOCT_type VELOC_DBLE;
 /** VELOC data type for long doble floating point.                           */
 extern VELOCT_type VELOC_LDBE;
 
+extern VELOCT_execution VELOC_Mem_Exec;
+
 /*---------------------------------------------------------------------------
                             VELOC public functions
 ---------------------------------------------------------------------------*/
@@ -384,7 +386,7 @@ int VELOC_Checkpoint_begin();
 
 // write registered memory regions into a checkpoint file
 // must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
-int VELOC_Checkpoint_mem();
+int VELOC_Checkpoint_mem(int id, int level);
 
 // mark end of checkpoint phase
 //   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully

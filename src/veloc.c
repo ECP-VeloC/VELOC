@@ -14,7 +14,7 @@ static VELOCT_configuration VELOC_Mem_Conf;
 static VELOCT_checkpoint VELOC_Mem_Ckpt[5];
 
 /** Dynamic information for this execution.                                */
-static VELOCT_execution VELOC_Mem_Exec;
+VELOCT_execution VELOC_Mem_Exec;
 
 /** Topology of the system.                                                */
 static VELOCT_topology VELOC_Mem_Topo;
@@ -483,7 +483,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 		for (i = 0; i < VELOC_Mem_Exec.nbVar; i++) {
 			size_t bytes = fread(VELOC_Mem_Data[i].ptr, 1, VELOC_Mem_Data[i].size, fd);
 			if (ferror(fd)) {
-				VELOC_Mem_print("Could not read FTI checkpoint file.", VELOC_Mem_EROR);
+				VELOC_Mem_print("Could not read VELOC_Mem checkpoint file.", VELOC_Mem_EROR);
 				fclose(fd);
 				return VELOC_Mem_NSCS;
 			}
@@ -728,9 +728,9 @@ int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
     }
 
     // read protected memory from file
-    VELOC_Restart_begin();
+    //VELOC_Restart_begin();
     int rc = VELOC_Restart_mem(recovery_mode, id_list, id_count);
-    VELOC_Restart_end((rc == VELOC_SUCCESS));
+    //VELOC_Restart_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;
 }
