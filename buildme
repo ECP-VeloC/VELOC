@@ -1,0 +1,14 @@
+#!/bin/bash
+set -x
+
+# create directories to build and install
+rm -rf build install
+mkdir build
+mkdir install
+
+# build
+pushd build
+  cmake -DCMAKE_INSTALL_PREFIX=../install  -DBUILD_PDSH=ON ..
+  make -k
+  make test
+popd
