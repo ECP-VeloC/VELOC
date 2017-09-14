@@ -17,6 +17,11 @@
 
 #define VELOC_MAX_NAME (1024)
 
+#define VELOC_RECOVER_SOME      0
+#define VELOC_RECOVER_REST      1
+#define VELOC_RECOVER_ALL       2
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,9 +124,10 @@ int VELOC_Restart_test(int* flag);
 // mark start of restart phase
 int VELOC_Restart_begin();
 
+int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount);
 // read checkpoint file contents into registered memory regions
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-int VELOC_Restart_mem();
+int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count);
 
 // mark end of restart phase
 //   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise

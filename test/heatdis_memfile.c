@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         VELOC_Restart_begin();
 
         // restore protected variables
-        VELOC_Restart_mem();
+        VELOC_Restart_mem(VELOC_RECOVER_ALL, NULL, 0);
 
         // build file name for this rank
         char file[1024];

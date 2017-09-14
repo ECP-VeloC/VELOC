@@ -294,9 +294,21 @@ int VELOC_Restart_begin()
     return VELOC_SUCCESS;
 }
 
-// reads protected memory from file
-int VELOC_Restart_mem()
+int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount)
 {
+	int i = 0;
+	for(i=0;i<varIDCount;i++)
+	{
+		if(varIDList[i] == targetID)
+			return 1;
+	}
+	return 0;
+}
+
+// reads protected memory from file
+int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
+{
+	int status;
     // manage state transition
     if (g_veloc_state != VELOC_STATE_RESTART) {
         // ERROR!
@@ -319,14 +331,68 @@ int VELOC_Restart_mem()
 
     // read protected memory
     int i;
-    for (i = 0; i < g_nbVar; i++) {
-        size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
-        if (ferror(fd)) {
-            printf("Could not read VELOC checkpoint file %s\n", fn_scr);
-            fclose(fd);
-            return VELOC_FAILURE;
-        }
-    }
+    if(recovery_mode==VELOC_RECOVER_ALL)
+    {
+		for (i = 0; i < g_nbVar; i++) 
+		{
+			size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
+			if (ferror(fd)) {
+				printf("Could not read VELOC checkpoint file %s\n", fn_scr);
+				fclose(fd);
+				return VELOC_FAILURE;
+			}
+		}
+		status = VELOC_SUCCESS;
+	}
+	else if(recovery_mode==VELOC_RECOVER_REST)
+	{
+		for (i = 0; i < g_nbVar; i++)
+		{
+			if(VELOC_SUCCESS != VELOC_Mem_Check_ID_Exist(VELOC_Data[i].id, id_list, id_count))
+			{
+				size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
+				if (ferror(fd)) {
+					printf("Could not read VELOC checkpoint file.", fn_scr);
+					fclose(fd);
+					return VELOC_FAILURE;
+				}			
+			}
+			else
+			{
+				fseek(fd, VELOC_Data[i].size, SEEK_CUR);
+			}	
+		}
+		status = VELOC_SUCCESS;
+	}
+	else if(recovery_mode==VELOC_RECOVER_SOME)
+	{
+		if(id_count<=0||id_list==NULL)
+			status = VELOC_FAILURE;
+		else
+		{
+			for (i = 0; i < g_nbVar; i++) {
+				if(VELOC_Mem_Check_ID_Exist(VELOC_Data[i].id, id_list, id_count))
+				{
+					size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
+					if (ferror(fd)) {
+						printf("Could not read VELOC_Mem checkpoint file.", fn_scr);
+						fclose(fd);
+						return VELOC_FAILURE;
+					}			
+				}
+				else
+				{
+					fseek(fd, VELOC_Data[i].size, SEEK_CUR);
+				}
+			}
+			status = VELOC_SUCCESS;			
+		}
+	}
+	else 
+	{
+		printf("Error: unrecognized recovery_mode: %sd\n", recovery_mode);
+		status = VELOC_FAILURE;
+	}
 
     // close the file
     if (fclose(fd) != 0) {
@@ -334,7 +400,7 @@ int VELOC_Restart_mem()
         return VELOC_FAILURE;
     }
 
-    return VELOC_SUCCESS;
+    return status;
 }
 
 int VELOC_Restart_end(int valid)
@@ -479,7 +545,7 @@ int VELOC_Mem_save()
     return VELOC_SUCCESS;
 }
 
-int VELOC_Mem_recover()
+int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -488,7 +554,7 @@ int VELOC_Mem_recover()
 
     // read protected memory from file
     VELOC_Restart_begin();
-    int rc = VELOC_Restart_mem();
+    int rc = VELOC_Restart_mem(recovery_mode, id_list, id_count);
     VELOC_Restart_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;
@@ -506,7 +572,7 @@ int VELOC_Mem_snapshot()
     VELOC_Restart_test(&have_restart);
     if (have_restart) {
         // If this is a recovery load checkpoint data
-        return VELOC_Mem_recover();
+        return VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, 0);
     }
 
     // otherwise checkpoint if it's time
