@@ -122,7 +122,9 @@ int VELOC_Route_file(const char* name, char* veloc_name);
 int VELOC_Restart_test(int* flag);
 
 // mark start of restart phase
-int VELOC_Restart_begin();
+//   OUT name - returns name of checkpoint as given when it was created in VELOC_Checkpoint_begin
+//              name should be at least VELOC_MAX_NAME characters long
+int VELOC_Restart_begin(char* name);
 
 int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount);
 
@@ -143,7 +145,8 @@ int VELOC_Restart_end(int valid);
 int VELOC_Checkpoint_test(int* flag);
 
 // mark start of checkpoint phase
-int VELOC_Checkpoint_begin();
+//   IN name - name of checkpoint, returned on restart in VELOC_Restart_begin
+int VELOC_Checkpoint_begin(const char* name);
 
 // write registered memory regions into a checkpoint file
 // must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end

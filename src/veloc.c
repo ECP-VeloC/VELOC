@@ -276,7 +276,7 @@ int VELOC_Restart_test(int* flag)
     return VELOC_SUCCESS;
 }
 
-int VELOC_Restart_begin()
+int VELOC_Restart_begin(char* name)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -286,10 +286,7 @@ int VELOC_Restart_begin()
 
     // enter restart phase, and get name of the checkpoint we're restarting from
     // this name is also used as the directory where we wrote files
-    SCR_Start_restart(g_checkpoint_dir);
-
-    // extract id from name
-    sscanf(g_checkpoint_dir, "veloc.%d", &g_checkpoint_id);
+    SCR_Start_restart(name);
 
     return VELOC_SUCCESS;
 }
@@ -435,7 +432,7 @@ int VELOC_Checkpoint_test(int* flag)
     return VELOC_SUCCESS;
 }
 
-int VELOC_Checkpoint_begin()
+int VELOC_Checkpoint_begin(const char* name)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_INIT) {
@@ -443,14 +440,8 @@ int VELOC_Checkpoint_begin()
     }
     g_veloc_state = VELOC_STATE_CHECKPOINT;
 
-    // bump our checkpoint counter
-    g_checkpoint_id++;
-
-    // create a name for our checkpoint
-    sprintf(g_checkpoint_dir, "veloc.%d", g_checkpoint_id);
-
     // open our checkpoint phase
-    SCR_Start_output(g_checkpoint_dir, SCR_FLAG_CHECKPOINT);
+    SCR_Start_output(name, SCR_FLAG_CHECKPOINT);
 
     return VELOC_SUCCESS;
 }
@@ -528,8 +519,14 @@ int VELOC_Mem_save()
         // ERROR!
     }
 
+    // bump our checkpoint counter
+    g_checkpoint_id++;
+
+    // create a name for our checkpoint
+    sprintf(g_checkpoint_dir, "veloc.%d", g_checkpoint_id);
+
     // open checkpoint phase
-    VELOC_Checkpoint_begin();
+    VELOC_Checkpoint_begin(g_checkpoint_dir);
 
     // build checkpoint file name, use checkpoint dir as prefix
     char file[VELOC_MAX_NAME];
@@ -551,8 +548,11 @@ int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
         // ERROR!
     }
 
-    // open restart phase
-    VELOC_Restart_begin();
+    // open restart phase and get checkpoint name/dir
+    VELOC_Restart_begin(g_checkpoint_dir);
+
+    // extract id from name
+    sscanf(g_checkpoint_dir, "veloc.%d", &g_checkpoint_id);
 
     // build checkpoint file name, use checkpoint dir as prefix
     char file[VELOC_MAX_NAME];

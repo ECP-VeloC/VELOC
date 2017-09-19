@@ -44,7 +44,8 @@ int main(int argc, char *argv[])
     int flag;
     VELOC_Restart_test(&flag);
     if (flag) {
-        VELOC_Restart_begin();
+        char ckptname[VELOC_MAX_NAME];
+        VELOC_Restart_begin(ckptname);
 
         // build file name for this rank for memory
         char file[1024];
@@ -81,7 +82,11 @@ int main(int argc, char *argv[])
         int flag;
         VELOC_Checkpoint_test(&flag);
         if (flag) {
-            VELOC_Checkpoint_begin();
+            // define a name for this checkpoint
+            char ckptname[VELOC_MAX_NAME];
+            snprintf(ckptname, sizeof(ckptname), "time.%d", i);
+
+            VELOC_Checkpoint_begin(ckptname);
 
             // build file name for this rank for memory
             char file[1024];
