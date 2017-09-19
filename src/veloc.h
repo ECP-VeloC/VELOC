@@ -125,9 +125,10 @@ int VELOC_Restart_test(int* flag);
 int VELOC_Restart_begin();
 
 int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount);
+
 // read checkpoint file contents into registered memory regions
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count);
+int VELOC_Restart_mem(const char* file, int recovery_mode, int *id_list, int id_count);
 
 // mark end of restart phase
 //   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise
@@ -146,7 +147,7 @@ int VELOC_Checkpoint_begin();
 
 // write registered memory regions into a checkpoint file
 // must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
-int VELOC_Checkpoint_mem();
+int VELOC_Checkpoint_mem(const char* file);
 
 // mark end of checkpoint phase
 //   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully
@@ -154,7 +155,6 @@ int VELOC_Checkpoint_end(int valid);
 
 /**************************
  * Convenience functions for existing FTI users
- * (implemented with combinations of above functions)
  ************************/
 
 // substitute for FTI_Checkpoint

@@ -306,7 +306,7 @@ int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount)
 }
 
 // reads protected memory from file
-int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
+int VELOC_Restart_mem(const char* file, int recovery_mode, int *id_list, int id_count)
 {
 	int status;
     // manage state transition
@@ -314,18 +314,14 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
         // ERROR!
     }
 
-    // build checkpoint file name
-    char fn[VELOC_MAX_NAME];
-    snprintf(fn, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
-
     // get SCR path to checkpoint file
-    char fn_scr[SCR_MAX_FILENAME];
-    SCR_Route_file(fn, fn_scr);
+    char file_scr[SCR_MAX_FILENAME];
+    SCR_Route_file(file, file_scr);
 
     // open file for reading
-    FILE* fd = fopen(fn_scr, "rb");
+    FILE* fd = fopen(file_scr, "rb");
     if (fd == NULL) {
-        printf("Could not open VELOC Mem checkpoint file %s\n", fn_scr);
+        printf("Could not open VELOC Mem checkpoint file %s\n", file_scr);
         return VELOC_FAILURE;
     }
 
@@ -337,7 +333,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 		{
 			size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
 			if (ferror(fd)) {
-				printf("Could not read VELOC checkpoint file %s\n", fn_scr);
+				printf("Could not read VELOC checkpoint file %s\n", file_scr);
 				fclose(fd);
 				return VELOC_FAILURE;
 			}
@@ -352,7 +348,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 			{
 				size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
 				if (ferror(fd)) {
-					printf("Could not read VELOC checkpoint file.", fn_scr);
+					printf("Could not read VELOC checkpoint file.", file_scr);
 					fclose(fd);
 					return VELOC_FAILURE;
 				}			
@@ -375,7 +371,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 				{
 					size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
 					if (ferror(fd)) {
-						printf("Could not read VELOC_Mem checkpoint file.", fn_scr);
+						printf("Could not read VELOC_Mem checkpoint file.", file_scr);
 						fclose(fd);
 						return VELOC_FAILURE;
 					}			
@@ -396,7 +392,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 
     // close the file
     if (fclose(fd) != 0) {
-        printf("Could not close VELOC checkpoint file %s", fn_scr);
+        printf("Could not close VELOC checkpoint file %s", file_scr);
         return VELOC_FAILURE;
     }
 
@@ -460,25 +456,21 @@ int VELOC_Checkpoint_begin()
 }
 
 // writes protected memory to file
-int VELOC_Checkpoint_mem()
+int VELOC_Checkpoint_mem(const char* file)
 {
     // manage state transition
     if (g_veloc_state != VELOC_STATE_CHECKPOINT) {
         // ERROR!
     }
 
-    // build checkpoint file name
-    char fn[VELOC_MAX_NAME];
-    snprintf(fn, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
-
     // get SCR path to checkpoint file
-    char fn_scr[SCR_MAX_FILENAME];
-    SCR_Route_file(fn, fn_scr);
+    char file_scr[SCR_MAX_FILENAME];
+    SCR_Route_file(file, file_scr);
 
     // open checkpoint file
-    FILE* fd = fopen(fn_scr, "wb");
+    FILE* fd = fopen(file_scr, "wb");
     if (fd == NULL) {
-        printf("VELOC checkpoint file could not be opened %s", fn_scr);
+        printf("VELOC checkpoint file could not be opened %s", file_scr);
         return VELOC_FAILURE;
     }
 
@@ -486,7 +478,7 @@ int VELOC_Checkpoint_mem()
     int i;
     for (i = 0; i < g_nbVar; i++) {
         if (fwrite(VELOC_Data[i].ptr, VELOC_Data[i].eleSize, VELOC_Data[i].count, fd) != VELOC_Data[i].count) {
-            printf("Dataset #%d could not be written to %s\n", VELOC_Data[i].id, fn_scr);
+            printf("Dataset #%d could not be written to %s\n", VELOC_Data[i].id, file_scr);
             fclose(fd);
             return VELOC_FAILURE;
         }
@@ -494,14 +486,14 @@ int VELOC_Checkpoint_mem()
 
     // flush data to disk
     if (fflush(fd) != 0) {
-        printf("VELOC checkpoint file could not be flushed %s\n", fn_scr);
+        printf("VELOC checkpoint file could not be flushed %s\n", file_scr);
         fclose(fd);
         return VELOC_FAILURE;
     }
 
     // close the file
     if (fclose(fd) != 0) {
-        printf("VELOC checkpoint file could not be flushed %s\n", fn_scr);
+        printf("VELOC checkpoint file could not be flushed %s\n", file_scr);
         return VELOC_FAILURE;
     }
 
@@ -527,7 +519,6 @@ int VELOC_Checkpoint_end(int valid)
 
 /**************************
  * convenience functions for existing FTI users
- * (can be implemented fully with above functions)
  ************************/
 
 int VELOC_Mem_save()
@@ -537,9 +528,17 @@ int VELOC_Mem_save()
         // ERROR!
     }
 
-    // write protected memory to file
+    // open checkpoint phase
     VELOC_Checkpoint_begin();
-    int rc = VELOC_Checkpoint_mem();
+
+    // build checkpoint file name, use checkpoint dir as prefix
+    char file[VELOC_MAX_NAME];
+    snprintf(file, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
+
+    // write protected memory to file
+    int rc = VELOC_Checkpoint_mem(file);
+
+    // close checkpoint phase
     VELOC_Checkpoint_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;
@@ -552,9 +551,17 @@ int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
         // ERROR!
     }
 
-    // read protected memory from file
+    // open restart phase
     VELOC_Restart_begin();
-    int rc = VELOC_Restart_mem(recovery_mode, id_list, id_count);
+
+    // build checkpoint file name, use checkpoint dir as prefix
+    char file[VELOC_MAX_NAME];
+    snprintf(file, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
+
+    // read contents from file into memory
+    int rc = VELOC_Restart_mem(file, recovery_mode, id_list, id_count);
+
+    // close restart phase
     VELOC_Restart_end((rc == VELOC_SUCCESS));
 
     return VELOC_SUCCESS;

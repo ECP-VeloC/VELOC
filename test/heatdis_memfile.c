@@ -46,11 +46,14 @@ int main(int argc, char *argv[])
     if (flag) {
         VELOC_Restart_begin();
 
+        // build file name for this rank for memory
+        char file[1024];
+        snprintf(file, sizeof(file), "mem.%d", rank);
+
         // restore protected variables
-        VELOC_Restart_mem(VELOC_RECOVER_ALL, NULL, 0);
+        VELOC_Restart_mem(file, VELOC_RECOVER_ALL, NULL, 0);
 
         // build file name for this rank
-        char file[1024];
         snprintf(file, sizeof(file), "ckpt.%d", rank);
 
         // get path to file from VELOC
@@ -80,11 +83,14 @@ int main(int argc, char *argv[])
         if (flag) {
             VELOC_Checkpoint_begin();
 
+            // build file name for this rank for memory
+            char file[1024];
+            snprintf(file, sizeof(file), "time.%d/mem.%d", i, rank);
+
             // save protected variables
-            VELOC_Checkpoint_mem();
+            VELOC_Checkpoint_mem(file);
 
             // build file name for this rank
-            char file[1024];
             snprintf(file, sizeof(file), "time.%d/ckpt.%d", i, rank);
 
             // get path to file from VELOC
