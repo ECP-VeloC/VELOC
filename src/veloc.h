@@ -161,7 +161,7 @@ int VELOC_Checkpoint_end(int valid);
 int VELOC_Mem_save();
 
 // substitute for FTI_Recover
-int VELOC_Mem_recover();
+int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count);
 
 // substitute for FTI_Snapshot
 int VELOC_Mem_snapshot();

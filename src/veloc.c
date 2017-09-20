@@ -336,6 +336,7 @@ int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count)
 		for (i = 0; i < g_nbVar; i++) 
 		{
 			size_t bytes = fread(VELOC_Data[i].ptr, 1, VELOC_Data[i].size, fd);
+			//printf("~~~~~~~~~~~VELOC_Data[10].ptr=%d\n", ((int*)VELOC_Data[10].ptr)[0]);
 			if (ferror(fd)) {
 				printf("Could not read VELOC checkpoint file %s\n", fn_scr);
 				fclose(fd);
@@ -485,6 +486,13 @@ int VELOC_Checkpoint_mem()
     // write protected memory
     int i;
     for (i = 0; i < g_nbVar; i++) {
+		/*if(VELOC_Data[i].type.id==VELOC_DBLE.id)
+			printf("----------------VELOC_Data[%d].ptr=%f\n", i, ((double*)VELOC_Data[i].ptr)[0]);
+		else if(VELOC_Data[i].type.id==VELOC_INTG.id)
+			printf("----------------VELOC_Data[%d].ptr=%d\n", i, ((int*)VELOC_Data[i].ptr)[0]);
+		else 
+			printf("----------------VELOC_Data[%d].type.id=%d\n", i, VELOC_Data[i].type.id);
+		*/	
         if (fwrite(VELOC_Data[i].ptr, VELOC_Data[i].eleSize, VELOC_Data[i].count, fd) != VELOC_Data[i].count) {
             printf("Dataset #%d could not be written to %s\n", VELOC_Data[i].id, fn_scr);
             fclose(fd);
