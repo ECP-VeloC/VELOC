@@ -122,12 +122,15 @@ int VELOC_Route_file(const char* name, char* veloc_name);
 int VELOC_Restart_test(int* flag);
 
 // mark start of restart phase
-int VELOC_Restart_begin();
+//   OUT name - returns name of checkpoint as given when it was created in VELOC_Checkpoint_begin
+//              name should be at least VELOC_MAX_NAME characters long
+int VELOC_Restart_begin(char* name);
 
 int VELOC_Mem_Check_ID_Exist(int targetID, int* varIDList, int varIDCount);
+
 // read checkpoint file contents into registered memory regions
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-int VELOC_Restart_mem(int recovery_mode, int *id_list, int id_count);
+int VELOC_Restart_mem(const char* file, int recovery_mode, int *id_list, int id_count);
 
 // mark end of restart phase
 //   IN valid - calling process should set this flag to 1 if it read all checkpoint data successfully, 0 otherwise
@@ -142,11 +145,12 @@ int VELOC_Restart_end(int valid);
 int VELOC_Checkpoint_test(int* flag);
 
 // mark start of checkpoint phase
-int VELOC_Checkpoint_begin();
+//   IN name - name of checkpoint, returned on restart in VELOC_Restart_begin
+int VELOC_Checkpoint_begin(const char* name);
 
 // write registered memory regions into a checkpoint file
 // must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
-int VELOC_Checkpoint_mem();
+int VELOC_Checkpoint_mem(const char* file);
 
 // mark end of checkpoint phase
 //   IN valid - calling process should set this flag to 1 if it wrote all checkpoint data successfully
@@ -154,7 +158,6 @@ int VELOC_Checkpoint_end(int valid);
 
 /**************************
  * Convenience functions for existing FTI users
- * (implemented with combinations of above functions)
  ************************/
 
 // substitute for FTI_Checkpoint

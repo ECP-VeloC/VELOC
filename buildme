@@ -9,6 +9,8 @@ mkdir install
 # build
 pushd build
   cmake -DCMAKE_INSTALL_PREFIX=../install  -DBUILD_PDSH=ON ..
+  #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install  -DBUILD_PDSH=ON ..
   make -k
   make test
+  #make install
 popd
