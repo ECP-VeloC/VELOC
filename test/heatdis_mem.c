@@ -32,7 +32,15 @@ int main(int argc, char *argv[])
 
     VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
     VELOC_Mem_protect(1, h, M*nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M*nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(2, &M, 1, VELOC_INTG);
+    VELOC_Mem_protect(3, g, M*nbLines, VELOC_DBLE);
+
+    //test selective-variable-recovery
+    int reco;
+    VELOC_Restart_test(&reco);
+    int recoVarIDList[3] = {0,1,3};
+    if(reco)
+    	VELOC_Mem_recover(VELOC_RECOVER_SOME, recoVarIDList, 3);
 
     wtime = MPI_Wtime();
     for(i = 0; i < ITER_TIMES; i++)

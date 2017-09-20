@@ -64,6 +64,9 @@ static unsigned int g_nbType = 0;
 // current size of checkpoint in bytes
 static unsigned int g_ckptSize = 0;
 
+/** The flag "recovered" is used to avoid the duplicated recovery in VELOC_Mem_Snapshot() after user's own recovery operation before the loop.*/
+static int recovered = 0;
+
 typedef enum {
     VELOC_STATE_UNINIT,
     VELOC_STATE_INIT,
@@ -394,6 +397,7 @@ int VELOC_Restart_mem(const char* file, int recovery_mode, int *id_list, int id_
         return VELOC_FAILURE;
     }
 
+	recovered = 1;
     return status;
 }
 
@@ -455,6 +459,7 @@ int VELOC_Checkpoint_mem(const char* file)
         // ERROR!
     }
 
+
     // get SCR path to checkpoint file
     char file_scr[SCR_MAX_FILENAME];
     SCR_Route_file(file, file_scr);
@@ -482,7 +487,6 @@ int VELOC_Checkpoint_mem(const char* file)
             return VELOC_FAILURE;
         }
     }
-
     // flush data to disk
     if (fflush(fd) != 0) {
         printf("VELOC checkpoint file could not be flushed %s\n", file_scr);
@@ -532,10 +536,10 @@ int VELOC_Mem_save()
 
     // create a name for our checkpoint
     sprintf(g_checkpoint_dir, "veloc.%d", g_checkpoint_id);
-
+ 
     // open checkpoint phase
     VELOC_Checkpoint_begin(g_checkpoint_dir);
-
+ 
     // build checkpoint file name, use checkpoint dir as prefix
     char file[VELOC_MAX_NAME];
     snprintf(file, VELOC_MAX_NAME, "%s/mem.%d.veloc", g_checkpoint_dir, g_rank);
@@ -555,6 +559,7 @@ int VELOC_Mem_recover(int recovery_mode, int *id_list, int id_count)
     if (g_veloc_state != VELOC_STATE_INIT) {
         // ERROR!
     }
+
 
     // open restart phase and get checkpoint name/dir
     VELOC_Restart_begin(g_checkpoint_dir);
@@ -585,7 +590,8 @@ int VELOC_Mem_snapshot()
     // check whether this is a restart
     int have_restart;
     VELOC_Restart_test(&have_restart);
-    if (have_restart) {
+    if (recovered==0 && have_restart) 
+    {
         // If this is a recovery load checkpoint data
         return VELOC_Mem_recover(VELOC_RECOVER_ALL, NULL, 0);
     }

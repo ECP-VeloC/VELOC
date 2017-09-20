@@ -21,7 +21,6 @@
 #define VELOC_RECOVER_REST      1
 #define VELOC_RECOVER_ALL       2
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
