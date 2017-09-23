@@ -45,6 +45,14 @@ We currently test three ways to interact with the VeloC API:
 
 The tests can be run using `make test` or, for more verbose output, using `make check`.
 
+The test directory contains a few examples showcasing the different features of VELOC. It contains three variants of an  example program which implementsa distributed heat equation calculation. These three examples use of both memory protection and file protection mechanisms.
+
+1. heatdis_mem.c shows how to use VELOC if you are using only memory-based checkpointing. The variables in the code are memory protected and used during checkpointing/recovery
+
+2. heatdis_file.c shows how to use VELOC if you are only using file-based checkpointing. The variables in the code are written to files and used during checkpointing/recovery
+
+3. heatdis_memfile.c shows how to use VELOC when you memory-protecting some variables and writing some to files
+
 
 ## Contacts
 In case of questions and comments or help, please contact the VELOC team at ecp-veloc@lists.mcs.anl.gov
