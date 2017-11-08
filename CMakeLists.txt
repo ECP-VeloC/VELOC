@@ -1,61 +1,29 @@
-PROJECT(VELOC)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+cmake_minimum_required (VERSION 3.9)
+project (VELOC)
 
-# Mac rpath Policy
-IF(POLICY CMP0042)
-          CMAKE_POLICY(SET CMP0042 NEW)
-ENDIF(POLICY CMP0042)
-SET(CMAKE_MACOSX_RPATH ON)
+# set the root prefix of the library dependencies
+set(EXTERNAL_ROOT $ENV{HOME}/deploy)
 
-SET(VELOC_MAJOR_VERSION 0)
-SET(VELOC_MINOR_VERSION 1)
-SET(VELOC_PATCH_VERSION 0)
-SET(VELOC_VERSION
-    "${VELOC_MAJOR_VERSION}.${VELOC_MINOR_VERSION}.${VELOC_PATCH_VERSION}")
+# some global compiler flags
+add_definitions(-O2 -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 
-INCLUDE(GNUInstallDirs)
-INCLUDE(ExternalProject)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src)
-LIST(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+# Now set up the libraries
+# -----------------------------------------------------------------------------------
 
-# SCR
-EXTERNALPROJECT_ADD(SCR
-        GIT_REPOSITORY "https://github.com/llnl/scr.git"
-        PREFIX         "${CMAKE_CURRENT_BINARY_DIR}/SCR"
-        CMAKE_ARGS     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DWITH_PDSH_PREFIX=${CMAKE_INSTALL_PREFIX}
-)
-INCLUDE_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
-ADD_LIBRARY(scr SHARED IMPORTED)
-SET_TARGET_PROPERTIES(scr PROPERTIES IMPORTED_LOCATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}scr${CMAKE_SHARED_LIBRARY_SUFFIX})
-LIST(APPEND VELOC_EXTERNAL_LIBS scr)
+# the elegant way to set up boost
+set(BOOST_ROOT ${EXTERNAL_ROOT})
+set(Boost_FIND_REQUIRED True)
+find_package(Boost 1.60 COMPONENTS thread mpi)
+include_directories(${Boost_INCLUDE_DIR})
 
-# PDSH Dependency for SCR
-OPTION(BUILD_PDSH "Download and build the PDSH Library?" OFF)
-IF(BUILD_PDSH)
-        EXTERNALPROJECT_ADD(PDSH
-                GIT_REPOSITORY    https://github.com/grondo/pdsh
-                PREFIX            ${CMAKE_CURRENT_BINARY_DIR}/PDSH
-                UPDATE_COMMAND    ${CMAKE_CURRENT_BINARY_DIR}/PDSH/src/PDSH/bootstrap
-                CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/PDSH/src/PDSH/configure --prefix=${CMAKE_INSTALL_PREFIX}
-                BUILD_COMMAND     ${MAKE}
-        )
-        SET(WITH_PDSH_PREFIX ${CMAKE_INSTALL_PREFIX})
-        SET(PDSH_EXE ${CMAKE_INSTALL_PREFIX}/bin/pdsh)
-        SET(DSHBAK_EXE ${CMAKE_INSTALL_PREFIX}/bin/dshbak)
-        ADD_DEPENDENCIES(scr PDSH)
-ENDIF(BUILD_PDSH)
+# set up OpenSSL
+find_package(OpenSSL)
+include_directories(${OPENSSL_INCLUDE_DIR})
 
-# MPI
-INCLUDE(SetupMPI)
-INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-LIST(APPEND VELOC_EXTERNAL_LIBS ${MPI_C_LIBRARIES})
+# set up MPI
+find_package(MPI)
+include_directories(${MPI_CXX_INCLUDE_PATH})
 
-# VELOC Library
+# -----------------------------------------------------------------------------------
 
-ADD_SUBDIRECTORY(src)
-
-# TESTING
-
-ENABLE_TESTING()
-INCLUDE(VELOC_ADD_TEST)
-ADD_SUBDIRECTORY(test)
+add_subdirectory (src)
