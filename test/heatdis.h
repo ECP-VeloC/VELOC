@@ -11,12 +11,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <veloc.h>
-#include "mpi.h"
+#include <mpi.h>
 
+
+#include "include/veloc.h"
+#include "include/veloc_types.h"
 
 #define PRECISION   0.00001
-#define ITER_TIMES  50000
+#define ITER_TIMES  5000
 #define ITER_OUT    50
 #define WORKTAG     5
 #define REDUCE      1

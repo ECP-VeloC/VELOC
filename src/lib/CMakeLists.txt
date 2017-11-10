@@ -1,32 +1,17 @@
-# Header files need not be enumerated
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-#############
-# LIB VELOC #
-#############
-
-# installed header files
-LIST(APPEND v_install_headers
-        veloc.h
-)
-INSTALL(FILES ${v_install_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-# Source files
-SET(v_srcs
-    veloc.c
+add_library (veloc SHARED 
+  veloc.cpp
 )
 
-# object files
-ADD_LIBRARY(veloc_o OBJECT ${v_srcs})
+# Link the executable to the necessary libraries.
+target_link_libraries (veloc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
 
-# static library
-ADD_LIBRARY(veloc-static STATIC $<TARGET_OBJECTS:veloc_o>)
-TARGET_LINK_LIBRARIES(veloc-static ${VELOC_EXTERNAL_LIBS})
-SET_TARGET_PROPERTIES(veloc-static PROPERTIES OUTPUT_NAME veloc CLEAN_DIRECT_OUTPUT 1)
-INSTALL(TARGETS veloc-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# shared library
-ADD_LIBRARY(veloc SHARED $<TARGET_OBJECTS:veloc_o>)
-TARGET_LINK_LIBRARIES(veloc ${VELOC_EXTERNAL_LIBS})
-SET_TARGET_PROPERTIES(veloc PROPERTIES OUTPUT_NAME veloc CLEAN_DIRECT_OUTPUT 1)
-INSTALL(TARGETS veloc DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# Install libraries
+install (TARGETS veloc
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+install (FILES
+  ${VELOC_SOURCE_DIR}/include/veloc.h
+  DESTINATION include
+)

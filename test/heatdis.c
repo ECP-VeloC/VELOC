@@ -1,84 +1,61 @@
-/**
- *  @file   heatdis.c
- *  @author Leonardo A. Bautista Gomez
- *  @date   May, 2014
- *  @brief  Heat distribution code to test VELOC_Mem.
- */
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "heatdis.h"
-#include "mpi.h"
+#include <assert.h>
 
-void initData(int nbLines, int M, int rank, double *h)
-{
+#include "heatdis.h"
+
+static const unsigned int CKPT_FREQ = ITER_TIMES / 10;
+
+void initData(int nbLines, int M, int rank, double *h) {
     int i, j;
-    for (i = 0; i < nbLines; i++)
-    {
-        for (j = 0; j < M; j++)
-        {
+    for (i = 0; i < nbLines; i++) {
+        for (j = 0; j < M; j++) {
             h[(i*M)+j] = 0;
         }
     }
-    if (rank == 0)
-    {
-        for (j = (M*0.1); j < (M*0.9); j++)
-        {
+    if (rank == 0) {
+        for (j = (M*0.1); j < (M*0.9); j++) {
             h[j] = 100;
         }
     }
 }
 
-
-double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h)
-{
+double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h) {
     int i,j;
     MPI_Request req1[2], req2[2];
     MPI_Status status1[2], status2[2];
     double localerror;
     localerror = 0;
-    for(i = 0; i < nbLines; i++)
-    {
-        for(j = 0; j < M; j++)
-        {
+    for(i = 0; i < nbLines; i++) {
+        for(j = 0; j < M; j++) {
             h[(i*M)+j] = g[(i*M)+j];
         }
     }
-    if (rank > 0)
-    {
-        MPI_Isend(g+M, M, MPI_DOUBLE, rank-1, WORKTAG, VELOC_Mem_COMM_WORLD, &req1[0]);
-        MPI_Irecv(h,   M, MPI_DOUBLE, rank-1, WORKTAG, VELOC_Mem_COMM_WORLD, &req1[1]);
+    if (rank > 0) {
+        MPI_Isend(g+M, M, MPI_DOUBLE, rank-1, WORKTAG, MPI_COMM_WORLD, &req1[0]);
+        MPI_Irecv(h,   M, MPI_DOUBLE, rank-1, WORKTAG, MPI_COMM_WORLD, &req1[1]);
     }
-    if (rank < numprocs-1)
-    {
-        MPI_Isend(g+((nbLines-2)*M), M, MPI_DOUBLE, rank+1, WORKTAG, VELOC_Mem_COMM_WORLD, &req2[0]);
-        MPI_Irecv(h+((nbLines-1)*M), M, MPI_DOUBLE, rank+1, WORKTAG, VELOC_Mem_COMM_WORLD, &req2[1]);
+    if (rank < numprocs - 1) {
+        MPI_Isend(g+((nbLines-2)*M), M, MPI_DOUBLE, rank+1, WORKTAG, MPI_COMM_WORLD, &req2[0]);
+        MPI_Irecv(h+((nbLines-1)*M), M, MPI_DOUBLE, rank+1, WORKTAG, MPI_COMM_WORLD, &req2[1]);
     }
-    if (rank > 0)
-    {
+    if (rank > 0) {
         MPI_Waitall(2,req1,status1);
     }
-    if (rank < numprocs-1)
-    {
+    if (rank < numprocs - 1) {
         MPI_Waitall(2,req2,status2);
     }
-    for(i = 1; i < (nbLines-1); i++)
-    {
-        for(j = 0; j < M; j++)
-        {
+    for(i = 1; i < (nbLines-1); i++) {
+        for(j = 0; j < M; j++) {
             g[(i*M)+j] = 0.25*(h[((i-1)*M)+j]+h[((i+1)*M)+j]+h[(i*M)+j-1]+h[(i*M)+j+1]);
-            if(localerror < fabs(g[(i*M)+j] - h[(i*M)+j]))
-            {
+            if(localerror < fabs(g[(i*M)+j] - h[(i*M)+j])) {
                 localerror = fabs(g[(i*M)+j] - h[(i*M)+j]);
             }
         }
     }
-    if (rank == (numprocs-1))
-    {
-        for(j = 0; j < M; j++)
-        {
+    if (rank == (numprocs-1)) {
+        for(j = 0; j < M; j++) {
             g[((nbLines-1)*M)+j] = g[((nbLines-2)*M)+j];
         }
     }
@@ -86,49 +63,67 @@ double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h)
 }
 
 
-/*int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
+    char ckpt_name[1024];
+
+    if (argc < 3) {
+	printf("Usage: %s <mem_in_mb> <cfg_file>\n", argv[0]);
+	exit(1);
+    }
 
     MPI_Init(&argc, &argv);
-    VELOC_Mem_init(argv[2], MPI_COMM_WORLD);
+    if (VELOC_Init(argv[2]) != VELOC_SUCCESS) {
+	printf("Error initializing VELOC! Aborting...\n");
+	exit(2);
+    }
+	
+    MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Comm_size(VELOC_Mem_COMM_WORLD, &nbProcs);
-    MPI_Comm_rank(VELOC_Mem_COMM_WORLD, &rank);
-
-    arg = atoi(argv[1]);
-    M = (int)sqrt((double)(arg * 1024.0 * 512.0 * nbProcs)/sizeof(double));
-    nbLines = (M / nbProcs)+3;
+    arg = atoi(argv[1]); // argv[1] = total memory for one process
+    M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
+    nbLines = (M / nbProcs) + 3;
     h = (double *) malloc(sizeof(double *) * M * nbLines);
     g = (double *) malloc(sizeof(double *) * M * nbLines);
     initData(nbLines, M, rank, g);
     memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
 
-    if (rank == 0) printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
-    if (rank == 0) printf("Target precision : %f \n", PRECISION);
-    if (rank == 0) printf("Maximum number of iterations : %d \n", ITER_TIMES);
+    if (rank == 0)
+	printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
+    if (rank == 0)
+	printf("Target precision : %f \n", PRECISION);
+    if (rank == 0)
+	printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
-    VELOC_Mem_protect(1, h, M*nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M*nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(1, h, M * nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(2, g, M * nbLines, VELOC_DBLE);
 
-    wtime = MPI_Wtime();
-    for(i = 0; i < ITER_TIMES; i++)
-    {
-        int checkpointed = VELOC_Mem_snapshot();
+    wtime = MPI_Wtime();    
+    for(i = 0; i < ITER_TIMES; i++) {
+        if (i % CKPT_FREQ == 0) {       
+	    sprintf(ckpt_name, "headis-rank-%d-iteration-%d", rank, i);
+	    assert(VELOC_Checkpoint_begin(i, ckpt_name) == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_mem(i, 0) == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_end(i, 1) == VELOC_SUCCESS);
+	}
+
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
-        if (((i%ITER_OUT) == 0) && (rank == 0)) printf("Step : %d, error = %f\n", i, globalerror);
-        if ((i%REDUCE) == 0) MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, VELOC_Mem_COMM_WORLD);
-        if(globalerror < PRECISION) break;
+        if (((i % ITER_OUT) == 0) && (rank == 0))
+	    printf("Step : %d, error = %f\n", i, globalerror);
+        if ((i % REDUCE) == 0)
+	    MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        if (globalerror < PRECISION)
+	    break;
     }
-    if (rank == 0) printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
+    if (rank == 0)
+	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
     free(h);
     free(g);
-    VELOC_Mem_finalize();
+    VELOC_Finalize();
     MPI_Finalize();
     return 0;
-}*/
-
-
+}
