@@ -145,11 +145,11 @@ extern "C" int VELOC_Restart_begin(const char *name, int version) {
     std::ostringstream os;
     os << name << "-" << rank << "-" << version;
     bf::path cname(scratch.string() + bf::path::preferred_separator + os.str() + ".dat");
-    
+
     if (!bf::is_regular_file(cname))
 	return VELOC_FAILURE;
 
-    restart_ckpt = cname;    
+    restart_ckpt = cname;
     return VELOC_SUCCESS;
 }
 

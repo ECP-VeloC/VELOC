@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         if (i % CKPT_FREQ == 0) {       
 	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
 	    assert(VELOC_Checkpoint_mem(i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_end(i, 1) == VELOC_SUCCESS);	 
+	    assert(VELOC_Checkpoint_end(i, 1) == VELOC_SUCCESS);
 	}
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))
