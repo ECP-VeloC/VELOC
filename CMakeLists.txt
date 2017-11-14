@@ -13,7 +13,7 @@ add_definitions(-O2 -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 # the elegant way to set up boost
 set(BOOST_ROOT ${EXTERNAL_ROOT})
 set(Boost_FIND_REQUIRED True)
-find_package(Boost 1.60 COMPONENTS thread mpi program_options)
+find_package(Boost 1.60 COMPONENTS program_options filesystem system mpi)
 include_directories(${Boost_INCLUDE_DIR})
 
 # set up OpenSSL
