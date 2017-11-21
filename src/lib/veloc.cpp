@@ -122,16 +122,25 @@ extern "C" int VELOC_Restart_test(const char *name) {
     return ret;
 }
 
-extern "C" int VELOC_Restart_begin(const char *name, int version) {
-    std::ostringstream os;
+static bf::path gen_ckpt_name(const char *name, int version) {
+    std::ostringstream os;    
     os << name << "-" << rank << "-" << version;
-    bf::path cname(cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");
-    
-    if (!bf::is_regular_file(cname))
-	return VELOC_FAILURE;
+    return bf::path(cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");    
+}
 
-    restart_ckpt = cname;
+extern "C" int VELOC_Route_file(const char *name, int version, char *ckpt_file_name) {
+    std::string cname = gen_ckpt_name(name, version).string();
+    cname.copy(ckpt_file_name, cname.length());
+    
     return VELOC_SUCCESS;
+}
+
+extern "C" int VELOC_Restart_begin(const char *name, int version) {
+    restart_ckpt = gen_ckpt_name(name, version);    
+    if (!bf::is_regular_file(restart_ckpt))
+	return VELOC_FAILURE;
+    else
+	return VELOC_SUCCESS;
 }
 
 extern "C" int VELOC_Restart_mem(int version) {

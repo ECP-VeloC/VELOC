@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     if (sscanf(argv[1], "%d", &arg) != 1) {
         printf("Wrong memory size! See usage\n");
 	exit(3);
-    }
+    }    
     if (VELOC_Init(rank, argv[2]) != VELOC_SUCCESS) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
@@ -98,24 +98,49 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
 	printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
-    VELOC_Mem_protect(1, h, M * nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M * nbLines, VELOC_DBLE);
-
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis");
     if (v != VELOC_FAILURE) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-	assert(VELOC_Restart_mem(v) == VELOC_SUCCESS);
-	assert(VELOC_Restart_end(v, 1) == VELOC_SUCCESS);
+	
+	char veloc_file[VELOC_MAX_NAME];
+	assert(VELOC_Route_file("heatdis", v, veloc_file) == VELOC_SUCCESS);
+
+	int valid = 1;
+        FILE* fd = fopen(veloc_file, "rb");
+        if (fd != NULL) {
+            if (fread(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
+            if (fread( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+            if (fread( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+            fclose(fd);
+        } else
+            // failed to open file
+            valid = 0;
+	
+	assert(VELOC_Restart_end(v, valid) == VELOC_SUCCESS);
     } else
 	i = 0;
+
     while(i < ITER_TIMES) {
         if (i % CKPT_FREQ == 0) {       
 	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_mem(i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_end(i, 1) == VELOC_SUCCESS);
+
+	    char veloc_file[VELOC_MAX_NAME];
+	    assert(VELOC_Route_file("heatdis", i, veloc_file) == VELOC_SUCCESS);
+	
+            int valid = 1;
+            FILE* fd = fopen(veloc_file, "wb");
+            if (fd != NULL) {
+                if (fwrite(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
+                if (fwrite( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+                if (fwrite( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+                fclose(fd);
+            } else 
+                // failed to open file
+                valid = 0;
+
+	    assert(VELOC_Checkpoint_end(i, valid) == VELOC_SUCCESS);
 	}
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))

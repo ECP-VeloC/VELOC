@@ -5,15 +5,15 @@
                                   Defines
 ---------------------------------------------------------------------------*/
 
-/** Compile-time macros to define API version */
-#define VELOC_VERSION_MAJOR (0)
-#define VELOC_VERSION_MINOR (0)
-#define VELOC_VERSION_PATCH (0)
-#define VELOC_VERSION "v0.0.0"
+/** Constants */
+static const unsigned int VELOC_VERSION_MAJOR = 0;
+static const unsigned int VELOC_VERSION_MINOR = 0;
+static const unsigned int VELOC_VERSION_PATH = 0;
+static const char VELOC_VERSION[] = "v0.0.0";
+static const size_t VELOC_MAX_NAME = 1024;
 
-/** Token returned if a VEOC function succeeds.                             */
-#define VELOC_SUCCESS (0)
-#define VELOC_FAILURE (-1)
+static const int VELOC_SUCCESS = 0;
+static const int VELOC_FAILURE = -1;
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +50,14 @@ int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size);
 // unregisters a memory region
 //   IN id        - application defined integer label for memory region
 int VELOC_Mem_unprotect(int id);
+
+/**************************
+ * File registration
+ *************************/
+    
+// obtain the full path for the file associated with the named checkpoint and version number
+// can be used to manually read/write checkpointing data without registering memory regions
+int VELOC_Route_file(const char *name, int version, char *ckpt_file_name);
 
 /**************************
  * Checkpoint routines
