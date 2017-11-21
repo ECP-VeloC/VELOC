@@ -1,34 +1,10 @@
-#include <unordered_map>
-#include <map>
-#include <fstream>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
-#include "common/config.hpp"
 #include "include/veloc.h"
+#include "client.hpp"
+
+static veloc_client_t *veloc_client = NULL;
 
 #define __DEBUG
 #include "common/debug.hpp"
-
-typedef std::pair<void *, size_t> region_t;
-typedef std::map<int, region_t> regions_t;
-
-typedef std::string ckpt_info_t; // for now, just keep checkpoint name
-typedef std::unordered_map<int, ckpt_info_t> ckpts_t;
-
-static regions_t mem_regions;
-static ckpts_t ckpts;
-
-namespace bf = boost::filesystem;
-
-static bf::path restart_ckpt;
-static int rank;
-static config_t cfg;
 
 void __attribute__ ((constructor)) veloc_constructor() {
 }
@@ -37,140 +13,67 @@ void __attribute__ ((destructor)) veloc_destructor() {
 }
 
 extern "C" int VELOC_Init(int r, const char *cfg_file) {
-    DBG("VELOC initialization");
-    rank = r;
-    if (cfg.get_parameters(std::string(cfg_file)))
+    try {
+	veloc_client = new veloc_client_t(r, cfg_file);
 	return VELOC_SUCCESS;
-    else
+    } catch (std::runtime_error &e) {
+	ERROR(e.what());
 	return VELOC_FAILURE;
+    }
 }
-    
+
+#define CLIENT_CALL(x) (veloc_client != NULL && (x)) ? VELOC_SUCCESS : VELOC_FAILURE;
+
 extern "C" int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size) {
-    mem_regions[id] = std::make_pair(ptr, base_size * count);
-    return VELOC_SUCCESS;
+    return CLIENT_CALL(veloc_client->mem_protect(id, ptr, count, base_size));
 }
 
 extern "C" int VELOC_Mem_unprotect(int id) {
-    if (mem_regions.erase(id) > 0)
-	return VELOC_SUCCESS;
-    else
-	return VELOC_FAILURE;
+    return CLIENT_CALL(veloc_client->mem_unprotect(id));
 }
 
 extern "C" int VELOC_Checkpoint_begin(const char *name, int version) {
-    if (ckpts.find(version) != ckpts.end()) {
-	DBG("Checkpoint " << version << " already initiated");
-	return VELOC_FAILURE;
-    }
-    std::ostringstream os;
-    os << name << "-" << rank << "-" << version;
-    ckpts.insert(std::make_pair(version, os.str()));
-    
-    return VELOC_SUCCESS;
+    return CLIENT_CALL(veloc_client->checkpoint_begin(name, version));
 }
 
-extern "C" int VELOC_Checkpoint_mem(int version) {
-    auto it = ckpts.find(version);
-    if (it == ckpts.end())
-	return VELOC_FAILURE;
-    bf::path cname(cfg.get_scratch() + bf::path::preferred_separator + it->second + ".dat");
-    int fd = open(cname.c_str(), O_CREAT | O_TRUNC | O_WRONLY, S_IREAD | S_IWRITE);
-    if (fd == -1) {
-	ERROR("can't open checkpoint file " << cname);
-	return VELOC_FAILURE;
-    }
-    for (auto it = mem_regions.begin(); it != mem_regions.end(); ++it) {
-	void *ptr = it->second.first;
-	size_t size = it->second.second;
-	size_t written = 0;
-	while (written < size) {
-	   ssize_t ret = write(fd, ((char *)ptr + written), size - written);
-	   if (ret == -1) {
-	       ERROR("can't write to checkpoint file " << cname);
-	       return VELOC_FAILURE;
-	   }
-	   written += ret;
-	}
-    }
-    close(fd);
-
-    return VELOC_SUCCESS;
+extern "C" int VELOC_Checkpoint_mem() {
+    return CLIENT_CALL(veloc_client->checkpoint_mem());
 }
 
-extern "C" int VELOC_Checkpoint_end(int version, int success) { 
-    if (ckpts.erase(version) > 0)
-	return VELOC_SUCCESS;
-    else
-	return VELOC_FAILURE;
+extern "C" int VELOC_Checkpoint_end(int success) {
+    return CLIENT_CALL(veloc_client->checkpoint_end(success));
 }
 
 extern "C" int VELOC_Restart_test(const char *name) {
-    std::string cname(name);
-    int ret = VELOC_FAILURE;
-    for(auto& f : boost::make_iterator_range(bf::directory_iterator(cfg.get_scratch()), {})) {
-	std::string fname = f.path().leaf().string();
-	int ckpt_rank, version;
-	if (bf::is_regular_file(f.path()) &&
-	    fname.compare(0, cname.length(), cname) == 0 &&
-	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &ckpt_rank, &version) == 2 &&
-	    ckpt_rank == rank) {	 
-	    if (version > ret)
-		ret = version;
-	}
-    }
-    // TO-DO: allreduce on versions to select min of max available on all ranks (maybe separate function test_all)
-    return ret;
-}
-
-static bf::path gen_ckpt_name(const char *name, int version) {
-    std::ostringstream os;    
-    os << name << "-" << rank << "-" << version;
-    return bf::path(cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");    
+    if (veloc_client == NULL)
+	return VELOC_FAILURE;
+    return veloc_client->restart_test(name);
 }
 
 extern "C" int VELOC_Route_file(const char *name, int version, char *ckpt_file_name) {
-    std::string cname = gen_ckpt_name(name, version).string();
+    std::string cname = veloc_client->route_file(name, version);
     cname.copy(ckpt_file_name, cname.length());
-    
     return VELOC_SUCCESS;
 }
 
 extern "C" int VELOC_Restart_begin(const char *name, int version) {
-    restart_ckpt = gen_ckpt_name(name, version);    
-    if (!bf::is_regular_file(restart_ckpt))
-	return VELOC_FAILURE;
-    else
-	return VELOC_SUCCESS;
+    return CLIENT_CALL(veloc_client->restart_begin(name, version));
 }
 
-extern "C" int VELOC_Restart_mem(int version) {
-    int fd = open(restart_ckpt.string().c_str(), O_RDONLY);
-    if (fd == -1) {
-	ERROR("can't open checkpoint file " << restart_ckpt);
-	return VELOC_FAILURE;
-    }
-    for (auto it = mem_regions.begin(); it != mem_regions.end(); ++it) {
-	void *ptr = it->second.first;
-	size_t size = it->second.second;
-	size_t bytes_read = 0;
-	while (bytes_read < size) {
-	   ssize_t ret = read(fd, ((char *)ptr + bytes_read), size - bytes_read);
-	   if (ret == -1) {
-	       ERROR("can't read from checkpoint file " << restart_ckpt.string());
-	       return VELOC_FAILURE;
-	   }
-	   bytes_read += ret;
-	}
-    }
-    close(fd);
-    return VELOC_SUCCESS;
+extern "C" int VELOC_Restart_mem() {
+    return CLIENT_CALL(veloc_client->restart_mem());
 }
 
-extern "C" int VELOC_Restart_end(int version, int success) {
-    return VELOC_SUCCESS;
+extern "C" int VELOC_Restart_end(int success) {
+    return CLIENT_CALL(veloc_client->restart_end(success));
 }
 
 extern "C" int VELOC_Finalize() {
-    DBG("VELOC finalized");
-    return VELOC_SUCCESS;
+    if (veloc_client != NULL) {
+	delete veloc_client;
+	return VELOC_SUCCESS;
+    } else {
+	ERROR("Attempting to finalize VELOC before it was initialized");
+	return VELOC_FAILURE;
+    }
 }

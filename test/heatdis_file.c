@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
             // failed to open file
             valid = 0;
 	
-	assert(VELOC_Restart_end(v, valid) == VELOC_SUCCESS);
+	assert(VELOC_Restart_end(valid) == VELOC_SUCCESS);
     } else
 	i = 0;
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
                 // failed to open file
                 valid = 0;
 
-	    assert(VELOC_Checkpoint_end(i, valid) == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_end(valid) == VELOC_SUCCESS);
 	}
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))

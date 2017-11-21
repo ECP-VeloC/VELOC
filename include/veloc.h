@@ -1,5 +1,7 @@
-#ifndef _VELOC_H
-#define _VELOC_H
+#ifndef __VELOC_H
+#define __VELOC_H
+
+#include <string.h>
 
 /*---------------------------------------------------------------------------
                                   Defines
@@ -70,12 +72,12 @@ int VELOC_Checkpoint_begin(const char *name, int version);
 
 // write registered memory regions into the checkpoint
 // must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
-int VELOC_Checkpoint_mem(int version);
+int VELOC_Checkpoint_mem();
 
 // mark end of checkpont phase
 //   IN version - version of the checkpoint 
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
-int VELOC_Checkpoint_end(int version, int success);
+int VELOC_Checkpoint_end(int success);
 
 /**************************
  * Restart routines
@@ -93,15 +95,15 @@ int VELOC_Restart_begin(const char *name, int version);
 // read registered memory regions from the checkpoint file
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
 //   IN version - version of the checkpoint
-int VELOC_Restart_mem(int version);
+int VELOC_Restart_mem();
         
 // mark end of restart phase
 //   IN version - version of the checkpoint 
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
-int VELOC_Restart_end(int version, int success);
+int VELOC_Restart_end(int success);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ----- #ifndef _VELOC_H  ----- */
+#endif /* ----- #ifndef __VELOC_H  ----- */

@@ -1,5 +1,6 @@
 add_library (veloc SHARED 
   veloc.cpp
+  client.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
@@ -11,7 +12,8 @@ install (TARGETS veloc
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
-)
+  )
+
 install (FILES
   ${VELOC_SOURCE_DIR}/include/veloc.h
   DESTINATION include
