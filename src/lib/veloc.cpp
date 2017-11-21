@@ -1,8 +1,3 @@
-#define __DEBUG
-#include "common/debug.hpp"
-
-#include "include/veloc.h"
-
 #include <unordered_map>
 #include <map>
 #include <fstream>
@@ -13,6 +8,12 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
+#include "common/config.hpp"
+#include "include/veloc.h"
+
+#define __DEBUG
+#include "common/debug.hpp"
 
 typedef std::pair<void *, size_t> region_t;
 typedef std::map<int, region_t> regions_t;
@@ -25,45 +26,25 @@ static ckpts_t ckpts;
 
 namespace bf = boost::filesystem;
 
-static bf::path scratch, persistent, restart_ckpt;
+static bf::path restart_ckpt;
 static int rank;
+static config_t cfg;
 
 void __attribute__ ((constructor)) veloc_constructor() {
-    DBG("VELOC constructor");
 }
 
 void __attribute__ ((destructor)) veloc_destructor() {
-    DBG("VELOC destructor");
 }
 
-extern "C" int VELOC_Init(int r, const char *cfg) {
-    namespace po = boost::program_options;
-    
-    po::options_description desc("VELOC options");
-    desc.add_options()
-	("help", "This help message")
-	("scratch", po::value<std::string>(), "Scratch path for local checkpoints")
-	("persistent", po::value<std::string>(), "Path for persistent storage") 
-    ;
-    
-    po::variables_map vm;
-    std::ifstream ifs(cfg);
-    if (ifs.is_open()) {
-	po::store(po::parse_config_file(ifs, desc), vm);
-	ifs.close();
-    } else
-	return VELOC_FAILURE;
-    
-    po::notify(vm);
-
-    if (vm.count("scratch") && bf::is_directory(scratch = vm["scratch"].as<std::string>()) &&
-	vm.count("persistent") && bf::is_directory(persistent = vm["persistent"].as<std::string>())) {
-	rank = r;
+extern "C" int VELOC_Init(int r, const char *cfg_file) {
+    DBG("VELOC initialization");
+    rank = r;
+    if (cfg.get_parameters(std::string(cfg_file)))
 	return VELOC_SUCCESS;
-    } else
+    else
 	return VELOC_FAILURE;
 }
-
+    
 extern "C" int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size) {
     mem_regions[id] = std::make_pair(ptr, base_size * count);
     return VELOC_SUCCESS;
@@ -92,7 +73,7 @@ extern "C" int VELOC_Checkpoint_mem(int version) {
     auto it = ckpts.find(version);
     if (it == ckpts.end())
 	return VELOC_FAILURE;
-    bf::path cname(scratch.string() + bf::path::preferred_separator + it->second + ".dat");
+    bf::path cname(cfg.get_scratch() + bf::path::preferred_separator + it->second + ".dat");
     int fd = open(cname.c_str(), O_CREAT | O_TRUNC | O_WRONLY, S_IREAD | S_IWRITE);
     if (fd == -1) {
 	ERROR("can't open checkpoint file " << cname);
@@ -112,6 +93,7 @@ extern "C" int VELOC_Checkpoint_mem(int version) {
 	}
     }
     close(fd);
+
     return VELOC_SUCCESS;
 }
 
@@ -125,8 +107,7 @@ extern "C" int VELOC_Checkpoint_end(int version, int success) {
 extern "C" int VELOC_Restart_test(const char *name) {
     std::string cname(name);
     int ret = VELOC_FAILURE;
-    
-    for(auto& f : boost::make_iterator_range(bf::directory_iterator(scratch), {})) {
+    for(auto& f : boost::make_iterator_range(bf::directory_iterator(cfg.get_scratch()), {})) {
 	std::string fname = f.path().leaf().string();
 	int ckpt_rank, version;
 	if (bf::is_regular_file(f.path()) &&
@@ -137,15 +118,15 @@ extern "C" int VELOC_Restart_test(const char *name) {
 		ret = version;
 	}
     }
-    // TO-DO: allreduce on versions to select min of max available on all ranks (maybe separate function test_all) 
+    // TO-DO: allreduce on versions to select min of max available on all ranks (maybe separate function test_all)
     return ret;
 }
 
 extern "C" int VELOC_Restart_begin(const char *name, int version) {
     std::ostringstream os;
     os << name << "-" << rank << "-" << version;
-    bf::path cname(scratch.string() + bf::path::preferred_separator + os.str() + ".dat");
-
+    bf::path cname(cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");
+    
     if (!bf::is_regular_file(cname))
 	return VELOC_FAILURE;
 
@@ -181,5 +162,6 @@ extern "C" int VELOC_Restart_end(int version, int success) {
 }
 
 extern "C" int VELOC_Finalize() {
+    DBG("VELOC finalized");
     return VELOC_SUCCESS;
 }

@@ -1,5 +1,6 @@
 add_library (veloc SHARED 
   veloc.cpp
+  ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
 # Link the executable to the necessary libraries.

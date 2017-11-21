@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #define safe_printf(...) {\

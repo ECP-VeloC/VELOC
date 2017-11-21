@@ -62,7 +62,6 @@ double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h) 
     return localerror;
 }
 
-
 int main(int argc, char *argv[]) {
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
