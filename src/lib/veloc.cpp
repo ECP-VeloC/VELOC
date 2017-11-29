@@ -61,7 +61,8 @@ extern "C" int VELOC_Restart_begin(const char *name, int version) {
 }
 
 extern "C" int VELOC_Restart_mem() {
-    return CLIENT_CALL(veloc_client->restart_mem());
+    std::set<int> ids = {};
+    return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, ids));
 }
 
 extern "C" int VELOC_Restart_end(int success) {

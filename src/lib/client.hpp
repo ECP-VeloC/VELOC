@@ -5,6 +5,8 @@
 
 #include <unordered_map>
 #include <map>
+#include <set>
+
 #include <boost/filesystem.hpp>
 
 namespace bf = boost::filesystem;
@@ -12,7 +14,7 @@ namespace bf = boost::filesystem;
 class veloc_client_t {
     config_t cfg;
 
-    typedef std::pair<void *, size_t> region_t;
+    typedef std::pair <void *, size_t> region_t;
     typedef std::map<int, region_t> regions_t;
 
     regions_t mem_regions;
@@ -34,7 +36,7 @@ public:
 
     int restart_test(const char *name);
     bool restart_begin(const char *name, int version);
-    bool restart_mem();
+    bool recover_mem(int mode, std::set<int> &ids);
     bool restart_end(bool success);
 
     ~veloc_client_t();

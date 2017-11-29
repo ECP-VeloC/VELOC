@@ -17,6 +17,8 @@ static const size_t VELOC_MAX_NAME = 1024;
 static const int VELOC_SUCCESS = 0;
 static const int VELOC_FAILURE = -1;
 
+static const int VELOC_RECOVER_ALL = 0;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

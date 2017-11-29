@@ -5,10 +5,6 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #define __DEBUG
 #include "common/debug.hpp"
 
@@ -45,29 +41,25 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 
 bool veloc_client_t::checkpoint_mem() {
     if (!checkpoint_in_progress) {
-	ERROR("must call checkpoint_being() first");
+	ERROR("must call checkpoint_begin() first");
 	return false;
     }
-    int fd = open(current_ckpt.c_str(), O_CREAT | O_TRUNC | O_WRONLY, S_IREAD | S_IWRITE);
-    if (fd == -1) {
-	ERROR("can't open checkpoint file " << current_ckpt);
-	return false;
-    }
-    for (auto it = mem_regions.begin(); it != mem_regions.end(); ++it) {
-	void *ptr = it->second.first;
-	size_t size = it->second.second;
-	size_t written = 0;
-	while (written < size) {
-	   ssize_t ret = write(fd, ((char *)ptr + written), size - written);
-	   if (ret == -1) {
-	       ERROR("can't write to checkpoint file " << current_ckpt);
-	       return false;
-	   }
-	   written += ret;
+    std::ofstream f;
+    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    try {
+	f.open(current_ckpt.string(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	size_t regions_size = mem_regions.size();
+	f.write((char *)&regions_size, sizeof(size_t));
+	for (auto &e : mem_regions) {
+	    f.write((char *)&(e.first), sizeof(int));
+	    f.write((char *)&(e.second.second), sizeof(size_t));
 	}
-    }
-    close(fd);
-
+        for (auto &e : mem_regions) 
+	    f.write((char *)e.second.first, e.second.second);
+    } catch (std::ofstream::failure &f) {	
+	ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
+	return false;
+    }    
     return true;
 }
 
@@ -103,30 +95,37 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = gen_ckpt_name(name, version);    
-    return bf::is_regular_file(current_ckpt);
+    current_ckpt = gen_ckpt_name(name, version);
+    return bf::exists(current_ckpt);
 }
 
-bool veloc_client_t::restart_mem() {
-    int fd = open(current_ckpt.c_str(), O_RDONLY);
-    if (fd == -1) {
-	ERROR("can't open checkpoint file " << current_ckpt);
+bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
+    if (mode != VELOC_RECOVER_ALL) {
+	ERROR("only VELOC_RECOVER_ALL mode currently supported");
 	return false;
     }
-    for (auto it = mem_regions.begin(); it != mem_regions.end(); ++it) {
-	void *ptr = it->second.first;
-	size_t size = it->second.second;
-	size_t bytes_read = 0;
-	while (bytes_read < size) {
-	   ssize_t ret = read(fd, ((char *)ptr + bytes_read), size - bytes_read);
-	   if (ret == -1) {
-	       ERROR("can't read from checkpoint file " << current_ckpt.string());
-	       return false;
-	   }
-	   bytes_read += ret;
+
+    std::ifstream f;
+    f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+	f.open(current_ckpt.string(), std::ios_base::in | std::ios_base::binary);
+	size_t no_regions, region_size;
+	int id;
+	f.read((char *)&no_regions, sizeof(size_t));
+	for (unsigned int i = 0; i < no_regions; i++) {
+	    f.read((char *)&id, sizeof(int));
+	    f.read((char *)&region_size, sizeof(size_t));
+	    if (mem_regions.find(id) == mem_regions.end() || mem_regions[id].second != region_size) {
+		ERROR("protected memory region " << i << " does not exist or match size in recovery checkpoint");
+		return false;
+	    }
 	}
+	for (auto &e : mem_regions)
+	    f.read((char *)e.second.first, e.second.second);
+    } catch (std::ifstream::failure &e) {
+	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
+	return false;
     }
-    close(fd);
     return true;
 }
 
