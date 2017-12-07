@@ -4,8 +4,9 @@
 #include <cstring>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/named_condition.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/containers/deque.hpp>
 
 #define __DEBUG
@@ -41,22 +42,18 @@ template <class T> class shm_queue_t {
 	typedef deque<T, T_allocator> queue_t;
 	
 	interprocess_mutex mutex;
-	interprocess_condition done_processing;
+	interprocess_condition wait_cond;
 	queue_t queue;
 	container_t(const T_allocator &alloc) : queue(alloc) { }
     };
 
     managed_shared_memory segment;
+    named_mutex     cond_mutex;
+    named_condition cond;
     container_t *data = NULL;
-    interprocess_mutex     *cond_mutex;
-    interprocess_condition *cond;
 
-    bool find_non_empty(std::string &id) {
-	const char prefix[] = "backend";
-	const size_t prefix_length = std::strlen(prefix);
-	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {
-	    if (it->name_length() >= prefix_length && std::strncmp(it->name(), prefix, prefix_length) == 0)
-		continue;
+    bool find_non_empty_queue(std::string &id) {
+	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {	    
 	    data = (container_t *)it->value();
 	    if (!data->queue.empty()) {
 		id = std::string(it->name(), it->name_length());
@@ -67,10 +64,9 @@ template <class T> class shm_queue_t {
     }
     
   public:
-    shm_queue_t() : segment(open_or_create, shm_name, MAX_SIZE) {
-	cond = segment.find_or_construct<interprocess_condition>("backend_cond")();
-	cond_mutex = segment.find_or_construct<interprocess_mutex>("backend_cond_mutex")();
-    }
+    shm_queue_t() : segment(open_or_create, shm_name, MAX_SIZE),
+		    cond_mutex(open_or_create, "backend_cond_mutex"),
+		    cond(open_or_create, "backend_cond") { }        
     void set_id(const std::string &id) {
 	data = segment.find_or_construct<container_t>(id.c_str())(segment.get_allocator<typename container_t::T_allocator>());
     }
@@ -79,21 +75,29 @@ template <class T> class shm_queue_t {
 	scoped_lock<interprocess_mutex> lock(data->mutex);
 	data->queue.push_back(e);
 	lock.unlock();
-	cond->notify_one();
+	cond.notify_one();
     }
     void dequeue(T &e) {
 	assert(data != NULL);
-	scoped_lock<interprocess_mutex> lock(*cond_mutex);
+	// wait until at the queue for the registered id has at least one element
+	scoped_lock<named_mutex> cond_lock(cond_mutex);
 	while (data->queue.empty())
-	    cond->wait(lock);
+	    cond.wait(cond_lock);
+	cond_lock.unlock();
+	// remove the head of the queue
+	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
 	e = data->queue.front();
 	data->queue.pop_front();
     }
     std::string dequeue_any(T &e) {
 	std::string id;
-	scoped_lock<interprocess_mutex> lock(*cond_mutex);
-	while (!find_non_empty(id))
-	    cond->wait(lock);
+	// wait until at least one queue has at least one element
+	scoped_lock<named_mutex> cond_lock(cond_mutex);
+	while (!find_non_empty_queue(id))
+	    cond.wait(cond_lock);
+	cond_lock.unlock();
+	// remove the head of the queue
+	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
 	e = data->queue.front();
 	data->queue.pop_front();
 	return id;
