@@ -16,7 +16,7 @@ extern "C" int VELOC_Init(int r, const char *cfg_file) {
     try {
 	veloc_client = new veloc_client_t(r, cfg_file);
 	return VELOC_SUCCESS;
-    } catch (std::runtime_error &e) {
+    } catch (std::exception &e) {
 	ERROR(e.what());
 	return VELOC_FAILURE;
     }
@@ -51,7 +51,7 @@ extern "C" int VELOC_Restart_test(const char *name) {
 }
 
 extern "C" int VELOC_Route_file(const char *name, int version, char *ckpt_file_name) {
-    std::string cname = veloc_client->route_file(name, version);
+    std::string cname = veloc_client->route_file();
     cname.copy(ckpt_file_name, cname.length());
     return VELOC_SUCCESS;
 }
@@ -60,7 +60,7 @@ extern "C" int VELOC_Restart_begin(const char *name, int version) {
     return CLIENT_CALL(veloc_client->restart_begin(name, version));
 }
 
-extern "C" int VELOC_Restart_mem() {
+extern "C" int VELOC_Recover_mem() {
     std::set<int> ids = {};
     return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, ids));
 }

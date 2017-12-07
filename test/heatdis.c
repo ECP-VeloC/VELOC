@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     if (v != VELOC_FAILURE) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-	assert(VELOC_Restart_mem() == VELOC_SUCCESS);
+	assert(VELOC_Recover_mem() == VELOC_SUCCESS);
 	assert(VELOC_Restart_end(1) == VELOC_SUCCESS);
     } else
 	i = 0;

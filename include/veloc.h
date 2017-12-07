@@ -97,7 +97,7 @@ int VELOC_Restart_begin(const char *name, int version);
 // read registered memory regions from the checkpoint file
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
 //   IN version - version of the checkpoint
-int VELOC_Restart_mem();
+int VELOC_Recover_mem();
         
 // mark end of restart phase
 //   IN version - version of the checkpoint 

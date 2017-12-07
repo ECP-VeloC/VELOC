@@ -2,6 +2,7 @@ add_library (veloc SHARED
   veloc.cpp
   client.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
+  ${VELOC_SOURCE_DIR}/src/backend/module_manager.cpp
 )
 
 # Link the executable to the necessary libraries.
