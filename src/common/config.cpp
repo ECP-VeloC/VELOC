@@ -25,6 +25,6 @@ bool config_t::get_parameters(const std::string &cfg_file) {
 	ERROR("Persistent directory " << persistent << " specificied in config file " << cfg_file << " is invalid!");
 	return false;
     }
-    sync_mode = (pt.get("mode", "sync") == "sync");        
+    sync_mode = (pt.get("mode", "sync") == "sync");
     return true;
 }

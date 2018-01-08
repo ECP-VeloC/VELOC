@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis");
-    if (v != VELOC_FAILURE) {
+    if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
 	assert(VELOC_Recover_mem() == VELOC_SUCCESS);
@@ -112,11 +112,6 @@ int main(int argc, char *argv[]) {
     } else
 	i = 0;
     while(i < ITER_TIMES) {
-        if (i % CKPT_FREQ == 0) {       
-	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
-	}
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))
 	    printf("Step : %d, error = %f\n", i, globalerror);
@@ -125,6 +120,12 @@ int main(int argc, char *argv[]) {
         if (globalerror < PRECISION)
 	    break;
 	i++;
+	if (i % CKPT_FREQ == 0) {
+	    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
+	    assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
+	}
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);

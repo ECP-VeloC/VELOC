@@ -7,15 +7,22 @@
                                   Defines
 ---------------------------------------------------------------------------*/
 
+/** Defines */
+
+#ifndef VELOC_SUCCESS
+#define VELOC_SUCCESS (0)
+#endif
+
+#ifndef VELOC_FAILURE
+#define VELOC_FAILURE (1)
+#endif
+
 /** Constants */
 static const unsigned int VELOC_VERSION_MAJOR = 0;
 static const unsigned int VELOC_VERSION_MINOR = 0;
 static const unsigned int VELOC_VERSION_PATH = 0;
 static const char VELOC_VERSION[] = "v0.0.0";
 static const size_t VELOC_MAX_NAME = 1024;
-
-static const int VELOC_SUCCESS = 0;
-static const int VELOC_FAILURE = -1;
 
 static const int VELOC_RECOVER_ALL = 0;
 
@@ -80,6 +87,11 @@ int VELOC_Checkpoint_mem();
 //   IN version - version of the checkpoint 
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
 int VELOC_Checkpoint_end(int success);
+
+// Wait for the checkpoint to complete and return the result (success or failure).
+// Only valid in async mode. Typically called before beginning a new checkpoint.
+int VELOC_Checkpoint_wait();
+    
 
 /**************************
  * Restart routines

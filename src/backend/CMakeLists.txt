@@ -1,5 +1,8 @@
 # Comment as needed to reduce build time
-add_executable (backend main.cpp topology.cpp module_manager.cpp)
+add_executable (backend
+  main.cpp topology.cpp module_manager.cpp
+  ${VELOC_SOURCE_DIR}/src/common/config.cpp
+)
 
 # Link the executable to the necessary libraries.
 target_link_libraries (backend ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)

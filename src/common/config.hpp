@@ -20,4 +20,4 @@ public:
     }
 };
 
-#endif
+#endif // __CONFIG_HPP

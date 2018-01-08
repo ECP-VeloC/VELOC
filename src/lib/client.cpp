@@ -13,8 +13,7 @@ veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
     if (cfg.is_sync())
 	modules = new module_manager_t();
     else {
-	queue = new veloc_ipc::shm_queue_t<command_t>();
-	queue->set_id(std::to_string(r));
+	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(r).c_str());
     }
     DBG("VELOC initialized");
 }
@@ -37,15 +36,27 @@ bool veloc_client_t::mem_unprotect(int id) {
 command_t veloc_client_t::gen_ckpt_details(int cmd, const char *name, int version) {
     std::ostringstream os;
     os << name << "-" << rank << "-" << version;
-    return command_t(cmd, version, cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");
+    return command_t(rank, cmd, version, cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");
 }
 
-bool veloc_client_t::checkpoint_begin(const char *name, int version) {
+bool veloc_client_t::checkpoint_wait() {
+    if (cfg.is_sync()) {
+	INFO("waiting for a checkpoint in sync mode is not necessary, result is returned by checkpoint_end() directly");
+	return true;
+    }    
+    if (checkpoint_in_progress) {
+	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
+	return false;
+    }
+    return queue->wait_completion() == VELOC_SUCCESS;
+}
+
+bool veloc_client_t::checkpoint_begin(const char *name, int version) {    
     if (checkpoint_in_progress) {
 	ERROR("nested checkpoints not yet supported");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::CHECKPOINT_END, name, version);
+    current_ckpt = gen_ckpt_details(command_t::CHECKPOINT, name, version);
     checkpoint_in_progress = true;
     return true;
 }
@@ -75,30 +86,30 @@ bool veloc_client_t::checkpoint_mem() {
 }
 
 bool veloc_client_t::checkpoint_end(bool /*success*/) {
-    checkpoint_in_progress = false;    
-    if (cfg.is_sync())
-	modules->run(std::to_string(rank), current_ckpt);
-    else
-	queue->enqueue(current_ckpt);	
+    checkpoint_in_progress = false;
+    if (cfg.is_sync()) {
+	int result = VELOC_SUCCESS;
+	modules->notify_command(current_ckpt, [&result](int status) { result = std::max(result, status); });
+	return result == VELOC_SUCCESS;
+    } else
+	queue->enqueue(current_ckpt);    
     return true;
 }
 
-int veloc_client_t::restart_test(const char *name) {
-    std::string cname(name);
-    int ret = VELOC_FAILURE;
-    for(auto& f : boost::make_iterator_range(bf::directory_iterator(cfg.get_scratch()), {})) {
-	std::string fname = f.path().leaf().string();
-	int ckpt_rank, version;
-	if (bf::is_regular_file(f.path()) &&
-	    fname.compare(0, cname.length(), cname) == 0 &&
-	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &ckpt_rank, &version) == 2 &&
-	    ckpt_rank == rank) {	 
-	    if (version > ret)
-		ret = version;
-	}
+int veloc_client_t::run_blocking(const command_t &cmd) {
+    if (cfg.is_sync()) {
+	int result = VELOC_SUCCESS;
+	modules->notify_command(cmd, [&result](int status) { result = std::max(result, status); });
+	return result;
+    } else {
+	queue->enqueue(cmd);
+	return queue->wait_completion();
     }
-    // TO-DO: allreduce on versions to select min of max available on all ranks (maybe separate function test_all)
-    return ret;
+}
+
+int veloc_client_t::restart_test(const char *name) {
+    
+    return run_blocking(command_t(rank, command_t::TEST, 0, name));
 }
 
 std::string veloc_client_t::route_file() {
@@ -110,8 +121,11 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::RESTART_BEGIN, name, version);
-    return bf::exists(current_ckpt.ckpt_name);
+    current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);
+    if (bf::exists(current_ckpt.ckpt_name))
+	return true;
+    else
+	return run_blocking(current_ckpt) == VELOC_SUCCESS;
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {

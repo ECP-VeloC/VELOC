@@ -1,14 +1,32 @@
 #include <mpi.h>
 
-#include "topology.hpp"
+#include "common/config.hpp"
+#include "common/command.hpp"
 #include "common/ipc_queue.hpp"
+
+#include "topology.hpp"
 #include "module_manager.hpp"
+#include "posix_transfer.hpp"
 
 #define __DEBUG
 #include "common/debug.hpp"
 
 int main(int argc, char *argv[]) {
-    int rank;
+    if (argc != 2) {
+	veloc_ipc::cleanup();
+	std::cout << "Usage: " << argv[0] << " <veloc_config>" << std::endl;
+	return 1;
+    }
+
+    config_t cfg;
+    if (!cfg.get_parameters(argv[1]))
+	return 2;
+    if (cfg.is_sync()) {
+	ERROR("configuration requests sync mode, backend is not needed");
+	return 3;
+    }
+    
+    int rank;    
     MPI_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -16,16 +34,19 @@ int main(int argc, char *argv[]) {
 
     printf("Rank %d my right partner is %d\n", rank, top.get_partner(1));
 
-    boost::interprocess::shared_memory_object::remove(veloc_ipc::shm_name);
-    veloc_ipc::shm_queue_t<command_t> queue;
+    veloc_ipc::cleanup();
+    veloc_ipc::shm_queue_t<command_t> queue(NULL);
     module_manager_t modules;
+    posix_transfer_t ptransfer(cfg.get_scratch(), cfg.get_persistent());
+    modules.add_module([&ptransfer](const command_t &c, const completion_t &completion) {
+	    ptransfer.process_command(c, completion);
+	});
 
     command_t c;
     while (true) {
-	std::string id = queue.dequeue_any(c);
-	modules.run(id, c);
+	completion_t completion = queue.dequeue_any(c);
+	modules.notify_command(c, completion);
     }
-
     MPI_Finalize();
     
     return 0;

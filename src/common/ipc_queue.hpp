@@ -1,108 +1,108 @@
 #ifndef __IPC_QUEUE_HPP
 #define __IPC_QUEUE_HPP
 
-#include <cstring>
+#include "status.hpp"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/named_condition.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
-#include <boost/interprocess/containers/deque.hpp>
+#include <boost/interprocess/containers/list.hpp>
 
 #define __DEBUG
 #include "common/debug.hpp"
 
-class command_t {
-public:
-    static const size_t MAX_SIZE = 128;
-    static const int CHECKPOINT_END = 0, RESTART_BEGIN = 1;
-    
-    int command;
-    int version;
-    char ckpt_name[MAX_SIZE];
-
-    command_t() { }
-    command_t(int c, int v, const std::string &s) : command(c), version(v) {
-	std::strcpy(ckpt_name, s.c_str());
-    }
-    friend std::ostream &operator<<(std::ostream &output, const command_t &c) {
-	output << "(Command = '" << c.command << "', Version = '" << c.version << "', File = '" << c.ckpt_name << "')";
-	return output;
-    }
-};
-
 namespace veloc_ipc {
+    
 using namespace boost::interprocess;
-static const char shm_name[] = "veloc_shm";
+    
+inline void cleanup() {
+    boost::interprocess::shared_memory_object::remove("veloc_shm");
+    boost::interprocess::named_mutex::remove("veloc_pending_mutex");
+    boost::interprocess::named_condition::remove("veloc_pending_cond");
+}
+    
 template <class T> class shm_queue_t {
     static const size_t MAX_SIZE = 1 << 20;
-    
     struct container_t {
 	typedef allocator<T, managed_shared_memory::segment_manager> T_allocator;
-	typedef deque<T, T_allocator> queue_t;
+	typedef list<T, T_allocator> list_t;
 	
 	interprocess_mutex mutex;
-	interprocess_condition wait_cond;
-	queue_t queue;
-	container_t(const T_allocator &alloc) : queue(alloc) { }
+	interprocess_condition cond;
+	int status = VELOC_SUCCESS;
+	list_t pending, progress;
+	container_t(const T_allocator &alloc) : pending(alloc), progress(alloc) { }
     };
-
+    typedef typename container_t::list_t::iterator list_iterator_t;
+    
     managed_shared_memory segment;
-    named_mutex     cond_mutex;
-    named_condition cond;
+    named_mutex     pending_mutex;
+    named_condition pending_cond;
     container_t *data = NULL;
 
-    bool find_non_empty_queue(std::string &id) {
+    bool find_non_empty_pending() {
 	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {	    
 	    data = (container_t *)it->value();
-	    if (!data->queue.empty()) {
-		id = std::string(it->name(), it->name_length());
+	    if (!data->pending.empty())
 		return true;
-	    }
 	}
 	return false;
     }
+    bool check_completion() {
+	// this is a predicate intended to be used for condition variables only
+	return data->pending.empty() && data->progress.empty();
+    }
+    void set_completion(container_t *q, const list_iterator_t  &it, int status) {
+	// delete the element from the progress queue and notify the producer
+	DBG("completed element " << *it);
+	scoped_lock<interprocess_mutex> queue_lock(q->mutex);
+	q->progress.erase(it);
+	q->status = std::max(q->status, status);
+	q->cond.notify_one();
+    }
     
-  public:
-    shm_queue_t() : segment(open_or_create, shm_name, MAX_SIZE),
-		    cond_mutex(open_or_create, "backend_cond_mutex"),
-		    cond(open_or_create, "backend_cond") { }        
-    void set_id(const std::string &id) {
-	data = segment.find_or_construct<container_t>(id.c_str())(segment.get_allocator<typename container_t::T_allocator>());
+  public:    
+    shm_queue_t(const char *id) : segment(open_or_create, "veloc_shm" , MAX_SIZE),
+				  pending_mutex(open_or_create, "veloc_pending_mutex"),
+				  pending_cond(open_or_create, "veloc_pending_cond") {
+	if (id != NULL)
+	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
+    }    
+    int wait_completion() {
+	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
+	while (!check_completion())
+	    data->cond.wait(cond_lock);
+	int ret = data->status;
+	data->status = VELOC_SUCCESS;
+	return ret;
     }
-    void enqueue(T &e) {
-	assert(data != NULL);
+    void enqueue(const T &e) {
+	// enqueue an element and notify the consumer
 	scoped_lock<interprocess_mutex> lock(data->mutex);
-	data->queue.push_back(e);
-	lock.unlock();
-	cond.notify_one();
+	data->pending.push_back(e);
+	pending_cond.notify_one();
+	DBG("enqueued element " << e);
     }
-    void dequeue(T &e) {
-	assert(data != NULL);
-	// wait until at the queue for the registered id has at least one element
-	scoped_lock<named_mutex> cond_lock(cond_mutex);
-	while (data->queue.empty())
-	    cond.wait(cond_lock);
+    completion_t dequeue_any(T &e) {
+	// wait until at least one pending queue has at least one element
+	scoped_lock<named_mutex> cond_lock(pending_mutex);
+	while (!find_non_empty_pending())
+	    pending_cond.wait(cond_lock);
 	cond_lock.unlock();
-	// remove the head of the queue
+	// remove the head of the pending queue and move it to the progress queue
 	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
-	e = data->queue.front();
-	data->queue.pop_front();
+	e = data->pending.front();
+	data->pending.pop_front();
+	data->progress.push_back(e);
+	DBG("dequeued element " << e);
+	return [this, q = data, it = std::prev(data->progress.end())](int status) { set_completion(q, it, status); };
     }
-    std::string dequeue_any(T &e) {
-	std::string id;
-	// wait until at least one queue has at least one element
-	scoped_lock<named_mutex> cond_lock(cond_mutex);
-	while (!find_non_empty_queue(id))
-	    cond.wait(cond_lock);
-	cond_lock.unlock();
-	// remove the head of the queue
-	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
-	e = data->queue.front();
-	data->queue.pop_front();
-	return id;
+    size_t get_num_queues() {
+	return segment.get_num_named_objects();
     }
 };
+
 };
 
 #endif // __IPC_QUEUE_HPP

@@ -2,14 +2,13 @@
 #define __CLIENT_HPP
 
 #include "common/config.hpp"
+#include "common/command.hpp"
 #include "common/ipc_queue.hpp"
 #include "backend/module_manager.hpp"
 
 #include <unordered_map>
 #include <map>
 #include <set>
-
-#include <boost/filesystem.hpp>
 
 namespace bf = boost::filesystem;
 
@@ -28,6 +27,8 @@ class veloc_client_t {
     module_manager_t *modules;
 
     command_t gen_ckpt_details(int cmd, const char *name, int version);
+    int run_blocking(const command_t &cmd);
+    
 public:
     veloc_client_t(int r, const char *cfg_file);
 
@@ -38,6 +39,7 @@ public:
     bool checkpoint_begin(const char *name, int version);
     bool checkpoint_mem();
     bool checkpoint_end(bool success);
+    bool checkpoint_wait();
 
     int restart_test(const char *name);
     bool restart_begin(const char *name, int version);
