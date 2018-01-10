@@ -6,7 +6,7 @@
 
 #include "topology.hpp"
 #include "module_manager.hpp"
-#include "posix_transfer.hpp"
+#include "driver_module.hpp"
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
 
     config_t cfg;
-    if (!cfg.get_parameters(argv[1]))
+    if (!cfg.init(argv[1]))
 	return 2;
     if (cfg.is_sync()) {
 	ERROR("configuration requests sync mode, backend is not needed");
@@ -37,15 +37,19 @@ int main(int argc, char *argv[]) {
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> queue(NULL);
     module_manager_t modules;
+    /*
     posix_transfer_t ptransfer(cfg.get_scratch(), cfg.get_persistent());
     modules.add_module([&ptransfer](const command_t &c, const completion_t &completion) {
 	    ptransfer.process_command(c, completion);
 	});
+    */
+    driver_module_t driver(cfg);
+    modules.add_module([&driver](const command_t &c) { return driver.process_command(c); });
 
     command_t c;
     while (true) {
 	completion_t completion = queue.dequeue_any(c);
-	modules.notify_command(c, completion);
+	completion(modules.notify_command(c));
     }
     MPI_Finalize();
     

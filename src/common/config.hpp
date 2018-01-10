@@ -3,17 +3,17 @@
 
 #include <string>
 
-class config_t {
-    std::string scratch, persistent;
-    bool sync_mode;
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
+class config_t {
+    boost::property_tree::ptree pt;
+    bool sync_mode;
+    
 public:    
-    bool get_parameters(const std::string &cfg_file);
-    const std::string &get_scratch() {
-	return scratch;
-    }
-    const std::string &get_persistent() {
-	return persistent;
+    bool init(const std::string &cfg_file);
+    const std::string get(const std::string &param) const {
+	return pt.get<std::string>(param);
     }
     bool is_sync() {
 	return sync_mode;

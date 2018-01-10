@@ -58,7 +58,10 @@ template <class T> class shm_queue_t {
 	DBG("completed element " << *it);
 	scoped_lock<interprocess_mutex> queue_lock(q->mutex);
 	q->progress.erase(it);
-	q->status = std::max(q->status, status);
+	if (q->status < 0 || status < 0)
+	    q->status = std::min(q->status, status);
+	else
+	    q->status = std::max(q->status, status);
 	q->cond.notify_one();
     }
     

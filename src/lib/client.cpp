@@ -8,7 +8,7 @@
 #include "common/debug.hpp"
 
 veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
-    if (!cfg.get_parameters(cfg_file))
+    if (!cfg.init(cfg_file))
 	throw std::runtime_error("configuration error, cannot initialize VELOC");
     if (cfg.is_sync())
 	modules = new module_manager_t();
@@ -36,7 +36,7 @@ bool veloc_client_t::mem_unprotect(int id) {
 command_t veloc_client_t::gen_ckpt_details(int cmd, const char *name, int version) {
     std::ostringstream os;
     os << name << "-" << rank << "-" << version;
-    return command_t(rank, cmd, version, cfg.get_scratch() + bf::path::preferred_separator + os.str() + ".dat");
+    return command_t(rank, cmd, version, cfg.get("scratch") + bf::path::preferred_separator + os.str() + ".dat");
 }
 
 bool veloc_client_t::checkpoint_wait() {
@@ -87,28 +87,24 @@ bool veloc_client_t::checkpoint_mem() {
 
 bool veloc_client_t::checkpoint_end(bool /*success*/) {
     checkpoint_in_progress = false;
-    if (cfg.is_sync()) {
-	int result = VELOC_SUCCESS;
-	modules->notify_command(current_ckpt, [&result](int status) { result = std::max(result, status); });
-	return result == VELOC_SUCCESS;
-    } else
+    if (cfg.is_sync())
+	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
+    else {
 	queue->enqueue(current_ckpt);    
-    return true;
+	return true;
+    }
 }
 
 int veloc_client_t::run_blocking(const command_t &cmd) {
-    if (cfg.is_sync()) {
-	int result = VELOC_SUCCESS;
-	modules->notify_command(cmd, [&result](int status) { result = std::max(result, status); });
-	return result;
-    } else {
+    if (cfg.is_sync())
+	return modules->notify_command(cmd);
+    else {
 	queue->enqueue(cmd);
 	return queue->wait_completion();
     }
 }
 
-int veloc_client_t::restart_test(const char *name) {
-    
+int veloc_client_t::restart_test(const char *name) {    
     return run_blocking(command_t(rank, command_t::TEST, 0, name));
 }
 

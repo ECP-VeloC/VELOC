@@ -14,7 +14,7 @@
 #endif
 
 #ifndef VELOC_FAILURE
-#define VELOC_FAILURE (1)
+#define VELOC_FAILURE (-1)
 #endif
 
 /** Constants */
