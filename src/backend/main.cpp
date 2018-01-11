@@ -6,7 +6,9 @@
 
 #include "topology.hpp"
 #include "module_manager.hpp"
+
 #include "driver_module.hpp"
+#include "client_watchdog.hpp"
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -43,9 +45,11 @@ int main(int argc, char *argv[]) {
 	    ptransfer.process_command(c, completion);
 	});
     */
+    client_watchdog_t watchdog(cfg);
+    modules.add_module([&watchdog](const command_t &c) { return watchdog.process_command(c); });
     driver_module_t driver(cfg);
     modules.add_module([&driver](const command_t &c) { return driver.process_command(c); });
-
+    
     command_t c;
     while (true) {
 	completion_t completion = queue.dequeue_any(c);

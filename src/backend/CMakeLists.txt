@@ -1,6 +1,7 @@
 # Comment as needed to reduce build time
 add_executable (backend
   main.cpp topology.cpp module_manager.cpp
+  client_watchdog.cpp
   driver_module.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )

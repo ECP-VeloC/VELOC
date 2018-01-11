@@ -14,6 +14,7 @@ veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
 	modules = new module_manager_t();
     else {
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(r).c_str());
+	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
     }
     DBG("VELOC initialized");
 }

@@ -72,6 +72,6 @@ int driver_module_t::process_command(const command_t &c) {
 	return transfer_file(c.ckpt_name, remote);
 	
     default:
-	return VELOC_FAILURE;
+	return VELOC_SUCCESS;
     }
 }
