@@ -1,16 +1,15 @@
-# Comment as needed to reduce build time
-add_executable (backend
-  main.cpp topology.cpp module_manager.cpp
-  client_watchdog.cpp
-  driver_module.cpp
+add_executable (veloc-backend
+  main.cpp 
+  topology.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
 # Link the executable to the necessary libraries.
-target_link_libraries (backend ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)
+#target_link_libraries (backend ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)
+target_link_libraries (veloc-backend veloc-modules ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)
 
 # Install executables
-install (TARGETS backend
+install (TARGETS veloc-backend
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

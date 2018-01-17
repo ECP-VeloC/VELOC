@@ -23,6 +23,7 @@ void client_watchdog_t::timeout_check() {
 	for (auto &e : client_map)
 	    if (t > e.second) {
 		ERROR("client " << e.first << " triggered a watchdog timeout");
+		// TODO: kill client and initiate restart
 	    }
 	std::this_thread::sleep_for(std::chrono::seconds(timeout));
     }

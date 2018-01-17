@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PREFIX=/tmp/test
+PREFIX=$HOME/deploy
 V_MAJOR=1
 V_MINOR=65
 V_ADDITIONAL=1

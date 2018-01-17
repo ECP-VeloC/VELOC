@@ -10,9 +10,11 @@
 veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
     if (!cfg.init(cfg_file))
 	throw std::runtime_error("configuration error, cannot initialize VELOC");
-    if (cfg.is_sync())
+    if (cfg.is_sync()) {
 	modules = new module_manager_t();
-    else {
+	modules->add_default_modules(cfg);
+	modules->notify_command(command_t(rank, command_t::INIT, 0, ""));
+    } else {
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(r).c_str());
 	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
     }
@@ -91,7 +93,7 @@ bool veloc_client_t::checkpoint_end(bool /*success*/) {
     if (cfg.is_sync())
 	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
     else {
-	queue->enqueue(current_ckpt);    
+	queue->enqueue(current_ckpt);
 	return true;
     }
 }

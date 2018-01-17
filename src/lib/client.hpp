@@ -4,7 +4,7 @@
 #include "common/config.hpp"
 #include "common/command.hpp"
 #include "common/ipc_queue.hpp"
-#include "backend/module_manager.hpp"
+#include "modules/module_manager.hpp"
 
 #include <unordered_map>
 #include <map>
@@ -23,8 +23,8 @@ class veloc_client_t {
     int rank;
     bool checkpoint_in_progress = false;
 
-    veloc_ipc::shm_queue_t<command_t> *queue;
-    module_manager_t *modules;
+    veloc_ipc::shm_queue_t<command_t> *queue = NULL;
+    module_manager_t *modules = NULL;
 
     command_t gen_ckpt_details(int cmd, const char *name, int version);
     int run_blocking(const command_t &cmd);
