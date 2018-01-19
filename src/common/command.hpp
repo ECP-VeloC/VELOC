@@ -5,8 +5,6 @@
 
 #include <boost/filesystem.hpp>
 
-typedef std::function<void (int)> completion_t;
-
 class command_t {
 public:
     static const size_t MAX_SIZE = 128;

@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     
     command_t c;
     while (true) {
-	completion_t completion = queue.dequeue_any(c);
+	veloc_ipc::completion_t completion = queue.dequeue_any(c);
 	completion(modules.notify_command(c));
     }
     MPI_Finalize();

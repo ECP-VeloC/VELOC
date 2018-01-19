@@ -15,6 +15,8 @@
 namespace veloc_ipc {
     
 using namespace boost::interprocess;
+
+typedef std::function<void (int)> completion_t;
     
 inline void cleanup() {
     boost::interprocess::shared_memory_object::remove("veloc_shm");
