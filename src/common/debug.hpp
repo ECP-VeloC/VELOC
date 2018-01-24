@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <chrono>
 
 #define safe_printf(...) {\
     char msg[1024];\
@@ -12,11 +12,12 @@
     std::cout << msg;}
 
 #ifdef __BENCHMARK
-#define TIMER_START(timer) boost::posix_time::ptime timer(boost::posix_time::microsec_clock::local_time());
+#define TIMER_START(timer) auto timer = std::chrono::steady_clock::now();
 #define TIMER_STOP(timer, message) {\
-	boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());\
-	boost::posix_time::time_duration t = now - timer;\
-	std::clog << "[BENCHMARK " << now << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << t << " us] " << message << std::endl;\
+        auto now = std::chrono::steady_clock::now();\
+	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count();\
+        auto t = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count(); \
+	std::clog << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
     }
 #else
 #define TIMER_START(timer)
@@ -24,8 +25,8 @@
 #endif
 
 #define MESSAGE(out, level, message)\
-    out << "[" << level << " " << boost::posix_time::microsec_clock::local_time() << "] [" \
-    << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl
+    out << "[" << level << " " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() << "] [" \
+        << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl
 
 #define FATAL(message) {\
     std::ostringstream out;\

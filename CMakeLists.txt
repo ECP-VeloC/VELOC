@@ -9,7 +9,7 @@ add_definitions(-O2 -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 
 list(APPEND CMAKE_MODULE_PATH "${VELOC_SOURCE_DIR}/cmake")
 
-# the elegant way to set up boost
+# set up boost
 find_path(BOOST_ROOT NAMES include/boost)
 set(Boost_FIND_REQUIRED True)
 find_package(Boost 1.60 COMPONENTS filesystem system serialization mpi)
