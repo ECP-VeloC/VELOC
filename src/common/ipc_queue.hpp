@@ -57,8 +57,8 @@ template <class T> class shm_queue_t {
     }
     void set_completion(container_t *q, const list_iterator_t  &it, int status) {
 	// delete the element from the progress queue and notify the producer
-	DBG("completed element " << *it);
 	scoped_lock<interprocess_mutex> queue_lock(q->mutex);
+	DBG("completed element " << *it);
 	q->progress.erase(it);
 	if (q->status < 0 || status < 0)
 	    q->status = std::min(q->status, status);
@@ -73,7 +73,7 @@ template <class T> class shm_queue_t {
 				  pending_cond(open_or_create, "veloc_pending_cond") {
 	if (id != NULL)
 	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
-    }    
+    }
     int wait_completion() {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
 	while (!check_completion())
@@ -84,8 +84,10 @@ template <class T> class shm_queue_t {
     }
     void enqueue(const T &e) {
 	// enqueue an element and notify the consumer
-	scoped_lock<interprocess_mutex> lock(data->mutex);
+	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
 	data->pending.push_back(e);
+	queue_lock.unlock();
+	scoped_lock<named_mutex> cond_lock(pending_mutex);
 	pending_cond.notify_one();
 	DBG("enqueued element " << e);
     }
