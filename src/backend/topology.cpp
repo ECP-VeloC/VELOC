@@ -33,7 +33,7 @@ topology_t::topology_t(const MPI_Comm &comm, std::string failure_domain) :
     while (i < mpi_comm.size()) {
 	for (auto &host : domain_map) {
 	    auto it = domain_map_it[host.first];
-	    if (it != host.second.end()) {		
+	    if (it != host.second.end()) {
 		shuffle[*it] = i;
 		reorder[i++] = *it;
 		domain_map_it[host.first] = ++it;

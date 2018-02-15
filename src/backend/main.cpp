@@ -8,8 +8,13 @@
 
 #include "modules/module_manager.hpp"
 
+#include <queue>
+#include <future>
+
 #define __DEBUG
 #include "common/debug.hpp"
+
+const unsigned int MAX_PARALLELISM = 64;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -30,19 +35,25 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    topology_t top(MPI_COMM_WORLD, "antares-" + std::to_string(rank / 3));
+    topology_t top(MPI_COMM_WORLD, "default");
 
     printf("Rank %d my right partner is %d\n", rank, top.get_partner(1));
 
     veloc_ipc::cleanup();
-    veloc_ipc::shm_queue_t<command_t> queue(NULL);
+    veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
     modules.add_default_modules(cfg);
     
-    command_t c;
+    std::queue<std::future<void> > work_queue;
     while (true) {
-	veloc_ipc::completion_t completion = queue.dequeue_any(c);
-	completion(modules.notify_command(c));
+	work_queue.push(std::async(std::launch::async, [&modules,&command_queue] {
+		    command_t c;
+		    command_queue.dequeue_any(c)(modules.notify_command(c));
+		}));
+	if (work_queue.size() > MAX_PARALLELISM) {
+	    work_queue.front().wait();
+	    work_queue.pop();
+	}
     }
     MPI_Finalize();
     

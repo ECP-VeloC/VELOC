@@ -43,13 +43,13 @@ template <class T> class shm_queue_t {
     named_condition pending_cond;
     container_t *data = NULL;
 
-    bool find_non_empty_pending() {
+    container_t *find_non_empty_pending() {
 	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {	    
-	    data = (container_t *)it->value();
-	    if (!data->pending.empty())
-		return true;
+	    container_t *result = (container_t *)it->value();
+	    if (!result->pending.empty())
+		return result;
 	}
-	return false;
+	return NULL;
     }
     bool check_completion() {
 	// this is a predicate intended to be used for condition variables only
@@ -93,17 +93,18 @@ template <class T> class shm_queue_t {
     }
     completion_t dequeue_any(T &e) {
 	// wait until at least one pending queue has at least one element
+	container_t *first_found;
 	scoped_lock<named_mutex> cond_lock(pending_mutex);
-	while (!find_non_empty_pending())
+	while ((first_found = find_non_empty_pending()) == NULL)
 	    pending_cond.wait(cond_lock);
 	cond_lock.unlock();
 	// remove the head of the pending queue and move it to the progress queue
-	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
-	e = data->pending.front();
-	data->pending.pop_front();
-	data->progress.push_back(e);
+	scoped_lock<interprocess_mutex> queue_lock(first_found->mutex);
+	e = first_found->pending.front();
+	first_found->pending.pop_front();
+	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return [this, q = data, it = std::prev(data->progress.end())](int status) { set_completion(q, it, status); };
+	return [this, q = first_found, it = std::prev(first_found->progress.end())](int status) { set_completion(q, it, status); };
     }
     size_t get_num_queues() {
 	return segment.get_num_named_objects();
