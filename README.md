@@ -1,6 +1,6 @@
 # VELOC: VEry-Low Overhead Checkpointing system
 
-VELOC software version 0.9
+VELOC Experimental Branch
 
 The VELOC project aims to provide a framework offering a
 checkpoint/restart interface and providing transparently the benefit
@@ -48,6 +48,9 @@ We currently test three ways to interact with the VeloC API:
 - Memory interface
 - File-based interface
 - A hybrid interface mixing memory-interface and file-based interface paradigms
+
+There are two test applications in the "test" subdirectory which illustrate
+how to use the memory based and file based API.
 
 ## Contacts
 
