@@ -18,5 +18,8 @@ module_manager_t::~module_manager_t() {
 }
 
 int module_manager_t::notify_command(const command_t &c) {
-    return *sig(c);
+    int ret = VELOC_SUCCESS;
+    for (auto &f : sig)
+	ret = f(c);
+    return ret;
 }

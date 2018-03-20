@@ -1,23 +1,29 @@
 #ifndef __CONFIG_HPP
 #define __CONFIG_HPP
 
-#include <string>
+#include "INIReader.h"
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/optional.hpp>
+#include <limits>
 
 class config_t {
-    boost::property_tree::ptree pt;
     bool sync_mode;
-    
+    INIReader reader;
 public:    
-    bool init(const std::string &cfg_file);
-    const std::string get(const std::string &param) const {
-	return pt.get<std::string>(param);
+    config_t(const std::string &cfg_file);
+    std::string get(const std::string &param) const {
+	std::string ret = reader.Get("", param, "");
+	if (ret.empty())
+	    throw std::runtime_error("config parameter " + param + " missing or empty");
+	return ret;
+
     }
-    template <class T> const boost::optional<T> get_optional(const std::string &param) const {
-	return pt.get_optional<T>(param);
+    bool get_optional(const std::string &param, std::string &value) const {
+	value = reader.Get("", param, "");
+	return value.empty();
+    }
+    bool get_optional(const std::string &param, int &value) const {
+	value = reader.GetInteger("", param, std::numeric_limits<int>::lowest());
+	return value == std::numeric_limits<int>::lowest();
     }
     bool is_sync() {
 	return sync_mode;

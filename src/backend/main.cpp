@@ -21,9 +21,7 @@ int main(int argc, char *argv[]) {
 	return 1;
     }
 
-    config_t cfg;
-    if (!cfg.init(argv[1]))
-	return 2;
+    config_t cfg(argv[1]);
     if (cfg.is_sync()) {
 	ERROR("configuration requests sync mode, backend is not needed");
 	return 3;

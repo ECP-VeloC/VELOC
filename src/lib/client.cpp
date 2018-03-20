@@ -8,9 +8,7 @@
 #define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
-    if (!cfg.init(cfg_file))
-	throw std::runtime_error("configuration error, cannot initialize VELOC");
+veloc_client_t::veloc_client_t(int r, const char *cfg_file) : cfg(cfg_file), rank(r) {
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);

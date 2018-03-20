@@ -53,13 +53,12 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 
 #ifdef AXL_FOUND // compiled with AXL
 transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
-    auto axl_config = cfg.get_optional<std::string>("axl_config");
-    if (!axl_config || access(*axl_config, R_OK) != 0) {
+    std::string axl_config;
+    if (!cfg.get_optional("axl_config", axl_config) || access(axl_config, R_OK) != 0) {
 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
 	return;
     }
-    auto axl_str = cfg.get_optional<std::string>("axl_type");
-    if (!axl_str || (*axl_str != "posix" && *axl_str != "bb" && *axl_str != "dw")) {
+    if (!cfg.get_optional("axl_type", axl_type) || (axl_type != "posix" && axl_type != "bb" && axl_type != "dw")) {
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
     }
@@ -69,7 +68,6 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
     else {
 	INFO("AXL successfully initialized");
 	use_axl = true;
-	axl_type = *axl_str;
     }
 }
 

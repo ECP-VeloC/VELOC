@@ -8,11 +8,11 @@
 #include "modules/transfer_module.hpp"
 
 #include <functional>
-#include <boost/signals2.hpp>
+#include <vector>
 
 class module_manager_t {    
     typedef std::function<int (const command_t &)> method_t;
-    boost::signals2::signal<int (const command_t &)> sig;
+    std::vector<method_t> sig;
     client_watchdog_t *watchdog = NULL;
     transfer_module_t *transfer = NULL;
     
@@ -21,7 +21,7 @@ public:
     ~module_manager_t();
     void add_default_modules(const config_t &cfg);
     void add_module(const method_t &m) {
-	sig.connect(m);
+	sig.push_back(m);
     }
     int notify_command(const command_t &c);
 };
