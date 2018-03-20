@@ -12,7 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${VELOC_SOURCE_DIR}/cmake")
 # set up boost
 find_path(BOOST_ROOT NAMES include/boost)
 set(Boost_FIND_REQUIRED True)
-find_package(Boost 1.60 COMPONENTS filesystem system serialization mpi)
+find_package(Boost 1.60)
 include_directories(${Boost_INCLUDE_DIR})
 
 # set up PThreads

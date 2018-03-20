@@ -4,8 +4,6 @@
 #include "common/command.hpp"
 #include "common/ipc_queue.hpp"
 
-#include "topology.hpp"
-
 #include "modules/module_manager.hpp"
 
 #include <queue>
@@ -33,17 +31,15 @@ int main(int argc, char *argv[]) {
     
     int rank;
     MPI_Init(&argc, &argv);
-
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    topology_t top(MPI_COMM_WORLD, "default");
 
-    printf("Rank %d my right partner is %d\n", rank, top.get_partner(1));
+    INFO("MPI rank = " << rank);
 
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
     modules.add_default_modules(cfg);
-    
+
     std::queue<std::future<void> > work_queue;
     while (true) {
 	work_queue.push(std::async(std::launch::async, [&modules,&command_queue] {
@@ -56,6 +52,6 @@ int main(int argc, char *argv[]) {
 	}
     }
     MPI_Finalize();
-    
+
     return 0;
 }

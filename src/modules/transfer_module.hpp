@@ -5,10 +5,6 @@
 #include "common/command.hpp"
 #include "common/status.hpp"
 
-#include <boost/filesystem.hpp>
-
-namespace bf = boost::filesystem;
-
 class transfer_module_t {
     const config_t &cfg;
     bool use_axl = false;

@@ -4,9 +4,6 @@ add_library (veloc-modules SHARED
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
-# Link the executable to the necessary libraries.
-target_link_libraries (veloc-modules ${Boost_LIBRARIES})
-
 # Compile and link with AXL if found
 find_package(AXL)
 if(${AXL_FOUND})

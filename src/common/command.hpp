@@ -2,8 +2,7 @@
 #define __COMMAND_HPP
 
 #include <iostream>
-
-#include <boost/filesystem.hpp>
+#include <cstring>
 
 class command_t {
 public:

@@ -10,8 +10,6 @@
 #include <map>
 #include <set>
 
-namespace bf = boost::filesystem;
-
 class veloc_client_t {
     config_t cfg;
 

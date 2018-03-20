@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <unistd.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -37,9 +38,8 @@ bool veloc_client_t::mem_unprotect(int id) {
 }
 
 command_t veloc_client_t::gen_ckpt_details(int cmd, const char *name, int version) {
-    std::ostringstream os;
-    os << name << "-" << rank << "-" << version;
-    return command_t(rank, cmd, version, cfg.get("scratch") + bf::path::preferred_separator + os.str() + ".dat");
+    return command_t(rank, cmd, version, cfg.get("scratch") + "/" + std::string(name) +
+		     "-" + std::to_string(rank) + "-" + std::to_string(version) + ".dat");
 }
 
 bool veloc_client_t::checkpoint_wait() {
@@ -121,7 +121,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	return false;
     }
     current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);
-    if (bf::exists(current_ckpt.ckpt_name))
+    if (access(current_ckpt.ckpt_name, R_OK) == 0)
 	return true;
     else
 	return run_blocking(current_ckpt) == VELOC_SUCCESS;
