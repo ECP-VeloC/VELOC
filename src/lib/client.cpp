@@ -107,7 +107,7 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
     }
 }
 
-int veloc_client_t::restart_test(const char *name) {    
+int veloc_client_t::restart_test(const char *name) {
     return run_blocking(command_t(rank, command_t::TEST, 0, name));
 }
 

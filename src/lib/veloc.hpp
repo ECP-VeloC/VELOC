@@ -12,7 +12,7 @@
 
 namespace bf = boost::filesystem;
 
-class veloc_client_t {    
+class veloc_client_t {
     config_t cfg;
 
     typedef std::pair <void *, size_t> region_t;
@@ -28,14 +28,14 @@ class veloc_client_t {
 
     command_t gen_ckpt_details(int cmd, const char *name, int version);
     int run_blocking(const command_t &cmd);
-    
+
 public:
     veloc_client_t(int r, const char *cfg_file);
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
     bool mem_unprotect(int id);
     std::string route_file();
-    
+
     bool checkpoint_begin(const char *name, int version);
     bool checkpoint_mem();
     bool checkpoint_end(bool success);

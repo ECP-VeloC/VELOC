@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
 	
 	char veloc_file[VELOC_MAX_NAME];
-	assert(VELOC_Route_file("heatdis", v, veloc_file) == VELOC_SUCCESS);
+	assert(VELOC_Route_file(veloc_file) == VELOC_SUCCESS);
 
 	int valid = 1;
         FILE* fd = fopen(veloc_file, "rb");
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
 
 	    char veloc_file[VELOC_MAX_NAME];
-	    assert(VELOC_Route_file("heatdis", i, veloc_file) == VELOC_SUCCESS);
+	    assert(VELOC_Route_file(veloc_file) == VELOC_SUCCESS);
 	
             int valid = 1;
             FILE* fd = fopen(veloc_file, "wb");
