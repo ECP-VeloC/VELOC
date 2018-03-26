@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <unistd.h>
+#include <ftw.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -18,6 +19,15 @@ veloc_client_t::veloc_client_t(int r, const char *cfg_file) : cfg(cfg_file), ran
 	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
     }
     DBG("VELOC initialized");
+}
+
+static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
+    return remove(f);
+}
+
+void veloc_client_t::cleanup() {
+    nftw(cfg.get("scratch").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
+    nftw(cfg.get("persistent").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 veloc_client_t::~veloc_client_t() {

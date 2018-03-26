@@ -5,7 +5,7 @@
 
 #include "heatdis.h"
 
-static const unsigned int CKPT_FREQ = ITER_TIMES / 10;
+static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
 
 void initData(int nbLines, int M, int rank, double *h) {
     int i, j;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
     free(h);
     free(g);
-    VELOC_Finalize();
+    VELOC_Finalize(0); // do not clean up
     MPI_Finalize();
     return 0;
 }

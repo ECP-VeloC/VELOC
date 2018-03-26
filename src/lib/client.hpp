@@ -29,6 +29,7 @@ class veloc_client_t {
 
 public:
     veloc_client_t(int r, const char *cfg_file);
+    void cleanup();
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
     bool mem_unprotect(int id);

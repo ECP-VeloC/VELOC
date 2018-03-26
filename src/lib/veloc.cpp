@@ -74,8 +74,10 @@ extern "C" int VELOC_Restart_end(int success) {
     return CLIENT_CALL(veloc_client->restart_end(success));
 }
 
-extern "C" int VELOC_Finalize() {
+extern "C" int VELOC_Finalize(int cleanup) {
     if (veloc_client != NULL) {
+	if (cleanup)
+	    veloc_client->cleanup();
 	delete veloc_client;
 	return VELOC_SUCCESS;
     } else {

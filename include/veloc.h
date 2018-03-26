@@ -45,7 +45,7 @@ extern "C" {
 //                     persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
 
 int VELOC_Init(int rank, const char *cfg_file);
-int VELOC_Finalize();
+int VELOC_Finalize(int cleanup);
     
 /**************************
  * Memory registration
