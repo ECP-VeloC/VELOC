@@ -19,11 +19,11 @@ public:
     }
     bool get_optional(const std::string &param, std::string &value) const {
 	value = reader.Get("", param, "");
-	return value.empty();
+	return !value.empty();
     }
     bool get_optional(const std::string &param, int &value) const {
 	value = reader.GetInteger("", param, std::numeric_limits<int>::lowest());
-	return value == std::numeric_limits<int>::lowest();
+	return value != std::numeric_limits<int>::lowest();
     }
     bool is_sync() {
 	return sync_mode;
