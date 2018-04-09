@@ -10,7 +10,7 @@ public:
     static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
     
     int unique_id, command, version;
-    char ckpt_name[MAX_SIZE];
+    char ckpt_name[MAX_SIZE] = "";
 
     command_t() { }
     command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {

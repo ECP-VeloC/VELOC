@@ -42,7 +42,8 @@ int main(int argc, char *argv[]) {
     while (true) {
 	work_queue.push(std::async(std::launch::async, [&modules,&command_queue] {
 		    command_t c;
-		    command_queue.dequeue_any(c)(modules.notify_command(c));
+		    auto f = command_queue.dequeue_any(c);
+		    f(modules.notify_command(c));
 		}));
 	if (work_queue.size() > MAX_PARALLELISM) {
 	    work_queue.front().wait();
