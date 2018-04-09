@@ -152,8 +152,12 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 	for (unsigned int i = 0; i < no_regions; i++) {
 	    f.read((char *)&id, sizeof(int));
 	    f.read((char *)&region_size, sizeof(size_t));
-	    if (mem_regions.find(id) == mem_regions.end() || mem_regions[id].second != region_size) {
-		ERROR("protected memory region " << i << " does not exist or match size in recovery checkpoint");
+	    if (mem_regions.find(id) == mem_regions.end()) {
+		ERROR("protected memory region " << id << " does not exist");
+		return false;
+	    }
+	    if (mem_regions[id].second != region_size) {
+		ERROR("protected memory region " << id << " has size " << region_size << " instead of expected " << mem_regions[id].second);
 		return false;
 	    }
 	}
