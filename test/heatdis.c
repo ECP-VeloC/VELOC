@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong memory size! See usage\n");
 	exit(3);
     }
-    if (VELOC_Init(rank, argv[2]) != VELOC_SUCCESS) {
+    if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
     free(h);
     free(g);
-    VELOC_Finalize(1); // clean up
+    VELOC_Finalize(0); // no clean up
     MPI_Finalize();
     return 0;
 }

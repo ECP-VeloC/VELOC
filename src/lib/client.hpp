@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <mpi.h>
 
 class veloc_client_t {
     config_t cfg;
@@ -28,7 +29,7 @@ class veloc_client_t {
     int run_blocking(const command_t &cmd);
 
 public:
-    veloc_client_t(int r, const char *cfg_file);
+    veloc_client_t(MPI_Comm comm, const char *cfg_file);
     void cleanup();
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);

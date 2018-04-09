@@ -12,9 +12,9 @@ void __attribute__ ((constructor)) veloc_constructor() {
 void __attribute__ ((destructor)) veloc_destructor() {
 }
 
-extern "C" int VELOC_Init(int r, const char *cfg_file) {
+extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
     try {
-	veloc_client = new veloc_client_t(r, cfg_file);
+	veloc_client = new veloc_client_t(comm, cfg_file);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
 	ERROR(e.what());

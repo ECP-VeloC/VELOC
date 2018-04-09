@@ -9,13 +9,14 @@
 #define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(int r, const char *cfg_file) : cfg(cfg_file), rank(r) {
+veloc_client_t::veloc_client_t(MPI_Comm comm, const char *cfg_file) : cfg(cfg_file) {
+    MPI_Comm_rank(comm, &rank);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
-	modules->add_default_modules(cfg);
+	modules->add_default_modules(cfg, comm);
 	modules->notify_command(command_t(rank, command_t::INIT, 0, ""));
     } else {
-	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(r).c_str());
+	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
 	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
     }
     DBG("VELOC initialized");

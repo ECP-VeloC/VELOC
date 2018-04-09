@@ -2,6 +2,7 @@
 #define __VELOC_H
 
 #include <string.h>
+#include <mpi.h>
 
 /*---------------------------------------------------------------------------
                                   Defines
@@ -44,7 +45,7 @@ extern "C" {
 //                     scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation) 
 //                     persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
 
-int VELOC_Init(int rank, const char *cfg_file);
+int VELOC_Init(MPI_Comm comm, const char *cfg_file);
 int VELOC_Finalize(int cleanup);
     
 /**************************

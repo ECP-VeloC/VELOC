@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
-    modules.add_default_modules(cfg);
+    modules.add_default_modules(cfg, MPI_COMM_WORLD);
 
     std::queue<std::future<void> > work_queue;
     while (true) {

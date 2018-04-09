@@ -6,8 +6,9 @@
 #include <limits>
 
 class config_t {
-    bool sync_mode;
+    std::string cfg_file;
     INIReader reader;
+    bool sync_mode;
 public:    
     config_t(const std::string &cfg_file);
     std::string get(const std::string &param) const {
@@ -19,14 +20,17 @@ public:
     }
     bool get_optional(const std::string &param, std::string &value) const {
 	value = reader.Get("", param, "");
-	return value.empty();
+	return !value.empty();
     }
     bool get_optional(const std::string &param, int &value) const {
 	value = reader.GetInteger("", param, std::numeric_limits<int>::lowest());
-	return value == std::numeric_limits<int>::lowest();
+	return value != std::numeric_limits<int>::lowest();
     }
-    bool is_sync() {
+    bool is_sync() const {
 	return sync_mode;
+    }
+    const std::string &get_cfg_file() const {
+	return cfg_file;
     }
 };
 

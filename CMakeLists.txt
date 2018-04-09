@@ -10,7 +10,6 @@ add_definitions(-O2 -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 list(APPEND CMAKE_MODULE_PATH "${VELOC_SOURCE_DIR}/cmake")
 
 # set up boost
-find_path(BOOST_ROOT NAMES include/boost)
 set(Boost_FIND_REQUIRED True)
 find_package(Boost 1.60)
 include_directories(${Boost_INCLUDE_DIR})
@@ -21,6 +20,9 @@ find_package(Threads REQUIRED)
 # set up MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
+
+find_package(ER REQUIRED)
+include_directories(${ER_INCLUDE_DIRS})
 
 # -----------------------------------------------------------------------------------
 
