@@ -5,6 +5,7 @@
 #include <unistd.h>
 extern "C" {
 #include "er.h"
+#include "rankstr_mpi.h"
 }
 
 #define __DEBUG
@@ -13,21 +14,19 @@ extern "C" {
 ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
     if(ER_Init(cfg.get_cfg_file().c_str()) != ER_SUCCESS)
 	throw std::runtime_error("Failed to initialize ER from config file: " + cfg.get_cfg_file());
-    if(!cfg.get_optional("failure_domain", fdomain)) {
-	char host_name[HOST_NAME_MAX] = "default";
-	gethostname(host_name, HOST_NAME_MAX);
+    char host_name[HOST_NAME_MAX] = "";
+    gethostname(host_name, HOST_NAME_MAX);
+    if(!cfg.get_optional("failure_domain", fdomain))
 	fdomain.assign(host_name);
-    }
     int rank, ranks;
     MPI_Comm_size(comm, &ranks);
     MPI_Comm_rank(comm, &rank);
-    //scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, ranks);
-    scheme_id = ER_Create_Scheme(comm, std::to_string(rank).c_str(), ranks, ranks);
+     
+    scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, ranks);
     if (scheme_id < 0)
-	throw std::runtime_error("Failed create scheme using failure domain: " + fdomain);
-    //rankstr_mpi_comm_split(comm, fdomain.c_str(), 0, 0, 1, &comm_domain);
+	throw std::runtime_error("Failed to create scheme using failure domain: " + fdomain);
+    rankstr_mpi_comm_split(comm, host_name, 0, 0, 1, &comm_domain);
     DBG("ER scheme successfully initialized");
-    comm_domain = comm;
 }
 
 ec_module_t::~ec_module_t() {

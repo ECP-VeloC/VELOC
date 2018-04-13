@@ -9,7 +9,7 @@ FIND_PATH(WITH_AXL_PREFIX
 )
 
 FIND_LIBRARY(AXL_LIBRARIES
-    NAMES axl
+    NAMES libaxl.a axl
     HINTS ${WITH_AXL_PREFIX}/lib
 )
 
