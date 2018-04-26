@@ -16,7 +16,7 @@ public:
     ec_module_t(const config_t &c, MPI_Comm cm);
     ~ec_module_t();
 
-    int process_commands(int command, const std::vector<command_t> &cmds);
+    int process_commands(const std::vector<command_t> &cmds);
 };
 
 #endif //__EC_MODULE_HPP

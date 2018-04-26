@@ -11,7 +11,7 @@ int client_aggregator_t::process_command(const command_t &c) {
 	cmds[c.command].push_back(c);
 	int res = VELOC_SUCCESS;
 	if (cmds[c.command].size() == no_clients) {
-	    res = agg_function(c.command, cmds[c.command]);
+	    res = agg_function(cmds[c.command]);
 	    cmds[c.command].clear();
 	}
 	return res;

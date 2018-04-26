@@ -35,16 +35,20 @@ ec_module_t::~ec_module_t() {
     MPI_Comm_free(&comm_domain);
 }
 
-int ec_module_t::process_commands(int command, const std::vector<command_t> &cmds) {
-    int set_id;
+int ec_module_t::process_commands(const std::vector<command_t> &cmds) {    
+    if (cmds.size() == 0)
+	return VELOC_SUCCESS;
+    int command = cmds[0].command;
     if (command != command_t::CHECKPOINT && command != command_t::RESTART) {
 	ERROR("support for command aggregation for " << command << " not implememnetd yet");
 	return VELOC_FAILURE;
     }
+    int version = cmds[0].version;
+    int set_id;
     if (command == command_t::CHECKPOINT)
-	set_id = ER_Create(comm, comm_domain, std::to_string(command).c_str(), ER_DIRECTION_ENCODE, scheme_id);
+	set_id = ER_Create(comm, comm_domain, (cfg.get("scratch") + "/" + std::to_string(version)).c_str(), ER_DIRECTION_ENCODE, scheme_id);
     else
-	set_id = ER_Create(comm, comm_domain, std::to_string(command).c_str(), ER_DIRECTION_REBUILD, 0);
+	set_id = ER_Create(comm, comm_domain, (cfg.get("scratch") + "/" + std::to_string(version)).c_str(), ER_DIRECTION_REBUILD, 0);
     for (auto &c : cmds)
 	ER_Add(set_id, c.ckpt_name);
     ER_Dispatch(set_id);

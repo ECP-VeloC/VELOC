@@ -10,7 +10,7 @@
 
 class client_aggregator_t {
     unsigned int no_clients;
-    typedef std::function<int (int, const std::vector<command_t> &)> agg_function_t;
+    typedef std::function<int (const std::vector<command_t> &)> agg_function_t;
     agg_function_t agg_function;
     std::map<int, std::vector<command_t> > cmds;
 public:
