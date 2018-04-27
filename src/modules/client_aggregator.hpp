@@ -9,7 +9,7 @@
 #include <map>
 
 class client_aggregator_t {
-    unsigned int no_clients;
+    unsigned int no_clients = 0;
     typedef std::function<int (const std::vector<command_t> &)> agg_function_t;
     agg_function_t agg_function;
     std::map<int, std::vector<command_t> > cmds;
