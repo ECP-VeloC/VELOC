@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+
+import sys, os.path, shutil
+import argparse
+import wget, bs4, urllib
+import re
+import tarfile
+
+def install_dep(git_link, dest):
+    name = os.path.basename(git_link).split('.')[0]
+    print("Installing {0}...".format(name))
+    try:
+        os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
+        os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
+        -DCMAKE_INSTALL_PREFIX={2} && make install".format(args.temp + '/' + name,
+                                                           args.temp + '/install', dest))
+    except Exception as err:        
+        print("Error installing dependency {0}: {1}!".format(git_link, err))
+        sys.exit(4)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='VeloC installation script')
+    parser.add_argument('prefix',
+                        help='installation path prefix (typically a home directory)')
+    parser.add_argument('--no-boost', action='store_true',
+                        help='use existing Boost version (must be pre-installed)')
+    parser.add_argument('--temp', default='/tmp/veloc',
+                        help='temporary directory used during the install (default: /tmp/veloc)')
+    args = parser.parse_args()
+    if not os.path.isdir(args.prefix):
+        print("Installation prefix {0} is not a valid directory!".format(args.prefix))
+        sys.exit(1)
+    try:
+        if (os.path.isdir(args.temp)):
+            shutil.rmtree(args.temp)
+        os.mkdir(args.temp)
+    except OSError as err:
+        print("Cannot create temporary directory {0}!".format(args.temp))
+        sys.exit(2)
+        
+    print("Installing VeloC in {0}...".format(args.prefix))
+
+    # Boost
+    if (not args.no_boost):
+        print("Downloading Boost...")
+        try:
+            soup = bs4.BeautifulSoup(urllib.request.urlopen("https://www.boost.org/users/download"), "html.parser")
+            for link in soup.findAll('a', attrs={'href': re.compile("bz2")}):
+                boost_arch = wget.download(link.get('href'), out=args.temp)
+                f = tarfile.open(boost_arch, mode='r:bz2')
+                f.extractall(path=args.temp)
+                f.close()
+                shutil.move(args.temp + '/' + os.path.basename(boost_arch).split('.')[0]
+                            + '/boost', args.temp + '/install/include/boost')
+        except Exception as err:
+            print("Error installing Boost: {0}!".format(err))
+            sys.exit(3)
+    
+    # Other depenencies 
+    install_dep('https://github.com/LLNL/KVTree.git', args.temp + '/install')
+    install_dep('https://github.com/LLNL/AXL.git', args.temp + '/install')
+    install_dep('https://github.com/ECP-VeloC/rankstr.git', args.temp + '/install')
+    install_dep('https://github.com/ECP-VeloC/shuffile.git', args.temp + '/install')
+    install_dep('https://github.com/ECP-VeloC/redset.git', args.temp + '/install')
+    install_dep('https://github.com/ECP-VeloC/er.git', args.temp + '/install')
+    
+    # VeloC
+    install_dep('https://github.com/ECP-VeloC/VELOC.git', args.prefix)
+
+    # Cleanup
+    try:
+        shutil.rmtree(args.temp)
+    except OSError as err:
+        print("Cannot cleanup temporary directory {0}!".format(args.temp))
+        sys.exit(5)
+
+    print("Installation successful!")
+        

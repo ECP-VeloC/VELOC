@@ -5,3 +5,6 @@ add_executable (heatdis_file heatdis_file.c)
 # Link the executable to the necessary libraries.
 target_link_libraries (heatdis ${MPI_C_LIBRARIES} m veloc-client)
 target_link_libraries (heatdis_file ${MPI_C_LIBRARIES} m veloc-client)
+
+# Install examples
+install (DIRECTORY ./ DESTINATION share/veloc)
