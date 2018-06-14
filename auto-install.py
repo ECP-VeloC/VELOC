@@ -6,14 +6,14 @@ import wget, bs4, urllib
 import re
 import tarfile
 
-def install_dep(git_link, dest):
+def install_dep(git_link):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
         os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
         os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
-        -DCMAKE_INSTALL_PREFIX={2} && make install".format(args.temp + '/' + name,
-                                                           args.temp + '/install', dest))
+        -DCMAKE_INSTALL_PREFIX={1} && make install".format(args.temp + '/' + name,
+                                                           args.prefix))
     except Exception as err:        
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
@@ -50,22 +50,25 @@ if __name__ == "__main__":
                 f = tarfile.open(boost_arch, mode='r:bz2')
                 f.extractall(path=args.temp)
                 f.close()
+                if os.path.isdir(args.prefix + '/include/boost'):
+                    shutil.rmtree(args.prefix + '/include/boost')
                 shutil.move(args.temp + '/' + os.path.basename(boost_arch).split('.')[0]
-                            + '/boost', args.temp + '/install/include/boost')
+                            + '/boost', args.prefix + '/include/boost')
         except Exception as err:
             print("Error installing Boost: {0}!".format(err))
             sys.exit(3)
     
     # Other depenencies 
-    install_dep('https://github.com/LLNL/KVTree.git', args.temp + '/install')
-    install_dep('https://github.com/LLNL/AXL.git', args.temp + '/install')
-    install_dep('https://github.com/ECP-VeloC/rankstr.git', args.temp + '/install')
-    install_dep('https://github.com/ECP-VeloC/shuffile.git', args.temp + '/install')
-    install_dep('https://github.com/ECP-VeloC/redset.git', args.temp + '/install')
-    install_dep('https://github.com/ECP-VeloC/er.git', args.temp + '/install')
+    install_dep('https://github.com/LLNL/KVTree.git')
+    install_dep('https://github.com/LLNL/AXL.git')
+    install_dep('https://github.com/ECP-VeloC/rankstr.git')
+    install_dep('https://github.com/ECP-VeloC/shuffile.git')
+    install_dep('https://github.com/ECP-VeloC/redset.git')
+    install_dep('https://github.com/ECP-VeloC/er.git')
     
     # VeloC
-    install_dep('https://github.com/ECP-VeloC/VELOC.git', args.prefix)
+    os.system("cmake -DCMAKE_PREFIX_PATH={0}\
+    -DCMAKE_INSTALL_PREFIX={0} && make install".format(args.prefix))
 
     # Cleanup
     try:
@@ -75,4 +78,3 @@ if __name__ == "__main__":
         sys.exit(5)
 
     print("Installation successful!")
-        
