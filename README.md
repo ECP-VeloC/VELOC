@@ -22,7 +22,7 @@ For now, VELOC has to be build from source. The first step is to
 clone the VELOC git repository:
 
 ```shell
-git clone git@xgitlab.cels.anl.gov:ecp-veloc/veloc.git
+git clone git@github.com:ecp-veloc/veloc.git
 ```
 
 In terms of dependencies, VELOC requires boost 1.60 or newer and CMake
@@ -65,6 +65,6 @@ Produced at the Lawrence Livermore National Laboratory.
 Copyright (c) 2018, UChicago Argonne LLC, operator of Argonne National Laboratory.
 
 
-For release details and restrictions, please read the [LICENSE]() and [NOTICE]() files.
+For release details and restrictions, please read the [LICENSE](https://github.com/ECP-VeloC/VELOC/blob/master/LICENSE) and [NOTICE](https://github.com/ECP-VeloC/VELOC/blob/master/NOTICE) files.
 
 `LLNL-CODE-751725` `OCEC-18-060`
