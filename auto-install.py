@@ -59,8 +59,8 @@ if __name__ == "__main__":
             sys.exit(3)
     
     # Other depenencies 
-    install_dep('https://github.com/LLNL/KVTree.git')
-    install_dep('https://github.com/LLNL/AXL.git')
+    install_dep('https://github.com/ECP-VeloC/KVTree.git')
+    install_dep('https://github.com/ECP-VeloC/AXL.git')
     install_dep('https://github.com/ECP-VeloC/rankstr.git')
     install_dep('https://github.com/ECP-VeloC/shuffile.git')
     install_dep('https://github.com/ECP-VeloC/redset.git')
