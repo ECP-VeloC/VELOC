@@ -103,9 +103,10 @@ int main(int argc, char *argv[]) {
     VELOC_Mem_protect(2, g, M * nbLines, VELOC_DBLE);
 
     wtime = MPI_Wtime();
-    int v = VELOC_Restart_test("heatdis");
+    int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
+	// v can be any version, independent of what VELOC_Restart_test is returning
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
 	assert(VELOC_Recover_mem() == VELOC_SUCCESS);
 	assert(VELOC_Restart_end(1) == VELOC_SUCCESS);

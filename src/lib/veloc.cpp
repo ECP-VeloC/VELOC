@@ -14,7 +14,7 @@ void __attribute__ ((destructor)) veloc_destructor() {
 
 extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
     try {
-	veloc_client = new veloc_client_t(comm, cfg_file);
+	veloc_client = new veloc_client_t(comm, cfg_file, true);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
 	ERROR(e.what());
@@ -48,10 +48,10 @@ extern "C" int VELOC_Checkpoint_wait() {
     return CLIENT_CALL(veloc_client->checkpoint_wait());
 }
 
-extern "C" int VELOC_Restart_test(const char *name) {
+extern "C" int VELOC_Restart_test(const char *name, int version) {
     if (veloc_client == NULL)
 	return -1;
-    return veloc_client->restart_test(name);
+    return veloc_client->restart_test(name, version);
 }
 
 extern "C" int VELOC_Route_file(char *ckpt_file_name) {

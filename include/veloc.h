@@ -99,8 +99,10 @@ int VELOC_Checkpoint_wait();
  *************************/
 
 // determine whether application can restart from a previous checkpoint
-//   returns - VELOC_FAILURE if no checkpoint found, latest version otherwise
-int VELOC_Restart_test(const char *name);
+//   IN name - label of the checkpoint
+//   IN needed_version - maximum version to look for
+//   returns - VELOC_FAILURE if no checkpoint < needed_version found, latest version < needed_version otherwise
+int VELOC_Restart_test(const char *name, int version);
 
 // mark start of restart phase
 //   IN name - label of the checkpoint

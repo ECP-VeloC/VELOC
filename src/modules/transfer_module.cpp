@@ -2,7 +2,6 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <libgen.h>
 #include <dirent.h>
 #include <sys/sendfile.h>
 #include <sys/types.h>
@@ -11,11 +10,9 @@
 #include <cerrno>
 #include <cstring>
 
-#ifdef AXL_FOUND
 extern "C" {
 #include "axl.h"
 }
-#endif
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -51,9 +48,13 @@ static int posix_transfer_file(const std::string &source, const std::string &des
     return VELOC_SUCCESS;
 }
 
-#ifdef AXL_FOUND // compiled with AXL
 transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
     std::string axl_config;
+
+    if (!cfg.get_optional("persistent_interval", interval)) {
+	INFO("Persistence interval not specified, every checkpoint will be persisted");
+	interval = 0;
+    }
     if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
 	return;
@@ -97,16 +98,7 @@ int transfer_module_t::transfer_file(const std::string &source, const std::strin
 	return posix_transfer_file(source, dest);
 }
 
-#else // compiled without AXL
-transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) { }
-transfer_module_t::~transfer_module_t() { }
-
-int transfer_module_t::transfer_file(const std::string &source, const std::string &dest) {
-    return posix_transfer_file(source, dest);
-}
-#endif
-
-static int get_latest_version(const std::string &p, const std::string &cname, int needed_id) {
+static int get_latest_version(const std::string &p, const std::string &cname, int needed_id, int needed_version) {
     struct dirent *dentry;
     DIR *dir;
     int id, version, ret = -1;
@@ -119,7 +111,7 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
 	if (access((p + "/" + fname).c_str(), R_OK) == 0 &&
 	    fname.compare(0, cname.length(), cname) == 0 &&
 	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &id, &version) == 2 &&
-	    id == needed_id) {
+	    id == needed_id && (needed_version == 0 || version <= needed_version)) {
 	    if (version > ret)
 		ret = version;
 	}
@@ -129,14 +121,26 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
 }
 
 int transfer_module_t::process_command(const command_t &c) {
-    std::string remote = cfg.get("persistent") + "/" + std::string(basename((char *)c.ckpt_name));
+    auto remote = cfg.get("persistent") + "/" + c.basename();
+    
     switch (c.command) {
+    case command_t::INIT:
+	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
+	return VELOC_SUCCESS;
+	
     case command_t::TEST:
 	DBG("obtain latest version for " << c.ckpt_name);
-	return std::max(get_latest_version(cfg.get("scratch"), c.ckpt_name, c.unique_id),
-			get_latest_version(cfg.get("persistent"), c.ckpt_name, c.unique_id));
+	return std::max(get_latest_version(cfg.get("scratch"), c.ckpt_name, c.unique_id, c.version),
+			get_latest_version(cfg.get("persistent"), c.ckpt_name, c.unique_id, c.version));
 	
     case command_t::CHECKPOINT:
+	if (interval > 0) {
+	    auto t = std::chrono::system_clock::now();
+	    if (t < last_timestamp)
+		return VELOC_SUCCESS;
+	    else
+		last_timestamp = t + std::chrono::seconds(interval);
+	}
 	DBG("transfer file " << c.ckpt_name << " to " << remote);
 	return transfer_file(c.ckpt_name, remote);
 

@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cstring>
 
+#include <libgen.h>
+
 class command_t {
 public:
     static const size_t MAX_SIZE = 128;
@@ -17,6 +19,17 @@ public:
 	if (s.length() > MAX_SIZE)
 	    throw std::runtime_error("checkpoint name '" + s + "' is longer than admissible size " + std::to_string(MAX_SIZE));
 	std::strcpy(ckpt_name, s.c_str());
+    }
+    std::string basename() const {
+	return std::string(::basename((char *)ckpt_name));
+    }
+    std::string stem() const {
+	std::string base = basename();
+	std::string::size_type pos = base.find('-');
+	if (pos != std::string::npos)
+	    return base.substr(0, pos);
+	else	    
+	    return base; 
     }
     friend std::ostream &operator<<(std::ostream &output, const command_t &c) {
 	output << "(Rank = '" << c.unique_id << "', Command = '" << c.command

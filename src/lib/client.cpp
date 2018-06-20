@@ -9,7 +9,8 @@
 #define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(MPI_Comm comm, const char *cfg_file) : cfg(cfg_file) {
+veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
+    cfg(cfg_file), comm(c), collective(coll) {
     MPI_Comm_rank(comm, &rank);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
@@ -55,7 +56,7 @@ bool veloc_client_t::checkpoint_wait() {
     if (cfg.is_sync()) {
 	INFO("waiting for a checkpoint in sync mode is not necessary, result is returned by checkpoint_end() directly");
 	return true;
-    }    
+    }
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
 	return false;
@@ -116,8 +117,14 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
     }
 }
 
-int veloc_client_t::restart_test(const char *name) {
-    return run_blocking(command_t(rank, command_t::TEST, 0, name));
+int veloc_client_t::restart_test(const char *name, int needed_version) {
+    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
+    if (collective) {
+	int min_version;
+	MPI_Allreduce(&version, &min_version, 1, MPI_INT, MPI_MIN, comm);
+	return min_version;
+    } else
+	return version;
 }
 
 std::string veloc_client_t::route_file() {
@@ -125,15 +132,23 @@ std::string veloc_client_t::route_file() {
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
+    int result;
+    
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);
+    current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);    
     if (access(current_ckpt.ckpt_name, R_OK) == 0)
-	return true;
-    else
-	return run_blocking(current_ckpt) == VELOC_SUCCESS;
+	result = VELOC_SUCCESS;
+    else 
+	result = run_blocking(current_ckpt);
+    if (collective) {
+	int end_result;
+	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
+	return end_result == VELOC_SUCCESS;
+    } else
+	return result;
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
@@ -157,7 +172,8 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 		return false;
 	    }
 	    if (mem_regions[id].second != region_size) {
-		ERROR("protected memory region " << id << " has size " << region_size << " instead of expected " << mem_regions[id].second);
+		ERROR("protected memory region " << id << " has size " << region_size
+		      << " instead of expected " << mem_regions[id].second);
 		return false;
 	    }
 	}

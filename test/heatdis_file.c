@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 	printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     wtime = MPI_Wtime();
-    int v = VELOC_Restart_test("heatdis");
+    int v = VELOC_Restart_test("heatdis", 0);
     if (v != VELOC_FAILURE) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
