@@ -14,7 +14,7 @@ def install_dep(git_link):
         os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
         -DCMAKE_INSTALL_PREFIX={1} && make install".format(args.temp + '/' + name,
                                                            args.prefix))
-    except Exception as err:        
+    except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
 
@@ -57,15 +57,15 @@ if __name__ == "__main__":
         except Exception as err:
             print("Error installing Boost: {0}!".format(err))
             sys.exit(3)
-    
-    # Other depenencies 
+
+    # Other depenencies
     install_dep('https://github.com/ECP-VeloC/KVTree.git')
     install_dep('https://github.com/ECP-VeloC/AXL.git')
     install_dep('https://github.com/ECP-VeloC/rankstr.git')
     install_dep('https://github.com/ECP-VeloC/shuffile.git')
     install_dep('https://github.com/ECP-VeloC/redset.git')
     install_dep('https://github.com/ECP-VeloC/er.git')
-    
+
     # VeloC
     os.system("cmake -DCMAKE_PREFIX_PATH={0}\
     -DCMAKE_INSTALL_PREFIX={0} && make install".format(args.prefix))

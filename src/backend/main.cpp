@@ -15,9 +15,11 @@
 const unsigned int MAX_PARALLELISM = 64;
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    bool ec_active = true;
+    
+    if (argc < 2 || argc > 3) {
 	veloc_ipc::cleanup();
-	std::cout << "Usage: " << argv[0] << " <veloc_config>" << std::endl;
+	std::cout << "Usage: " << argv[0] << " <veloc_config> [--deactivate-ec]" << std::endl;
 	return 1;
     }
 
@@ -26,21 +28,24 @@ int main(int argc, char *argv[]) {
 	ERROR("configuration requests sync mode, backend is not needed");
 	return 3;
     }
-    
-    int rank;
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (argc == 3 && std::string(argv[2]) == "--deactivate-ec")
+	ec_active = false;
 
-    INFO("MPI rank = " << rank);
+    if (ec_active) {
+	int rank;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	DBG("Active backend rank = " << rank);
+    }
 
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
-    modules.add_default_modules(cfg, MPI_COMM_WORLD);
+    modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
     std::queue<std::future<void> > work_queue;
     while (true) {
-	work_queue.push(std::async(std::launch::async, [&modules,&command_queue] {
+	work_queue.push(std::async(std::launch::async, [&modules, &command_queue] {
 		    command_t c;
 		    auto f = command_queue.dequeue_any(c);
 		    f(modules.notify_command(c));
@@ -50,7 +55,10 @@ int main(int argc, char *argv[]) {
 	    work_queue.pop();
 	}
     }
-    MPI_Finalize();
+    
+    if (ec_active) {
+	MPI_Finalize();
+    }
 
     return 0;
 }

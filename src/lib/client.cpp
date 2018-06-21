@@ -14,7 +14,7 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
     MPI_Comm_rank(comm, &rank);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
-	modules->add_default_modules(cfg, comm);
+	modules->add_default_modules(cfg, comm, true);
 	modules->notify_command(command_t(rank, command_t::INIT, 0, ""));
     } else {
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
