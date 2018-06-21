@@ -10,6 +10,9 @@ Welcome to VELOC's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   api.rst
+   userguide.rst
+   design.rst
 
 
 Indices and tables
