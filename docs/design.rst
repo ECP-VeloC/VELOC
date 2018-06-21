@@ -702,26 +702,26 @@ selecting an encoding method and a storage device.
    node.
 #. XOR is similar to RAID 5. Compute XOR file from a set of checkpoints
    files. In a failure, it can recover any file in the set using XOR
-   file and remaining :math:`N-1` files. If a checkpoint file is
-   :math:`B` bytes, the total space required for the checkpoint and
-   redundancy data is :math:`B+B/(N-1)` bytes, where :math:`N` is the
+   file and remaining `N-1` files. If a checkpoint file is
+   `B` bytes, the total space required for the checkpoint and
+   redundancy data is `B+B/(N-1)` bytes, where `N` is the
    size of the XOR set. Unlike Parter-copy, each checkpointing file
    needs 1 full copy + some fraction in XOR encoding.
 #. Reed-Solomon (RS) encoding: When using RS encoding for fault
    tolerance in HPC, the system will be partitioned in groups of
-   :math:`K` processes (:math:`K` checkpoint files), thus the groups can
+   `K` processes (`K` checkpoint files), thus the groups can
    encode the checkpoint files in parallel. Each group will generate
-   :math:`M` encoded checkpoint files in order to tolerate :math:`M`
+   `M` encoded checkpoint files in order to tolerate `M`
    erasures. To reach the optimal RS efficiency, VELOC detects the
    processes belonging to the same node and build a sketch of the
    cluster’s topology, such that all the processes in a group belong to
    different nodes, similar to the chipkill technology used in computer
    memories. The highest level of reliability is adopted: generating
-   :math:`M=K` encoded checkpoints per group. Since the encoded
+   `M=K` encoded checkpoints per group. Since the encoded
    checkpoint files will be stored in the same devices than the
    checkpoint files, one failure will generate two erasures, one
    checkpoint file and one encoded checkpoint file, thus each group can
-   tolerate :math:`M/2` process failures. In the configuration, the
+   tolerate `M/2` process failures. In the configuration, the
    number of nodes per group must be a multiple of 4.
 
 Encoding
