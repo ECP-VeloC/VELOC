@@ -6,14 +6,16 @@ import wget, bs4, urllib
 import re
 import tarfile
 
+#compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS='-dynamic -std=c++14'"
+
 def install_dep(git_link):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
         os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
         os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
-        -DCMAKE_INSTALL_PREFIX={1} && make install".format(args.temp + '/' + name,
-                                                           args.prefix))
+        -DCMAKE_INSTALL_PREFIX={1} {2} && make install".format(args.temp + '/' + name,
+                                                           args.prefix, compiler_options))
     except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
@@ -68,7 +70,7 @@ if __name__ == "__main__":
 
     # VeloC
     os.system("cmake -DCMAKE_PREFIX_PATH={0}\
-    -DCMAKE_INSTALL_PREFIX={0} && make install".format(args.prefix))
+    -DCMAKE_INSTALL_PREFIX={0} {1} && make install".format(args.prefix, compiler_options))
 
     # Cleanup
     try:
