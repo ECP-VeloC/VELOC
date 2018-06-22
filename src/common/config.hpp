@@ -4,6 +4,7 @@
 #include "INIReader.h"
 
 #include <limits>
+#include <stdexcept>
 
 class config_t {
     std::string cfg_file;

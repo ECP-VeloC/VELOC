@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <stdexcept>
 
 #include <libgen.h>
 

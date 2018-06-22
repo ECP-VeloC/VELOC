@@ -1,9 +1,12 @@
 #include "ec_module.hpp"
 #include "common/status.hpp"
 
+#include <stdexcept>
+
 #include <limits.h>
 #include <unistd.h>
 #include <dirent.h>
+
 extern "C" {
 #include "er.h"
 #include "rankstr_mpi.h"
