@@ -48,8 +48,9 @@ static int posix_transfer_file(const std::string &source, const std::string &des
     return VELOC_SUCCESS;
 }
 
-transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
+transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
     std::string axl_config;
+    std::string axl_type_str;
 
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
@@ -59,10 +60,12 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
 	return;
     }
-    if (!cfg.get_optional("axl_type", axl_type) || (axl_type != "AXL_XFER_SYNC" && axl_type != "bb" && axl_type != "dw")) {
+    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC" && axl_type_str != "bb" && axl_type_str != "dw")) {
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
     }
+    if (axl_type_str == std::string("AXL_XFER_SYNC"))
+        axl_type = AXL_XFER_SYNC;
     int ret = AXL_Init((char *)axl_config.c_str());
     if (ret)
 	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
@@ -76,8 +79,8 @@ transfer_module_t::~transfer_module_t() {
     AXL_Finalize();
 }
 
-static int axl_transfer_file(const char *type, const std::string &source, const std::string &dest) {
-    int id = AXL_Create((char *)type, source.c_str());
+static int axl_transfer_file(axl_xfer_t type, const std::string &source, const std::string &dest) {
+    int id = AXL_Create(type, source.c_str());
     if (id < 0)
     	return VELOC_FAILURE;
     if (AXL_Add(id, (char *)source.c_str(), (char *)dest.c_str()))
@@ -93,7 +96,7 @@ static int axl_transfer_file(const char *type, const std::string &source, const 
 
 int transfer_module_t::transfer_file(const std::string &source, const std::string &dest) {
     if (use_axl)
-	return axl_transfer_file(axl_type.c_str(), source, dest);
+	return axl_transfer_file(axl_type, source, dest);
     else
 	return posix_transfer_file(source, dest);
 }

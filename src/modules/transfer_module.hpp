@@ -7,10 +7,14 @@
 
 #include <chrono>
 
+extern "C" {
+#include "axl.h"
+}
+
 class transfer_module_t {
     const config_t &cfg;
     bool use_axl = false;
-    std::string axl_type;
+    axl_xfer_t axl_type;
     int interval;
     std::chrono::system_clock::time_point last_timestamp;
 
