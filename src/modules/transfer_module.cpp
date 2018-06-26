@@ -49,8 +49,7 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 }
 
 transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
-    std::string axl_config;
-    std::string axl_type_str;
+    std::string axl_config, axl_type_str;
 
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
@@ -60,18 +59,17 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
 	return;
     }
-    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC" && axl_type_str != "bb" && axl_type_str != "dw")) {
+    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
-    }
-    if (axl_type_str == std::string("AXL_XFER_SYNC"))
-        axl_type = AXL_XFER_SYNC;
+    }    
     int ret = AXL_Init((char *)axl_config.c_str());
     if (ret)
 	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
     else {
 	INFO("AXL successfully initialized");
 	use_axl = true;
+	axl_type = AXL_XFER_SYNC;
     }
 }
 
@@ -111,10 +109,10 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
 	return -1;
     while ((dentry = readdir(dir)) != NULL) {
 	std::string fname = std::string(dentry->d_name);
-	if (access((p + "/" + fname).c_str(), R_OK) == 0 &&
-	    fname.compare(0, cname.length(), cname) == 0 &&
+	if (fname.compare(0, cname.length(), cname) == 0 &&
 	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &id, &version) == 2 &&
-	    id == needed_id && (needed_version == 0 || version <= needed_version)) {
+	    id == needed_id && (needed_version == 0 || version <= needed_version) &&
+	    access((p + "/" + fname).c_str(), R_OK) == 0) {
 	    if (version > ret)
 		ret = version;
 	}

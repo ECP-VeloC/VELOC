@@ -7,6 +7,7 @@ import re
 import tarfile
 
 #compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS='-dynamic -std=c++14'"
+compiler_options = ""
 
 def install_dep(git_link):
     name = os.path.basename(git_link).split('.')[0]
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     except OSError as err:
         print("Cannot create temporary directory {0}!".format(args.temp))
         sys.exit(2)
-        
+
     print("Installing VeloC in {0}...".format(args.prefix))
 
     # Boost

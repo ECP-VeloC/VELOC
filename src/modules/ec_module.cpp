@@ -26,9 +26,9 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
     while ((dentry = readdir(dir)) != NULL) {
 	std::string fname = std::string(dentry->d_name);
 	if (fname.compare(0, cname.length(), cname) == 0 &&
-	    access((p + "/" + fname).c_str(), R_OK) == 0 &&
 	    sscanf(fname.substr(cname.length()).c_str(), "-%d", &version) == 1 &&
-	    (needed_version == 0 || version <= needed_version)) {
+	    (needed_version == 0 || version <= needed_version) &&
+	    access((p + "/" + fname).c_str(), R_OK) == 0) {
 	    if (version > ret)
 		ret = version;
 	}
@@ -90,13 +90,18 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     int set_id;
     std::string name = cfg.get("scratch") + "/" + cmds[0].stem() + "-ec-" + std::to_string(version);
     if (command == command_t::CHECKPOINT) {
+	bool result;
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
+	    int checkpoint = 1;
 	    if (t < last_timestamp)
-		return VELOC_SUCCESS;
-	    else
+		checkpoint = 0;
+	    MPI_Allreduce(&checkpoint, &result, 1, MPI_INT, MPI_LAND, comm);
+	    if (result)
 		last_timestamp = t + std::chrono::seconds(interval);
-	}	
+	    else
+		return VELOC_SUCCESS;
+	}
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
 	for (auto &c : cmds)
 	    ER_Add(set_id, c.ckpt_name);

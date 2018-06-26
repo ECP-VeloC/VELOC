@@ -186,6 +186,6 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
     return true;
 }
 
-bool veloc_client_t::restart_end(bool /*success*/) {    
+bool veloc_client_t::restart_end(bool /*success*/) {
     return true;
 }
