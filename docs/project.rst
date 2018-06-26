@@ -17,20 +17,41 @@ Objectives
 
 Software
 --------
+This implementation of VELOC software is based on VELOC API (version 0.4 currently).The VELOC API can be obtained from the https://xgitlab.cels.anl.gov/ecp-veloc/Veloc-Documentation.git
 
+The VeloC software is available at https://github.com/ecp-veloc/veloc
 
 Team
 ----
+(PI) Franck Cappello
+Argonne National Laboratory
 
+(Co-PI) Kathryn Mohror
+Lawrence Livermore National Laboratory
 
+Sheng Di 
+Argonne National Laboratory
 
+Rinku Gupta
+Argonne National Laboratory
+
+Bogdan Nicolae
+Argonne National Laboratory
+
+Gregory Becker
+Lawrence Livermore National Laboratory
+
+Elsa Gonsiorowski
+Lawrence Livermore National Laboratory
+
+Adam Moody
+Lawrence Livermore National Laboratory
 
 
 Publications & Presentations
 ----------------------------
 
 
-
-
 Contact Us
 ----------
+In case of questions and comments or help, please contact the VELOC team at ecp-veloc@lists.mcs.anl.gov
