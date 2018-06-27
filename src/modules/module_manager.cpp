@@ -33,10 +33,11 @@ module_manager_t::~module_manager_t() {
 int module_manager_t::notify_command(const command_t &c) {
     int ret = VELOC_SUCCESS;
     for (auto &f : sig) {
-	if (c.command == command_t::TEST)
-	    ret = std::max(ret, f(c));
+	int mod_ret = f(c);
+	if (c.command == command_t::TEST && mod_ret != VELOC_FAILURE)
+	    ret = std::max(ret, mod_ret);
 	else
-	    ret = std::min(ret, f(c));
+	    ret = std::min(ret, mod_ret);
     }
     return ret;
 }

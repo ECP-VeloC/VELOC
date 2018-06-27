@@ -107,11 +107,15 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	    ER_Add(set_id, c.ckpt_name);
     } else
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
+    if (set_id == -1) {
+	ERROR("ER_Create failed for checkpoint " << cmds[0].stem() << ", version: " << std::to_string(version));
+	return VELOC_FAILURE;
+    }
     int ret = ER_Dispatch(set_id);
     if (ret == ER_SUCCESS)
 	ER_Wait(set_id);
     else
-	ERROR("EC operation failed with error code: " << ret);
+	ERROR("ER_Dispatch failed for checkpoint " << cmds[0].stem() << ", version: " << std::to_string(version));
     ER_Free(set_id);
     
     return ret == ER_SUCCESS ? VELOC_SUCCESS : VELOC_FAILURE;
