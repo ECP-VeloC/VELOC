@@ -10,8 +10,12 @@
 #include "common/debug.hpp"
 
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
-    cfg(cfg_file), comm(c), collective(coll) {
+    cfg(cfg_file), comm(c), collective(coll) {    
     MPI_Comm_rank(comm, &rank);
+    if (!cfg.get_optional("max_versions", max_versions)) {
+	INFO("Max number of versions to keep not specified, keeping all");
+	max_versions = 0;
+    }
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg, comm, true);
@@ -47,11 +51,6 @@ bool veloc_client_t::mem_unprotect(int id) {
     return mem_regions.erase(id) > 0;
 }
 
-command_t veloc_client_t::gen_ckpt_details(int cmd, const char *name, int version) {
-    return command_t(rank, cmd, version, cfg.get("scratch") + "/" + std::string(name) +
-		     "-" + std::to_string(rank) + "-" + std::to_string(version) + ".dat");
-}
-
 bool veloc_client_t::checkpoint_wait() {
     if (cfg.is_sync()) {
 	INFO("waiting for a checkpoint in sync mode is not necessary, result is returned by checkpoint_end() directly");
@@ -69,7 +68,20 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("nested checkpoints not yet supported");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::CHECKPOINT, name, version);
+    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
+    // remove old versions if needed
+    if (max_versions > 0) {
+	auto &version_history = checkpoint_history[name];
+	version_history.push_back(version);
+	if ((int)version_history.size() > max_versions) {
+	    // wait for operations to complete in async mode before deleting old versions
+	    if (!cfg.is_sync())
+		queue->wait_completion(false);
+	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
+	    version_history.pop_front();
+	}
+    }
+    
     checkpoint_in_progress = true;
     return true;
 }
@@ -82,7 +94,7 @@ bool veloc_client_t::checkpoint_mem() {
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
-	f.open(current_ckpt.ckpt_name, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
 	size_t regions_size = mem_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : mem_regions) {
@@ -128,7 +140,7 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 }
 
 std::string veloc_client_t::route_file() {
-    return std::string(current_ckpt.ckpt_name);
+    return std::string(current_ckpt.filename(cfg.get("scratch")));
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
@@ -138,8 +150,8 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);    
-    if (access(current_ckpt.ckpt_name, R_OK) == 0)
+    current_ckpt = command_t(rank, command_t::RESTART, version, name);    
+    if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
 	result = VELOC_SUCCESS;
     else 
 	result = run_blocking(current_ckpt);
@@ -160,7 +172,7 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
     std::ifstream f;
     f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {
-	f.open(current_ckpt.ckpt_name, std::ios_base::in | std::ios_base::binary);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ios_base::in | std::ios_base::binary);
 	size_t no_regions, region_size;
 	int id;
 	f.read((char *)&no_regions, sizeof(size_t));

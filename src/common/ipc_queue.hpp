@@ -44,7 +44,7 @@ template <class T> class shm_queue_t {
     container_t *data = NULL;
 
     container_t *find_non_empty_pending() {
-	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {	    
+	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {
 	    container_t *result = (container_t *)it->value();
 	    if (!result->pending.empty())
 		return result;
@@ -74,12 +74,13 @@ template <class T> class shm_queue_t {
 	if (id != NULL)
 	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
     }
-    int wait_completion() {
+    int wait_completion(bool reset_status = true) {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
 	while (!check_completion())
 	    data->cond.wait(cond_lock);
 	int ret = data->status;
-	data->status = VELOC_SUCCESS;
+	if (reset_status)
+	    data->status = VELOC_SUCCESS;
 	return ret;
     }
     void enqueue(const T &e) {

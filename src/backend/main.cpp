@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     
     if (argc < 2 || argc > 3) {
 	veloc_ipc::cleanup();
-	std::cout << "Usage: " << argv[0] << " <veloc_config> [--deactivate-ec]" << std::endl;
+	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
 	return 1;
     }
 
@@ -28,8 +28,10 @@ int main(int argc, char *argv[]) {
 	ERROR("configuration requests sync mode, backend is not needed");
 	return 3;
     }
-    if (argc == 3 && std::string(argv[2]) == "--deactivate-ec")
+    if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
+	INFO("EC module disabled by commmand line switch");
 	ec_active = false;
+    }
 
     if (ec_active) {
 	int rank;

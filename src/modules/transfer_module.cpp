@@ -6,6 +6,7 @@
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
@@ -55,6 +56,9 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
 	interval = 0;
     }
+    if (!cfg.get_optional("max_versions", max_versions))
+	max_versions = 0;
+
     if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
 	return;
@@ -99,7 +103,7 @@ int transfer_module_t::transfer_file(const std::string &source, const std::strin
 	return posix_transfer_file(source, dest);
 }
 
-static int get_latest_version(const std::string &p, const std::string &cname, int needed_id, int needed_version) {
+static int get_latest_version(const std::string &p, const command_t &c) {
     struct dirent *dentry;
     DIR *dir;
     int id, version, ret = -1;
@@ -107,11 +111,12 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return -1;
+    std::string cname = c.filename(p);
     while ((dentry = readdir(dir)) != NULL) {
 	std::string fname = std::string(dentry->d_name);
 	if (fname.compare(0, cname.length(), cname) == 0 &&
 	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &id, &version) == 2 &&
-	    id == needed_id && (needed_version == 0 || version <= needed_version) &&
+	    id == c.unique_id && (c.version == 0 || version <= c.version) &&
 	    access((p + "/" + fname).c_str(), R_OK) == 0) {
 	    if (version > ret)
 		ret = version;
@@ -122,40 +127,51 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
 }
 
 int transfer_module_t::process_command(const command_t &c) {
-    auto remote = cfg.get("persistent") + "/" + c.basename();
+    if (interval < 0)
+	return VELOC_SUCCESS;
     
+    std::string local = c.filename(cfg.get("scratch")), remote = c.filename(cfg.get("persistent"));    
     switch (c.command) {
     case command_t::INIT:
-	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
+	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
 	
     case command_t::TEST:
-	DBG("obtain latest version for " << c.ckpt_name);
-	return std::max(get_latest_version(cfg.get("scratch"), c.ckpt_name, c.unique_id, c.version),
-			get_latest_version(cfg.get("persistent"), c.ckpt_name, c.unique_id, c.version));
+	DBG("obtain latest version for " << c.name);
+	return std::max(get_latest_version(cfg.get("scratch"), c),
+			get_latest_version(cfg.get("persistent"), c));
 	
     case command_t::CHECKPOINT:
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
-	    if (t < last_timestamp)
+	    if (t < last_timestamp[c.unique_id])
 		return VELOC_SUCCESS;
 	    else
-		last_timestamp = t + std::chrono::seconds(interval);
+		last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
 	}
-	DBG("transfer file " << c.ckpt_name << " to " << remote);
-	return transfer_file(c.ckpt_name, remote);
+	// remove old versions if needed
+	if (max_versions > 0) {
+	    auto &version_history = checkpoint_history[c.unique_id][c.name];
+	    version_history.push_back(c.version);
+	    if ((int)version_history.size() > max_versions) {
+		unlink(c.filename(cfg.get("persistent"), version_history.front()).c_str());
+		version_history.pop_front();
+	    }
+	}
+	DBG("transfer file " << local << " to " << remote);
+	return transfer_file(local, remote);
 
     case command_t::RESTART:
-	DBG("transfer file " << remote << " to " << c.ckpt_name);
-	if (access(c.ckpt_name, R_OK) == 0) {
-	    INFO("request to transfer file " << remote << " to " << c.ckpt_name << " ignored as destination already exists");
+	DBG("transfer file " << remote << " to " << local);
+	if (access(local.c_str(), R_OK) == 0) {
+	    INFO("request to transfer file " << remote << " to " << local << " ignored as destination already exists");
 	    return VELOC_SUCCESS;
 	}
 	if (access(remote.c_str(), R_OK) != 0) {
-	    ERROR("request to transfer file " << remote << " to " << c.ckpt_name << " failed: source does not exist");
+	    ERROR("request to transfer file " << remote << " to " << local << " failed: source does not exist");
 	    return VELOC_FAILURE;
 	}
-	return transfer_file(remote, c.ckpt_name);
+	return transfer_file(remote, local);
 	
     default:
 	return VELOC_SUCCESS;

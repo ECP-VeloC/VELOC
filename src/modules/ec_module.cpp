@@ -19,7 +19,7 @@ static int get_latest_version(const std::string &p, const std::string &cname, in
     struct dirent *dentry;
     DIR *dir;
     int version, ret = -1;
-    
+
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return -1;
@@ -44,11 +44,12 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
     gethostname(host_name, HOST_NAME_MAX);
     if(!cfg.get_optional("failure_domain", fdomain))
 	fdomain.assign(host_name);
+
     int rank, ranks;
     MPI_Comm_size(comm, &ranks);
     MPI_Comm_rank(comm, &rank);
-     
-    scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, ranks);
+
+    scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, 1);
     if (scheme_id < 0)
 	throw std::runtime_error("Failed to create scheme using failure domain: " + fdomain);
     rankstr_mpi_comm_split(comm, host_name, 0, 0, 1, &comm_domain);
@@ -56,6 +57,9 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
 	INFO("EC interval not specified, every checkpoint will be protected using EC");
 	interval = 0;
     }
+    if (!cfg.get_optional("max_versions", max_versions))
+	max_versions = 0;
+
     DBG("EC scheme successfully initialized");
 }
 
@@ -65,15 +69,15 @@ ec_module_t::~ec_module_t() {
     MPI_Comm_free(&comm_domain);
 }
 
-int ec_module_t::process_command(const command_t &cmd) {
-    switch (cmd.command) {
+int ec_module_t::process_command(const command_t &c) {
+    switch (c.command) {
     case command_t::INIT:
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
 	
     case command_t::TEST:
-	DBG("get latest EC version for " << cmd.ckpt_name);
-	return get_latest_version(cfg.get("scratch"), std::string(cmd.ckpt_name) + "-ec", cmd.version);
+	DBG("get latest EC version for " << c.name);
+	return get_latest_version(cfg.get("scratch"), std::string(c.name) + "-ec", c.version);
 
     default:
 	return VELOC_SUCCESS;
@@ -81,14 +85,14 @@ int ec_module_t::process_command(const command_t &cmd) {
 }
 
 int ec_module_t::process_commands(const std::vector<command_t> &cmds) {    
-    if (cmds.size() == 0)
+    if (cmds.size() == 0 || interval < 0)
 	return VELOC_SUCCESS;
     int command = cmds[0].command;
     ASSERT(command == command_t::CHECKPOINT || command == command_t::RESTART);
 
     int version = cmds[0].version;
     int set_id;
-    std::string name = cfg.get("scratch") + "/" + cmds[0].stem() + "-ec-" + std::to_string(version);
+    std::string name = cfg.get("scratch") + "/" + cmds[0].name + "-ec-" + std::to_string(version);
     if (command == command_t::CHECKPOINT) {
 	bool result;
 	if (interval > 0) {
@@ -103,20 +107,39 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 		return VELOC_SUCCESS;
 	}
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
+	if (set_id == -1) {
+	    ERROR("ER_Create failed for checkpoint " << cmds[0].stem());
+	    return VELOC_FAILURE;
+	}
 	for (auto &c : cmds)
-	    ER_Add(set_id, c.ckpt_name);
-    } else
+	    ER_Add(set_id, c.filename(cfg.get("scratch")).c_str());
+	if (max_versions > 0) {
+	    auto &version_history = checkpoint_history[cmds[0].name];
+	    version_history.push_back(version);
+	    if ((int)version_history.size() > max_versions) {
+		std::string old_name = cfg.get("scratch") + "/" + cmds[0].name +
+		    "-ec-" + std::to_string(version_history.front());
+		version_history.pop_front();
+		int old_id = ER_Create(comm, comm_domain, old_name.c_str(), ER_DIRECTION_REMOVE, 0);
+		if (old_id != -1) {
+		    ER_Dispatch(old_id);
+		    ER_Free(old_id);
+		}
+	    }
+	}
+    } else {
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
-    if (set_id == -1) {
-	ERROR("ER_Create failed for checkpoint " << cmds[0].stem() << ", version: " << std::to_string(version));
-	return VELOC_FAILURE;
+	if (set_id == -1) {
+	    ERROR("ER_Create failed for checkpoint " << cmds[0].stem());
+	    return VELOC_FAILURE;
+	}
     }
     int ret = ER_Dispatch(set_id);
     if (ret == ER_SUCCESS)
 	ER_Wait(set_id);
     else
-	ERROR("ER_Dispatch failed for checkpoint " << cmds[0].stem() << ", version: " << std::to_string(version));
+	ERROR("ER_Dispatch failed for checkpoint " << cmds[0].stem());
     ER_Free(set_id);
-    
+
     return ret == ER_SUCCESS ? VELOC_SUCCESS : VELOC_FAILURE;
 }
