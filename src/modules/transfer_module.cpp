@@ -67,7 +67,7 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
     }    
-    int ret = AXL_Init((char *)axl_config.c_str());
+    int ret = AXL_Init(NULL);
     if (ret)
 	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
     else {
