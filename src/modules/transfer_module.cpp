@@ -59,10 +59,10 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
 
-    if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
-	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
-	return;
-    }
+    // if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
+    // 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
+    // 	return;
+    // }
     if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;

@@ -52,10 +52,8 @@ bool veloc_client_t::mem_unprotect(int id) {
 }
 
 bool veloc_client_t::checkpoint_wait() {
-    if (cfg.is_sync()) {
-	INFO("waiting for a checkpoint in sync mode is not necessary, result is returned by checkpoint_end() directly");
+    if (cfg.is_sync())
 	return true;
-    }
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
 	return false;

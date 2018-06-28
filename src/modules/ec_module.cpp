@@ -53,13 +53,19 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
     if (scheme_id < 0)
 	throw std::runtime_error("Failed to create scheme using failure domain: " + fdomain);
     rankstr_mpi_comm_split(comm, host_name, 0, 0, 1, &comm_domain);
+
     if (!cfg.get_optional("ec_interval", interval)) {
 	INFO("EC interval not specified, every checkpoint will be protected using EC");
 	interval = 0;
     }
+    MPI_Comm_size(comm_domain, &ranks);
+    if (ranks == 1) {
+	INFO("Running on a single host, EC deactivated");
+	interval = -1;
+    }
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
-
+	
     DBG("EC scheme successfully initialized");
 }
 

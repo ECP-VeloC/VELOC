@@ -25,7 +25,5 @@ Documentation
 
    api.rst
    userguide.rst
-   design.rst
-
 
 * :ref:`search`

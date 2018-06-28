@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "heatdis.h"
+#include "include/veloc.h"
 
 static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
 
@@ -98,9 +99,9 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
 	printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
-    VELOC_Mem_protect(1, h, M * nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M * nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(0, &i, 1, sizeof(int));
+    VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
+    VELOC_Mem_protect(2, g, M * nbLines, sizeof(double));
 
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis", 0);

@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "heatdis.h"
+#include "include/veloc.h"
 
 static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
 
@@ -100,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis", 0);
-    if (v != VELOC_FAILURE) {
+    if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
 	
@@ -123,7 +124,16 @@ int main(int argc, char *argv[]) {
 	i = 0;
 
     while(i < ITER_TIMES) {
-        if (i % CKPT_FREQ == 0) {       
+        localerror = doWork(nbProcs, rank, M, nbLines, g, h);
+        if (((i % ITER_OUT) == 0) && (rank == 0))
+	    printf("Step : %d, error = %f\n", i, globalerror);
+        if ((i % REDUCE) == 0)
+	    MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        if (globalerror < PRECISION)
+	    break;
+	i++;
+	if (i % CKPT_FREQ == 0) {
+	    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
 	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
 
 	    char veloc_file[VELOC_MAX_NAME];
@@ -142,14 +152,6 @@ int main(int argc, char *argv[]) {
 
 	    assert(VELOC_Checkpoint_end(valid) == VELOC_SUCCESS);
 	}
-        localerror = doWork(nbProcs, rank, M, nbLines, g, h);
-        if (((i % ITER_OUT) == 0) && (rank == 0))
-	    printf("Step : %d, error = %f\n", i, globalerror);
-        if ((i % REDUCE) == 0)
-	    MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-        if (globalerror < PRECISION)
-	    break;
-	i++;
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
