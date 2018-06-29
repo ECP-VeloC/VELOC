@@ -11,9 +11,7 @@
 #include <cerrno>
 #include <cstring>
 
-extern "C" {
 #include "axl.h"
-}
 
 #define __DEBUG
 #include "common/debug.hpp"

@@ -28,6 +28,8 @@ if __name__ == "__main__":
                         help='installation path prefix (typically a home directory)')
     parser.add_argument('--no-boost', action='store_true',
                         help='use existing Boost version (must be pre-installed)')
+    parser.add_argument('--no-deps', action='store_true',
+                        help='use existing component libraries (must be pre-installed)')
     parser.add_argument('--temp', default='/tmp/veloc',
                         help='temporary directory used during the install (default: /tmp/veloc)')
     args = parser.parse_args()
@@ -63,12 +65,13 @@ if __name__ == "__main__":
             sys.exit(3)
 
     # Other depenencies
-    install_dep('https://github.com/ECP-VeloC/KVTree.git')
-    install_dep('https://github.com/ECP-VeloC/AXL.git')
-    install_dep('https://github.com/ECP-VeloC/rankstr.git')
-    install_dep('https://github.com/ECP-VeloC/shuffile.git')
-    install_dep('https://github.com/ECP-VeloC/redset.git')
-    install_dep('https://github.com/ECP-VeloC/er.git')
+    if (not args.no_deps):
+        install_dep('https://github.com/ECP-VeloC/KVTree.git')
+        install_dep('https://github.com/ECP-VeloC/AXL.git')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git')
+        install_dep('https://github.com/ECP-VeloC/shuffile.git')
+        install_dep('https://github.com/ECP-VeloC/redset.git')
+        install_dep('https://github.com/ECP-VeloC/er.git')
 
     # VeloC
     os.system("cmake -DCMAKE_PREFIX_PATH={0}\

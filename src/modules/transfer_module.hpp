@@ -9,9 +9,7 @@
 #include <deque>
 #include <map>
 
-extern "C" {
 #include "axl.h"
-}
 
 class transfer_module_t {
     const config_t &cfg;
