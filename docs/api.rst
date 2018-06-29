@@ -395,7 +395,8 @@ Close Checkpoint Phase
 ::
 
    int VELOC_Checkpoint_end (
-     IN int valid
+     IN int success
+     **FIXME** Is there an IN version parameter as well?
    )
 
 .. _arguments-8:
@@ -403,7 +404,7 @@ Close Checkpoint Phase
 ARGUMENTS
 '''''''''
 
--  **valid**: Input flag indicating whether the calling process
+-  **success**: Input flag indicating whether the calling process
    completed its checkpoint successfully.
 
 .. _description-9:
@@ -411,19 +412,22 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-This function completes a checkpoint phase.
+This function marks end of a checkpoint phase.
 
+**FIXME: Is the below para correct??**
 Inform VELOC that all files for the current checkpoint are complete
 (i.e., done writing and closed) and whether they are valid (i.e.,
 written without error). A process must close all checkpoint files before
-calling this function. A process should set ``valid`` to 1 if either it
+calling this function. A process should set ``success`` to 1 if either it
 wrote its checkpoint data successfully or it had no data to checkpoint.
-It should set ``valid`` to 0 otherwise. VELOC will determine whether all
+It should set ``success`` to 0 otherwise. VELOC will determine whether all
 processes wrote their checkpoint files successfully.
 
 It is collective across the set of processes in the job. Within an MPI
 application, it must be called collectively by all processes within
 ``MPI_COMM_WORLD``.
+
+
 
 Restart Functions
 ~~~~~~~~~~~~~~~~~
