@@ -7,10 +7,8 @@
 #include <unistd.h>
 #include <dirent.h>
 
-extern "C" {
 #include "er.h"
 #include "rankstr_mpi.h"
-}
 
 #define __DEBUG
 #include "common/debug.hpp"
