@@ -481,8 +481,8 @@ Memory-based Restart
 ^^^^^^^^^^^^^^^^^^^^
 ::
 
-int VELOC_Restart_mem (
- )
+   int VELOC_Restart_mem (
+   )
 
 
 .. _arguments-11:
