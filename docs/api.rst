@@ -68,26 +68,6 @@ Who should use this document?
 | This document is intended for users who wish to use the VELOC software
   for checkpoint restart. The document discusses the VELOC API.
 
-Terms and Conventions
----------------------
-
-This chapter explains some of the terms and conventions used in this
-document.
-
-+--------+---------------------------------------------------------------+
-| Terms  | Description                                                   |
-|        |                                                               |
-+========+===============================================================+
-|        | Function names, data structures and variables which start     |
-|        | with the                                                      |
-+--------+---------------------------------------------------------------+
-|        | Function names, data structures, and variables which start    |
-|        | with the                                                      |
-+--------+---------------------------------------------------------------+
-|        | Functions related to a VELOC restart phase.                   |
-+--------+---------------------------------------------------------------+
-|        | Functions related to a VELOC checkpoint phase.                |
-+--------+---------------------------------------------------------------+
 
 .. _ch:veloc_client_api:
 
@@ -469,7 +449,7 @@ Open Restart Phase
 
 ::  
 
-int VELOC_Restart_begin(
+int VELOC_Restart_begin (
    IN const char *name, 
    IN int version
 );
