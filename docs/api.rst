@@ -70,9 +70,9 @@ Who should use this document?
 
 | This document is a draft version and is subject to changes.
 
-| This document is intended for users who wish to use the VELOC software
-  for checkpoint restart. The document discusses the VELOC API.
-
+| This document is intended for application developers that need to
+integrate VeloC into their application code. It focuses on the API
+that VeloC exposes for this purpose.
 
 .. _ch:veloc_client_api:
 

@@ -6,7 +6,8 @@ import wget, bs4, urllib
 import re
 import tarfile
 
-#compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS='-dynamic -std=c++14'"
+# CRAY-specific compiler options
+# compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS='-dynamic -std=c++14'"
 compiler_options = ""
 
 def install_dep(git_link):

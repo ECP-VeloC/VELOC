@@ -5,6 +5,11 @@
 
 #include "heatdis.h"
 
+/*
+    This sample application is based on the heat distribution code
+    originally developed within the FTI project: github.com/leobago/fti
+*/
+
 void initData(int nbLines, int M, int rank, double *h) {
     int i, j;
     for (i = 0; i < nbLines; i++) {

@@ -123,9 +123,11 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	if (max_versions > 0) {
 	    auto &version_history = checkpoint_history[cmds[0].name];
 	    version_history.push_back(version);
-	    if ((int)version_history.size() > max_versions) {
+	    if ((int)version_history.size() > max_versions) {		
 		std::string old_name = cfg.get("scratch") + "/" + cmds[0].name +
 		    "-ec-" + std::to_string(version_history.front());
+		for (auto &c : cmds)
+		    unlink(c.filename(cfg.get("scratch"), version_history.front()).c_str());
 		version_history.pop_front();
 		int old_id = ER_Create(comm, comm_domain, old_name.c_str(), ER_DIRECTION_REMOVE, 0);
 		if (old_id != -1) {

@@ -1,16 +1,3 @@
-/**
- 
-* @file heatdis.h
- 
-* @author: The VeloC team
- 
-* Adapted from FTI version written by Leonardo A. Bautista Gomez
- 
-* @dates: June 2016 (this version)
- 
-* @brief Heat distribution code to test VeloC.
-*/
- 
 #ifndef _HEATDIS_H
 #define _HEATDIS_H
  

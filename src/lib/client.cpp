@@ -70,20 +70,7 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
-    // remove old versions if needed
-    if (max_versions > 0) {
-	auto &version_history = checkpoint_history[name];
-	version_history.push_back(version);
-	if ((int)version_history.size() > max_versions) {
-	    // wait for operations to complete in async mode before deleting old versions
-	    if (!cfg.is_sync())
-		queue->wait_completion(false);
-	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
-	    version_history.pop_front();
-	}
-    }
-    
+    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);    
     checkpoint_in_progress = true;
     return true;
 }

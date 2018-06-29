@@ -6,6 +6,11 @@
 #include "heatdis.h"
 #include "include/veloc.h"
 
+/*
+    This sample application is based on the heat distribution code
+    originally developed within the FTI project: github.com/leobago/fti
+*/
+
 static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
 
 void initData(int nbLines, int M, int rank, double *h) {
