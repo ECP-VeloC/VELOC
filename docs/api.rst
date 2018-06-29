@@ -406,6 +406,28 @@ It is collective across the set of processes in the job. Within an MPI
 application, it must be called collectively by all processes within
 ``MPI_COMM_WORLD``.
 
+Wait for Checkpoint completion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    int VELOC_Checkpoint_wait (
+    )   
+    
+.. _arguments-9:
+
+ARGUMENTS
+'''''''''
+- None
+
+.. _description-10:
+
+DESCRIPTION
+'''''''''''
+
+The paramater ``name'' is the label of the checkpoint. There parameter ``version'' is the maximum version to look for.
+
+This routine waits for the checkpoint to complete and returns the result (success or failure). Its only valid in async mode. and is typically called before beginning a new checkpoint.
 
 
 Restart Functions
