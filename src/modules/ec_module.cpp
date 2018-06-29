@@ -101,12 +101,12 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     int set_id;
     std::string name = cfg.get("scratch") + "/" + cmds[0].name + "-ec-" + std::to_string(version);
     if (command == command_t::CHECKPOINT) {
-	bool result;
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
 	    int checkpoint = 1;
 	    if (t < last_timestamp)
 		checkpoint = 0;
+	    int result;
 	    MPI_Allreduce(&checkpoint, &result, 1, MPI_INT, MPI_LAND, comm);
 	    if (result)
 		last_timestamp = t + std::chrono::seconds(interval);
