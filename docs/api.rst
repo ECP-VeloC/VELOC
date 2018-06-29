@@ -425,8 +425,6 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-The paramater ``name'' is the label of the checkpoint. There parameter ``version'' is the maximum version to look for.
-
 This routine waits for the checkpoint to complete and returns the result (success or failure). Its only valid in async mode. and is typically called before beginning a new checkpoint.
 
 
