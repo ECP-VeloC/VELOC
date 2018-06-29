@@ -205,41 +205,6 @@ also deregister memory regions that had been registered earlier in the
 execution. All memory registration must be completed before using any of
 the functions from \ `3.9 <#sec:fti>`__.
 
-Similar to MPI, VELOC associates a data type and number of elements with
-each region. To register a memory region, one must use a defined type.
-
-Type Definitions
-^^^^^^^^^^^^^^^^
-
-::
-
-   int VELOC_Mem_type (
-     OUT VELOC_type * type,
-     IN  size_t size
-   )
-
-.. _arguments-1:
-
-ARGUMENTS
-'''''''''
-
--  **type**: The data type to be initialized. This data type can be used
-   when registering a variable with VELOC. By default, VELOC includes
-   some basic data types.
--  **size**: The size of the data type in bytes.
-
-.. _description-2:
-
-DESCRIPTION
-'''''''''''
-
-This function initializes a new data type to be used with memory
-registration calls. The caller must specify the size of the data type in
-bytes.
-
-The function is local to each process. Each process may define data
-types that are unique to that process.
-
 .. _memory-registration-1:
 
 Memory Registration
@@ -251,22 +216,20 @@ Memory Registration
      IN int id,
      IN void * ptr,
      IN size_t count,
-     IN VELOC_type type
+     IN size_t base_size
    )
-
+   
 .. _arguments-2:
 
 ARGUMENTS
 '''''''''
 
--  **id**: This argument provides a user-defined integer identifier to
+-  **id**: This argument provides a application-defined integer label to
    refer to the memory region.
 -  **ptr**: This is the pointer to the start of the memory region.
--  **count**: This refers to the number of elements in the memory
-   region.
--  **type**: This refers to the type of elements in the memory region.
-   It must correspond to a pre-defined VeloC type or a type created with
-   a call to ``VeloC_Mem_type()``.
+-  **count**: This refers to the number of consecutive elements in memory region.
+-  **base_size**: This refers to the size of each element in memory region.
+   
 
 .. _description-3:
 
@@ -276,7 +239,7 @@ DESCRIPTION
 This function registers a memory region for checkpoint/restart. VELOC
 internally associates the caller’s label ``id`` with the memory region
 as defined by the pointer to the start of the region, the number of
-elements, and the type of the elements in the region. The memory region
+elements, and the size of each elements in the region. The memory region
 will be persisted during a checkpoint and recovered upon restart. If the
 application specifies a value for ``id`` that has been used previously,
 VELOC deregisters the previous region associated with that id and
@@ -301,7 +264,7 @@ Memory Deregistration
 ARGUMENTS
 '''''''''
 
--  **id**: This argument provides a user-defined integer identifier to
+-  **id**: This argument provides a application-defined integer identifier to
    refer to the memory region.
 
 .. _description-4:
