@@ -21,10 +21,8 @@ class veloc_client_t {
 
     typedef std::pair <void *, size_t> region_t;
     typedef std::map<int, region_t> regions_t;
-    typedef std::map<std::string, std::deque<int> > checkpoint_history_t;
 
     regions_t mem_regions;
-    checkpoint_history_t checkpoint_history;
     command_t current_ckpt;
     int rank;
     bool checkpoint_in_progress = false;    

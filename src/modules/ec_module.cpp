@@ -144,6 +144,11 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	    ERROR("ER_Create failed for checkpoint " << name);
 	    return VELOC_FAILURE;
 	}
+	if (max_versions > 0) {
+	    auto &version_history = checkpoint_history[cmds[0].name];
+	    version_history.clear();
+	    version_history.push_back(version);
+	}
     }
     ER_Dispatch(set_id);
     int ret = ER_Wait(set_id);

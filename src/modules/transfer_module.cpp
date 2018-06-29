@@ -170,6 +170,11 @@ int transfer_module_t::process_command(const command_t &c) {
 	    ERROR("request to transfer file " << remote << " to " << local << " failed: source does not exist");
 	    return VELOC_FAILURE;
 	}
+	if (max_versions > 0) {
+	    auto &version_history = checkpoint_history[c.unique_id][c.name];
+	    version_history.clear();
+	    version_history.push_back(c.version);
+	}
 	return transfer_file(remote, local);
 	
     default:

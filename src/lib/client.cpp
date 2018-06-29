@@ -70,7 +70,7 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);    
+    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
     checkpoint_in_progress = true;
     return true;
 }
