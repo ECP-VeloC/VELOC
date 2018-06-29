@@ -130,6 +130,8 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 		int old_id = ER_Create(comm, comm_domain, old_name.c_str(), ER_DIRECTION_REMOVE, 0);
 		if (old_id != -1) {
 		    ER_Dispatch(old_id);
+		    if (ER_Wait(old_id) == ER_FAILURE)
+			ERROR("cannot delete old version " << old_name);
 		    ER_Free(old_id);
 		}
 	    }
@@ -137,16 +139,17 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     } else {
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
 	if (set_id == -1) {
-	    ERROR("ER_Create failed for checkpoint " << cmds[0].stem());
+	    ERROR("ER_Create failed for checkpoint " << name);
 	    return VELOC_FAILURE;
 	}
     }
-    int ret = ER_Dispatch(set_id);
-    if (ret == ER_SUCCESS)
-	ER_Wait(set_id);
-    else
-	ERROR("ER_Dispatch failed for checkpoint " << cmds[0].stem());
+    ER_Dispatch(set_id);
+    int ret = ER_Wait(set_id);
     ER_Free(set_id);
-
-    return ret == ER_SUCCESS ? VELOC_SUCCESS : VELOC_FAILURE;
+    if (ret == ER_SUCCESS)
+	return VELOC_SUCCESS;
+    else {
+	ERROR("ER_Wait failed for checkpoint " << name);
+	return VELOC_FAILURE;
+    }
 }
