@@ -39,6 +39,10 @@ VELOC Software API
 
 Revision: VELOC API Version 1.0 - Document revision 0.8
 
+Copyright (c) 2018, Argonne National Laboratory, LLC.
+
+Copyright (c) 2018, Lawrence Livermore National Security, LLC.
+
 .. raw:: latex
 
    \normalsize
