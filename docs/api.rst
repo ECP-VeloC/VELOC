@@ -139,18 +139,18 @@ Initialization
 
 ::
 
-   int VELOC_Init (
-     IN char * configFile
+   int VELOC_Init(
+      IN MPI_Comm comm, 
+      IN const char *cfg_file
    )
 
 ARGUMENT
 ''''''''
-
--  **configFile**: This string contains the path to the VELOC library
-   configuration file. The same value must be specified by all
-   processes. An application may provide a NULL pointer for this
-   parameter if it has no configuration file or if it specifies the
-   configuration file through other means like an environment variable.
+- **comm**: the MPI communicator
+- **cfg_file**: configuration file with the following fields: 
+   scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
+    persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
+    
 
 DESCRIPTION
 '''''''''''
