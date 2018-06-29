@@ -417,10 +417,10 @@ Indication of Restart
 
 ::
 
-int VELOC_Restart_test (
-   IN const char *name, 
-   IN int version
- )
+    int VELOC_Restart_test (
+       IN const char *name, 
+       IN int version
+    )
 
 
 .. _arguments-9:
@@ -449,10 +449,10 @@ Open Restart Phase
 
 ::
 
-int VELOC_Restart_begin (
-   IN const char *name, 
-   IN int version
- )
+    int VELOC_Restart_begin (
+       IN const char *name, 
+       IN int version
+     )
 
 .. _arguments-10:
 
