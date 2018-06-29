@@ -58,8 +58,9 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
 	INFO("EC interval not specified, every checkpoint will be protected using EC");
 	interval = 0;
     }
-    MPI_Comm_size(comm_domain, &ranks);
-    if (ranks == 1) {
+    int domain_ranks;
+    MPI_Comm_size(comm_domain, &domain_ranks);
+    if (domain_ranks == ranks) {
 	INFO("Running on a single host, EC deactivated");
 	interval = -1;
     }
