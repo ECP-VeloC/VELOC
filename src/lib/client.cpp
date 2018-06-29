@@ -61,9 +61,13 @@ bool veloc_client_t::checkpoint_wait() {
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
-bool veloc_client_t::checkpoint_begin(const char *name, int version) {    
+bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     if (checkpoint_in_progress) {
 	ERROR("nested checkpoints not yet supported");
+	return false;
+    }
+    if (version < 0) {
+	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
