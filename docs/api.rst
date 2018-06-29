@@ -127,9 +127,9 @@ Initialization
 ARGUMENT
 ''''''''
 - **comm**: the MPI communicator
-- **cfg_file**: configuration file with the following fields:
-   scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
-   persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
+- **cfg_file**: configuration file with the following fields
+        scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
+        persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
     
 
 DESCRIPTION
