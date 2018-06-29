@@ -383,9 +383,6 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-// write registered memory regions into the checkpoint
-// must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
-
 The function is local to each process. Any process that registers memory
 must call this function.
 
