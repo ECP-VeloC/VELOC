@@ -96,7 +96,7 @@ of the software.
 
 -  ``VELOC_VERSION_MAJOR``: a number
 -  ``VELOC_VERSION_MINOR``: a number
--  ``VELOC_VERSION_PATCH``: a number
+-  ``VELOC_VERSION_PATH``: a number
 -  ``VELOC_VERSION``: a version string, such as “v0.0.1”
 
 Return Codes
@@ -106,7 +106,7 @@ All functions use the following return codes, defined as an ``int``
 type.
 
 -  ``VELOC_SUCCESS``: The function completed successfully.
--  ``VELOC_ERROR``: Indicates an error. This code will be expanded
+-  ``VELOC_FAILURE``: Indicates a failure. This code will be expanded
    later. Specific error codes could include memory errors, a missing
    configuration file, non-exist ant directories, missing checkpoint
    files, or not enough available storage.
