@@ -9,6 +9,7 @@ import tarfile
 # CRAY-specific compiler options
 # compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS='-dynamic -std=c++14'"
 compiler_options = ""
+cmake_build_type="Release"
 
 def install_dep(git_link):
     name = os.path.basename(git_link).split('.')[0]
@@ -16,8 +17,8 @@ def install_dep(git_link):
     try:
         os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
         os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
-        -DCMAKE_INSTALL_PREFIX={1} {2} && make install".format(args.temp + '/' + name,
-                                                           args.prefix, compiler_options))
+        -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3} && make install".format(args.temp + '/' + name,
+                                                           args.prefix, cmake_build_type, compiler_options))
     except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
@@ -30,6 +31,8 @@ if __name__ == "__main__":
                         help='use existing Boost version (must be pre-installed)')
     parser.add_argument('--no-deps', action='store_true',
                         help='use existing component libraries (must be pre-installed)')
+    parser.add_argument('--debug', action='store_true',
+                        help='build debug and keep temp directory')
     parser.add_argument('--temp', default='/tmp/veloc',
                         help='temporary directory used during the install (default: /tmp/veloc)')
     args = parser.parse_args()
@@ -45,6 +48,9 @@ if __name__ == "__main__":
         sys.exit(2)
 
     print("Installing VeloC in {0}...".format(args.prefix))
+
+    if (args.debug):
+        cmake_build_type="Debug"
 
     # Boost
     if (not args.no_boost):
@@ -75,13 +81,14 @@ if __name__ == "__main__":
 
     # VeloC
     os.system("cmake -DCMAKE_PREFIX_PATH={0}\
-    -DCMAKE_INSTALL_PREFIX={0} {1} && make install".format(args.prefix, compiler_options))
+    -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2} && make install".format(args.prefix, cmake_build_type, compiler_options))
 
     # Cleanup
-    try:
-        shutil.rmtree(args.temp)
-    except OSError as err:
-        print("Cannot cleanup temporary directory {0}!".format(args.temp))
-        sys.exit(5)
+    if (not args.debug):
+        try:
+            shutil.rmtree(args.temp)
+        except OSError as err:
+            print("Cannot cleanup temporary directory {0}!".format(args.temp))
+            sys.exit(5)
 
     print("Installation successful!")
