@@ -182,8 +182,7 @@ Typically, applications register memory once after initializing the
 VELOC library. Applications are free to register memory throughout the
 run, including within restart and checkpoint phases. Applications can
 also deregister memory regions that had been registered earlier in the
-execution. All memory registration must be completed before using any of
-the functions from \ `3.9 <#sec:fti>`__.
+execution. 
 
 .. _memory-registration-1:
 
