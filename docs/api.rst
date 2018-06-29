@@ -447,13 +447,12 @@ processes.
 Open Restart Phase
 ^^^^^^^^^^^^^^^^^^
 
-::  
+::
 
 int VELOC_Restart_begin (
    IN const char *name, 
    IN int version
-);
-
+ )
 
 .. _arguments-10:
 
@@ -480,11 +479,11 @@ application, it must be called collectively by all processes within
 
 Memory-based Restart
 ^^^^^^^^^^^^^^^^^^^^
-
 ::
 
-   int VELOC_Restart_mem (
-   )
+int VELOC_Restart_mem (
+ )
+
 
 .. _arguments-11:
 
