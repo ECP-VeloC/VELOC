@@ -111,11 +111,10 @@ static int get_latest_version(const std::string &p, const command_t &c) {
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return -1;
-    std::string cname = c.filename(p);
     while ((dentry = readdir(dir)) != NULL) {
 	std::string fname = std::string(dentry->d_name);
-	if (fname.compare(0, cname.length(), cname) == 0 &&
-	    sscanf(fname.substr(cname.length()).c_str(), "-%d-%d", &id, &version) == 2 &&
+	if (fname.compare(0, strlen(c.name), c.name) == 0 &&
+	    sscanf(fname.substr(strlen(c.name)).c_str(), "-%d-%d", &id, &version) == 2 &&
 	    id == c.unique_id && (c.version == 0 || version <= c.version) &&
 	    access((p + "/" + fname).c_str(), R_OK) == 0) {
 	    if (version > ret)
