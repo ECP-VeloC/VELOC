@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 
 #include "heatdis.h"
 #include "include/veloc.h"
+
+// this examples uses asserts so they need to be activated
+#undef NDEBUG
+#include <assert.h>
 
 /*
     This sample application is based on the heat distribution code
