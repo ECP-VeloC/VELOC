@@ -292,24 +292,23 @@ File Registration
 ::
 
    int VELOC_Route_file (
-     IN  const char * path,
-     OUT char * newpath
+     IN  char * ckpt_file_name,
    )
-
+   
 .. _arguments-4:
 
 ARGUMENTS
 '''''''''
 
--  **path**: The name or path of the file the application would open on
-   the parallel file system.
--  **newpath**: The name or path the application must use to open the
-   file.
+-  **ckpt_file_name**: ***FIXME**
 
 .. _description-5:
 
 DESCRIPTION
 '''''''''''
+
+**FIXME:   Code says "obtain the full path for the file associated with the named checkpoint and version number", "can be used to manually read/write checkpointing data without registering memory regions." We need to modify the below text..
+
 
 This function registers a file as belonging to a checkpoint/restart. The
 application provides the name or path of the file it would open on the
@@ -328,48 +327,14 @@ arbitrary number of files.
 Checkpoint Functions
 ~~~~~~~~~~~~~~~~~~~~
 
-Test for Checkpoint
-^^^^^^^^^^^^^^^^^^^
-
-::
-
-   int VELOC_Checkpoint_test (
-     OUT int * flag
-   )
-
-.. _arguments-5:
-
-ARGUMENTS
-'''''''''
-
--  **flag**: Output flag indicating whether the application should
-   checkpoint.
-
-.. _description-6:
-
-DESCRIPTION
-'''''''''''
-
-This function is optional. It is used to help guide an application to
-the optimal checkpoint frequency. An application does not need to call
-this function before checkpointing, and an application may ignore its
-return value.
-
-The parameter ``flag`` is set to 1 if the application should checkpoint,
-and it is set to 0 otherwise.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``. The same value is returned in ``flag`` on all
-processes.
-
 Open Checkpoint Phase
 ^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
    int VELOC_Checkpoint_begin (
-     IN const char * name
+     IN const char * name,
+     int version
    )
 
 .. _arguments-6:
@@ -378,6 +343,7 @@ ARGUMENTS
 '''''''''
 
 -  **name**: The name with which to label the checkpoint.
+-  **version**: The version of the checkpoint, needs to increase with each checkpoint (e.g. iteration number)    
 
 .. _description-7:
 
@@ -403,7 +369,6 @@ Memory-based Checkpoint
 ::
 
    int VELOC_Checkpoint_mem (
-     IN const char * file
    )
 
 .. _arguments-7:
@@ -411,24 +376,20 @@ Memory-based Checkpoint
 ARGUMENTS
 '''''''''
 
--  **file**: The filename to which to write the memory state.
+-  None
 
 .. _description-8:
 
 DESCRIPTION
 '''''''''''
 
+// write registered memory regions into the checkpoint
+// must be called between VELOC_Checkpoint_begin/VELOC_Checkpoint_end
+
 The function is local to each process. Any process that registers memory
 must call this function.
 
-This function writes all registered memory regions to a VELOC checkpoint
-file.
-
-Each process must specify a unique name in ``file``. If ``file`` is not
-an absolute path, the current working directory is prepended at the time
-of the call. One should not call ``VELOC_Route_file()`` on this file.
-
-The function must be called between ``VELOC_Checkpoint_begin()`` and
+This function writes all registered memory regions into the checkpoint. The function must be called between ``VELOC_Checkpoint_begin()`` and
 ``VELOC_Checkpoint_end()``.
 
 Close Checkpoint Phase
