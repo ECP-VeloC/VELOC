@@ -65,6 +65,7 @@ Who should use this document?
 -----------------------------
 
 | This document is a draft version and is subject to changes.
+
 | This document is intended for users who wish to use the VELOC software
   for checkpoint restart. The document discusses the VELOC API.
 
@@ -161,7 +162,7 @@ Finalize
 ARGUMENTS
 '''''''''
 
-**FIXME** - **cleanup**:????
+- cleanup: an integer value
 
 .. _description-1:
 
