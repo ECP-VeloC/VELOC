@@ -74,20 +74,20 @@ Terms and Conventions
 This chapter explains some of the terms and conventions used in this
 document.
 
-+------+---------------------------------------------------------------+
-| Term | Description                                                   |
-| s    |                                                               |
-+======+===============================================================+
-|      | Function names, data structures and variables which start     |
-|      | with the                                                      |
-+------+---------------------------------------------------------------+
-|      | Function names, data structures, and variables which start    |
-|      | with the                                                      |
-+------+---------------------------------------------------------------+
-|      | Functions related to a VELOC restart phase.                   |
-+------+---------------------------------------------------------------+
-|      | Functions related to a VELOC checkpoint phase.                |
-+------+---------------------------------------------------------------+
++--------+---------------------------------------------------------------+
+| Terms  | Description                                                   |
+|        |                                                               |
++========+===============================================================+
+|        | Function names, data structures and variables which start     |
+|        | with the                                                      |
++--------+---------------------------------------------------------------+
+|        | Function names, data structures, and variables which start    |
+|        | with the                                                      |
++--------+---------------------------------------------------------------+
+|        | Functions related to a VELOC restart phase.                   |
++--------+---------------------------------------------------------------+
+|        | Functions related to a VELOC checkpoint phase.                |
++--------+---------------------------------------------------------------+
 
 .. _ch:veloc_client_api:
 
