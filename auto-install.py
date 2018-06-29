@@ -11,11 +11,12 @@ import tarfile
 compiler_options = ""
 cmake_build_type="Release"
 
-def install_dep(git_link):
+def install_dep(git_link, dep_vers):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
         os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
+        os.system("cd {0} && git fetch && git checkout {1}".format(args.temp + '/' + name, dep_vers))
         os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
         -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3} && make install".format(args.temp + '/' + name,
                                                            args.prefix, cmake_build_type, compiler_options))
@@ -72,12 +73,12 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.no_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git')
-        install_dep('https://github.com/ECP-VeloC/AXL.git')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git')
-        install_dep('https://github.com/ECP-VeloC/redset.git')
-        install_dep('https://github.com/ECP-VeloC/er.git')
+        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
+        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
+        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
+        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.3')
+        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
     os.system("cmake -DCMAKE_PREFIX_PATH={0}\
