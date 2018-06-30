@@ -64,217 +64,111 @@ Revision: VELOC Revision 0.5
 Who should use this document?
 -----------------------------
 
-| This document is a draft version and is subject to changes.
-| This document is intended for users who wish to use the VELOC software
-  for checkpoint restart. The document discusses how to install,
-  configure and test the software with packaged examples.
+| This document is intended for users who need to run applications that make use of VeloC for checkpoint/restart.
 
 .. _ch:velocsetup:
 
-Setting up the VELOC software
------------------------------
+VeloC Setup
+-----------
 
-This chapter demonstrates how to setup the VELOC software. More
-specifically, it describes how to download, install and compile the
-VELOC code.
+Due to the large number of software and hardware configurations where VeloC
+can run, it must be built from source. Once built and installed, VeloC needs
+to be configured using a configuration file. These aspects are detailed below:
 
-Downloading the VELOC software
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Download VeloC
+~~~~~~~~~~~~~~
 
-The VELOC software is currently under development. It is available in a
-git repo at https://xgitlab.cels.anl.gov/ecp-veloc/ftiscr. To get access
-to code, please contact the developers of VELOC.
+The source code of VeloC is publicly available on ``github``. To download it,
+enter the following command:
 
-The software can be downloaded by using the following command. This will
-download the code directory in your current directory.
+::
 
-*git clone*\ https://xgitlab.cels.anl.gov/ecp-veloc/veloc
+   git clone git@github.com:ECP-VeloC/VELOC.git
 
-Installing the VELOC software
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install VeloC
+~~~~~~~~~~~~~
 
-Execute the ``./buildme`` script to build and install VELOC. This will
-create two directories ``build`` and ``install``.
+VeloC has an automated installation process based on Python, which depends on several standard libraries.
+These standard libraries may not be present on your system. If that is the case, you need to bootstrap the installation
+process first as follows: 
 
-The current VELOC library is implemented on top of SCR. The ``buildme``
-script downloads and installs SCR and its dependency PDSH. It then
-builds the VELOC library and several example programs.
+::
 
-Executing the VELOC examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   $bootstrap.sh
 
-To run the examples, move to the ``install`` directory and run
-``make test``.
+Once the bootstrapping has finished, the ``auto-install.py`` script will build and install VeloC and all it dependencies.
+The script can be edited to modify certain compiler options if needed. Common compiler options needed for some machines
+(e.g. Cray) are included as comments. After editing the script, run it as follows:
 
-Currently, VELOC tests a simple heat distribution example. There are 3
-versions of the example, to test the 3 modes of operation of VELOC:
+::
 
--  Memory interface (similar to that of FTI),
--  File interface (similar to that of SCR),
--  Both the memory and file interface.
+   $auto-install.py <destination_path>
+   
+Note that it may be possible that your Python installation will not detect the libraries installed by the bootstrapping 
+automatically. In this case, locate the installed libraries and tell Python about them as follows:
 
-Each version of the example creates 3 CMake tests:
+::
 
--  one to start the program,
--  one to test the restart the program,
--  and one to cleanup the files from the test.
+    $setenv PYTHONPATH ~/.local/lib/python3.6/site-packages
 
-These tests are run serially.
+If the installation process was successful, the VeloC client library (and its dependencies) are installed under
+``<destination_path>/lib``. The ``veloc.h`` header needed by the application developers to call the VeloC API is 
+installed under ``<destination_path>/include``. The active backend needed to run VeloC in asynchronous mode can be found in
+the source code repository: ``src/backend/veloc-backend``.
 
-VELOC Configuration
-~~~~~~~~~~~~~~~~~~~
+Configure VeloC
+~~~~~~~~~~~~~~~
 
-The current VELOC configuration file is the same as that used for SCR. A
-sample configuration file can be found at ``test/test.conf``.
+VeloC uses a INI-style configuration with the following options:
 
-.. _ch:examples:
+::
 
-Examples using VELOC API
-------------------------
+   scratch = <local_path>
+   persistent = <shared_path>
+   mode = <sync|async>
+   ec_interval = <seconds> (default: 0)
+   persistent_interval = <seconds> (default: 0)
+   max_versions = <int> (default: 0)
+   axl_type = AXL_XFER_SYNC (default: N/A)
 
-This chapter demonstrates how to use the VELOC API through a few
-examples. These examples can also be found in the VELOC software in the
-examples directory.
+The first three options are mandatory and specify where VeloC can save local checkpoints and redundancy information 
+for collaborative resilience strategies (currently set to XOR encoding). All other options are not 
+mandatory and have a default. Every time the application issues a checkpoint request, the local checkpoints are saved 
+in the scratch path of the node. Erasure coding is active by default and is applied to all checkpoint versions. To specify
+a minimum amount of time that needs to pass between checkpoints protected by erasure coding, ``ec_interval`` can be set to 
+a number of seconds. If ``ec_interval`` is negative, erasure coding is deactivated. Similarly, flushing of the local 
+checkpoints to the parallel file system is active by default and can be controlled using ``persistent_interval``. To
+preserve space, users can specify ``max_versions`` to instruct VeloC to keep only the latest N checkpoint versions. This
+applies to the scratch and persistent level individually. Finally, the user can specify whether to use a built-in POSIX
+file transfer routine to flush the files to a parallel file system or to use the AXL library for optimized flushes that can
+take advantage of additional hardware to accelerate I/O (such as burst buffers).
 
-Heat Equation Example
-~~~~~~~~~~~~~~~~~~~~~
+.. _ch:velocrun:
 
-An example of how the VELOC API can be used is seen in the following
-code. This example program implements a distributed heat equation
-calculation. Here, we see the use of both FTI-style memory protection
-and SCR-style file protection.
+Running VeloC
+-------------
 
-.. code:: c
+VeloC can be run in either synchronous mode (all resilience strategies are embedded in the client library and run directly 
+in the application processes in blocking fashion) or asynchronous mode (the resilience strategies run in the active backend
+in the background). 
 
-   /**
-    *  @file   heatdis.c
-    *  @author Leonardo A. Bautista Gomez
-    *  @date   May, 2014
-    *  @brief  Heat distribution code to test VELOC.
-    */
+To use VeloC in synchronous mode, the application simply needs to be run as any normal MPI job. To run VeloC in 
+asynchronous mode, each node needs to run an active backend instance:
 
-   #include "heatdis.h"
+::
 
-   int main(int argc, char *argv[])
-   {
-       int rank, nbProcs, nbLines, i, M, arg;
-       double wtime, *h, *g, memSize, localerror, globalerror = 1;
+   mpirun -np N --map-by ppr:1:node <path>/veloc-backend <config_file>
+   
+After the active backend are up and running, the application can run as a normal MPI job. Each application process will 
+then connect to the local backend present on the node where it is running.
 
-       MPI_Init(&argc, &argv);
-       VELOC_Init(argv[2]);
+Examples
+~~~~~~~~
 
-       MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
-       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+VeloC comes with a series of examples in the ``test`` subdirectory that can be used to test the setup. To run these 
+examples (in either synchronous or asynchronous mode), edit the sample configuration file ``heatdis.cfg`` and then run 
+the application as follows (run the active backend first as mentioned above if in async mode):
 
-       arg = atoi(argv[1]);
-       M = (int)sqrt((double)(arg * 1024.0 * 512.0 * nbProcs)/sizeof(double));
-       nbLines = (M / nbProcs)+3;
-       h = (double *) malloc(sizeof(double *) * M * nbLines);
-       g = (double *) malloc(sizeof(double *) * M * nbLines);
-       initData(nbLines, M, rank, g);
-       memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
+::
 
-       if (rank == 0) printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
-       if (rank == 0) printf("Target precision : %f \n", PRECISION);
-       if (rank == 0) printf("Maximum number of iterations : %d \n", ITER_TIMES);
-
-       // show that we can mix by saving i and h via protect
-       // write g to a file, e.g., consider a program in which
-       // one library uses protect and another library uses files
-
-       VELOC_Mem_protect(0, &i,         1, VELOC_INTG);
-       VELOC_Mem_protect(1,  h, M*nbLines, VELOC_DBLE);
-
-       // init loop counter (before restart which may overwrite it)
-       i = 0;
-
-       // read checkpoint if we're restarting
-       int flag;
-       VELOC_Restart_test(&flag);
-       if (flag) {
-           char ckptname[VELOC_MAX_NAME];
-           VELOC_Restart_begin(ckptname);
-
-           // build file name for this rank for memory
-           char file[1024];
-           snprintf(file, sizeof(file), "mem.%d", rank);
-
-           // restore protected variables
-           VELOC_Restart_mem(file, VELOC_RECOVER_ALL, NULL, 0);
-
-           // build file name for this rank
-           snprintf(file, sizeof(file), "ckpt.%d", rank);
-
-           // get path to file from VELOC
-           char veloc_file[VELOC_MAX_NAME];
-           VELOC_Route_file(file, veloc_file);
-
-           // open file for writing
-           int valid = 1;
-           FILE* fd = fopen(veloc_file, "rb");
-           if (fd != NULL) {
-               if (fread( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
-               fclose(fd);
-           } else {
-               // failed to open file
-               valid = 0;
-           }
-
-           VELOC_Restart_end(valid);
-       }
-
-       wtime = MPI_Wtime();
-       while(i < ITER_TIMES)
-       {
-           // write checkpoint if needed
-           int flag;
-           VELOC_Checkpoint_test(&flag);
-           if (flag) {
-               // define a name for this checkpoint
-               char ckptname[VELOC_MAX_NAME];
-               snprintf(ckptname, sizeof(ckptname), "time.%d", i);
-
-               VELOC_Checkpoint_begin(ckptname);
-
-               // build file name for this rank for memory
-               char file[1024];
-               snprintf(file, sizeof(file), "time.%d/mem.%d", i, rank);
-
-               // save protected variables
-               VELOC_Checkpoint_mem(file);
-
-               // build file name for this rank
-               snprintf(file, sizeof(file), "time.%d/ckpt.%d", i, rank);
-
-               // get path to file from VELOC
-               char veloc_file[VELOC_MAX_NAME];
-               VELOC_Route_file(file, veloc_file);
-
-               // open file for writing
-               int valid = 1;
-               FILE* fd = fopen(veloc_file, "wb");
-               if (fd != NULL) {
-                   if (fwrite( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
-                   fclose(fd);
-               } else {
-                   // failed to open file
-                   valid = 0;
-               }
-
-               VELOC_Checkpoint_end(valid);
-           }
-
-           localerror = doWork(nbProcs, rank, M, nbLines, g, h);
-           if (((i%ITER_OUT) == 0) && (rank == 0)) printf("Step : %d, error = %f\n", i, globalerror);
-           if ((i%REDUCE) == 0) MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-           if(globalerror < PRECISION) break;
-           i++;
-       }
-       if (rank == 0) printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
-
-       free(h);
-       free(g);
-       VELOC_Finalize();
-       MPI_Finalize();
-       return 0;
-   }
+   mpirun -np N test/heatdis_mem <mem_per_process> <config_file>
