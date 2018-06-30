@@ -68,8 +68,6 @@ Copyright (c) 2018, Lawrence Livermore National Security, LLC.
 Who should use this document?
 -----------------------------
 
-| This document is a draft version and is subject to changes.
-
 | This document is intended for application developers that need to
 integrate VeloC into their application code. It focuses on the API
 that VeloC exposes for this purpose.
@@ -79,30 +77,12 @@ that VeloC exposes for this purpose.
 VELOC API
 ---------
 
-This chapter describes routines that are a part of the VELOC Client
-Interface. **NOTE:** We may add more routines that enable developers
-finer control of VELOC.
-
-VELOC supports two fundamental checkpoint abstractions: memory-based
-checkpoints and file-based checkpoints. With memory-based checkpoints,
-an application registers portions of its memory that should be saved
-with each checkpoint and restored upon a restart. During a checkpoint,
-the VELOC library serializes these memory regions and stores the state
-to files. In file-based checkpoints, the application serializes its
-state to files, and it registers those files with VELOC. An application
-is free to use either abstraction, and both methods can be used in
-combination if desired.
-
-Version Information
-~~~~~~~~~~~~~~~~~~~
-
-The VELOC header file "veloc.h" defines macros that describe the version
-of the software.
-
--  ``VELOC_VERSION_MAJOR``: a number
--  ``VELOC_VERSION_MINOR``: a number
--  ``VELOC_VERSION_PATH``: a number
--  ``VELOC_VERSION``: a version string, such as “v0.0.1”
+VELOC supports two modes of operation: memory-based and file-based
+checkpoints. With memory-based checkpoints, an application registers regions
+of its memory that should be saved with each checkpoint and restored upon a restart. 
+In this mode, the serialization of the memory regions happens automatically.
+With file-based checkpoints, the application has full control over how to serialize
+the critical data structures needed for restart into checkpoint files.
 
 Return Codes
 ~~~~~~~~~~~~
@@ -111,83 +91,52 @@ All functions use the following return codes, defined as an ``int``
 type.
 
 -  ``VELOC_SUCCESS``: The function completed successfully.
--  ``VELOC_FAILURE``: Indicates a failure. This code will be expanded
-   later. Specific error codes could include memory errors, a missing
-   configuration file, non-exist ant directories, missing checkpoint
-   files, or not enough available storage.
+-  ``VELOC_FAILURE``: Indicates a failure. VeloC prints a corresponding error message when this error code is returned. In the future, more error codes may be added to indicate common error scenarios that can be used by the application to take further action.
 
-Initializing and Finalizing the VELOC library
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Initializing and Finalizing VeloC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Initialization
 ^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Init(
-      IN MPI_Comm comm, 
-      IN const char *cfg_file
-   )
+   int VELOC_Init(IN MPI_Comm comm, IN const char *cfg_file)
 
-ARGUMENT
-''''''''
-- **comm**: the MPI communicator
-- **cfg_file**: configuration file with the following fields
-        - scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
-        - persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
-    
+ARGUMENTS
+'''''''''
+
+- **comm**: The MPI communicator corresponding to the processes that need to checkpoint/restart as a group (typically MPI_COMM_WORLD)
+- **cfg_file**: The VeloC configuration file, detailed in the user guide.
 
 DESCRIPTION
 '''''''''''
 
-This function initializes the VELOC library. It must be called before
-any other VELOC functions.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively after ``MPI_Init()`` by all
-processes within ``MPI_COMM_WORLD``.
-
-It accomplishes the following:
-
-#. Process configuration files and gather requirements
-#. Setup internal variables, spawn/connect to back end VELOC processes,
-   etc.
-#. Rebuild or load checkpoint in cache (if available).
+This function initializes the VELOC library. It must be called collectively by all processes before any other VELOC function. A good practice is to call it immediately after ``MPI_Init()``.
 
 Finalize
 ^^^^^^^^
 
 ::
 
-   int VELOC_Finalize (
-      IN int cleanup
-   )
+   int VELOC_Finalize(IN int cleanup)
 
 ARGUMENTS
 '''''''''
 
-- cleanup: an integer value
+- **cleanup**: a bool flag specifying whether to remove all checkpoint files after successful completion (non-zero) or to keep them intact (0).
 
 .. _description-1:
 
 DESCRIPTION
 '''''''''''
 
-This function shuts down the VELOC library. No VELOC functions may be
-called after calling this function.
+This function shuts down the VELOC library. It must be called collectively by all processes and no other VELOC function is allowed afterwards. A good practice is to call it immediately before ``MPI_Finalize()``.
 
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively before ``MPI_Finalize()`` by
-all processes within ``MPI_COMM_WORLD``.
+Memory-Based Mode
+~~~~~~~~~~~~~~~~~
 
-Memory Registration
-~~~~~~~~~~~~~~~~~~~
-
-Typically, applications register memory once after initializing the
-VELOC library. Applications are free to register memory throughout the
-run, including within restart and checkpoint phases. Applications can
-also deregister memory regions that had been registered earlier in the
-execution. 
+In memory-based mode, applications need to register any critical memory regions needed for restart. Registration is allowed at any moment before initiating a checkpoint or restart. Memory regions can also be unregistered if they become non-critical at any moment during runtime.
 
 .. _memory-registration-1:
 
@@ -196,77 +145,54 @@ Memory Registration
 
 ::
 
-   int VELOC_Mem_protect (
-     IN int id,
-     IN void * ptr,
-     IN size_t count,
-     IN size_t base_size
-   )
+   int VELOC_Mem_protect(IN int id, IN void * ptr, IN size_t count, IN size_t base_size)
    
 .. _arguments-2:
 
 ARGUMENTS
 '''''''''
 
--  **id**: This argument provides a application-defined integer label to
-   refer to the memory region.
--  **ptr**: This is the pointer to the start of the memory region.
--  **count**: This refers to the number of consecutive elements in memory region.
--  **base_size**: This refers to the size of each element in memory region.
+-  **id**: An application defined id to identify the memory region
+-  **ptr**: A pointer to the beginning of the memory region.
+-  **count**: The number of elements in the memory region.
+-  **base_size**: The size of each element in the memory region.
    
-
 .. _description-3:
 
 DESCRIPTION
 '''''''''''
 
-This function registers a memory region for checkpoint/restart. VELOC
-internally associates the caller’s label ``id`` with the memory region
-as defined by the pointer to the start of the region, the number of
-elements, and the size of each elements in the region. The memory region
-will be persisted during a checkpoint and recovered upon restart. If the
-application specifies a value for ``id`` that has been used previously,
-VELOC deregisters the previous region associated with that id and
-records the pointer, count, and type provided in the new call. One may
-specify ``count = 0`` to effectively deregister a memory region.
-
-The function is local to each process. Each process may register an
-arbitrary number of memory regions, and all ``id`` labels are unique to
-each process.
+This function registers a memory region for checkpoint/restart. Each process can register and unregister its own 
+memory regions independently of the other processes. The id of the memory region must be unique within 
+each process. 
 
 Memory Deregistration
 ^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Mem_unprotect (
-     IN int id
-   )
+   int VELOC_Mem_unprotect(IN int id)
 
 .. _arguments-3:
 
 ARGUMENTS
 '''''''''
 
--  **id**: This argument provides a application-defined integer identifier to
-   refer to the memory region.
+-  **id**: The id of the memory region previously registered with ``VELOC_Mem_protect``
 
 .. _description-4:
 
 DESCRIPTION
 '''''''''''
 
-This function deregisters a memory region for checkpoint/restart. Some
-users may need to checkpoint different variables at various time steps
-selectively. The memory deregistration interface allows users to remove
-the registered memory at run time.
+This function deregisters a memory region for checkpoint/restart. 
 
-File Registration
-~~~~~~~~~~~~~~~~~
+File-Based Mode
+~~~~~~~~~~~~~~~
 
-Applications can only specify files within checkpoint and restart
-phases. It is not valid for an application to refer to files outside of
-such phases.
+In the file-based mode, applications need to manually serialize/recover the critical data structures to/from 
+checkpoint files. This mode provides fine-grain control over the serialization process and is especially useful when the
+application uses non-contiguous memory regions for which the memory-based API is not convenient to use.
 
 .. _file-registration-1:
 
@@ -275,58 +201,41 @@ File Registration
 
 ::
 
-   int VELOC_Route_file (
-     IN  char * ckpt_file_name,
-   )
+   int VELOC_Route_file(OUT char *ckpt_file_name)
    
 .. _arguments-4:
 
 ARGUMENTS
 '''''''''
 
--  **ckpt_file_name**: ***FIXME**
+-  **ckpt_file_name**: Holds the name of the checkpoint file that the user needs to use to perform I/O
 
 .. _description-5:
 
 DESCRIPTION
 '''''''''''
 
-**FIXME:   Code says "obtain the full path for the file associated with the named checkpoint and version number", "can be used to manually read/write checkpointing data without registering memory regions." We need to modify the below text..
-
-
-This function registers a file as belonging to a checkpoint/restart. The
-application provides the name or path of the file it would open on the
-parallel file system in the ``path`` argument. If this path is not
-absolute, VELOC internally prepends the current working directory to
-this value at the time of the call.
-
-VELOC returns the actual path that the application must use when
-opening/creating the file in ``newpath``. The caller must provide a
-pointer to a buffer of at least ``VELOC_MAX_NAME`` characters to hold
-this output value.
-
-The function is local to each process. Each process may register an
-arbitrary number of files.
+To enable the file-based mode, each process needs to use a predefined checkpoint file name that is obtained from VeloC.
+Unlike the memory-based mode, this function needs to be called after beginning the checkpoint/restart phase (detailed
+below). The process then opens the file, reads or writes the critical data structures depending on whether it performs 
+a checkpoint or restart, then closes the file and then ends the checkpoint/restart phase (detailed below).
 
 Checkpoint Functions
 ~~~~~~~~~~~~~~~~~~~~
 
-Open Checkpoint Phase
-^^^^^^^^^^^^^^^^^^^^^
+Begin Checkpoint Phase
+^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Checkpoint_begin (
-     IN const char * name,
-     int version
-   )
+   int VELOC_Checkpoint_begin(IN const char * name, int version)
 
 .. _arguments-6:
 
 ARGUMENTS
 '''''''''
 
--  **name**: The name with which to label the checkpoint.
+-  **name**: The label of the checkpoint.
 -  **version**: The version of the checkpoint, needs to increase with each checkpoint (e.g. iteration number)    
 
 .. _description-7:
@@ -334,26 +243,15 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-This function begins a checkpointing phase.
+This function begins the checkpoint phase. It must be called collectively by all processes within the 
+same checkpoint/restart group. The name must be an alphanumeric string holding letters and numbers only.
 
-The caller labels the checkpoint with a name. The string in ``name``
-should uniquely define the checkpoint. It must be no longer than
-``VELOC_MAX_NAME`` characters, including the trailing NUL character.
-This name is returned during a restart. It is also used by external
-command line tools, so the name should generally be easy to type. The
-same value must be provided for ``name`` on all processes.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``.
-
-Memory-based Checkpoint
-^^^^^^^^^^^^^^^^^^^^^^^
+Serialize Memory Regions
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Checkpoint_mem (
-   )
+   int VELOC_Checkpoint_mem()
 
 .. _arguments-7:
 
@@ -367,57 +265,41 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-The function is local to each process. Any process that registers memory
-must call this function.
-
-This function writes all registered memory regions into the checkpoint. The function must be called between ``VELOC_Checkpoint_begin()`` and
-``VELOC_Checkpoint_end()``.
+The function writes the memory regions previously registered in memory-based mode to the local checkpoint file 
+corresponding to each process. It must be called after beginning the checkpoint/restart phase and before ending it.
 
 Close Checkpoint Phase
 ^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Checkpoint_end (
-     IN int success
-     **FIXME** Is there an IN version parameter as well?
-   )
+   int VELOC_Checkpoint_end(IN int success)
 
 .. _arguments-8:
 
 ARGUMENTS
 '''''''''
 
--  **success**: Input flag indicating whether the calling process
-   completed its checkpoint successfully.
+-  **success**: Bool flag indicating whether the calling process completed its checkpoint successfully.
 
 .. _description-9:
 
 DESCRIPTION
 '''''''''''
 
-This function marks end of a checkpoint phase.
+This function ends the checkpoint phase. It must be called collectively by all processes within the 
+same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
+to write the local checkpoint. In synchronous mode, ending the checkpoint phase will perform all resilience strategies
+employed by VeloC in blocking fashion. The return value indicates whether these strategies succeeded or not. In 
+asynchornous mode, ending the checkpoint phase will trigger all resilience strategies in the background, while 
+returning control to the application immediately. This operation is always succesful.
 
-**FIXME: Is the below para correct??**
-Inform VELOC that all files for the current checkpoint are complete
-(i.e., done writing and closed) and whether they are valid (i.e.,
-written without error). A process must close all checkpoint files before
-calling this function. A process should set ``success`` to 1 if either it
-wrote its checkpoint data successfully or it had no data to checkpoint.
-It should set ``success`` to 0 otherwise. VELOC will determine whether all
-processes wrote their checkpoint files successfully.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``.
-
-Wait for Checkpoint completion
+Wait for Checkpoint Completion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-    int VELOC_Checkpoint_wait (
-    )   
+    int VELOC_Checkpoint_wait()   
     
 .. _arguments-9:
 
@@ -430,83 +312,68 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-This routine waits for the checkpoint to complete and returns the result (success or failure). Its only valid in async mode. and is typically called before beginning a new checkpoint.
-
+This routine waits for any resilience strategies employed by VeloC in the background to finish. The return value 
+indicates whether they were successful or not. The function is meaningul only in asynchronous mode. It has no effect 
+in synchronous mode and simply returns success.
 
 Restart Functions
 ~~~~~~~~~~~~~~~~~
 
-Indication of Restart
+Obtain latest version
 ^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-    int VELOC_Restart_test (
-       IN const char *name, 
-       IN int version
-    )
-
+    int VELOC_Restart_test(IN const char *name, IN int version)
 
 .. _arguments-9:
 
 ARGUMENTS
 '''''''''
-- **name** : label of the checkpoint
-- **version** : maximum version to look for
+- **name** : Label of the checkpoint
+- **max_ver** : Maximum version to restart from
 
 .. _description-10:
 
 DESCRIPTION
 '''''''''''
 
-The paramater ``name'' is the label of the checkpoint. There parameter ``version'' is the maximum version to look for.
-
-This routine determines whether an application can restart from a previous checkpoint.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``. The same value is returned in ``flag`` on all
-processes.
+This function probes for the most recent version less than **max_ver** that can be used to restart from. If no upper 
+limit is desired, **max_ver** can be set to zero to probe for the most recent version. Specifying an upper limit is 
+useful when the most recent version is corrupted (e.g. the restored data structures fail integrity checks) and a new 
+restart is needed based on the preceding version. The application can repeat the process until a valid version is found 
+or no more previous versions are available. The function returns VELOC_FAILURE if no version is available or a positive
+integer representing the most recent version otherwise.
 
 Open Restart Phase
 ^^^^^^^^^^^^^^^^^^
 
 ::
 
-    int VELOC_Restart_begin (
-       IN const char *name, 
-       IN int version
-     )
+    int VELOC_Restart_begin(IN const char *name, IN int version)
 
 .. _arguments-10:
 
 ARGUMENTS
 '''''''''
 
-- **name** : label of the checkpoint
-- **version** :  version to look for
+- **name** : Label of the checkpoint
+- **version** :  Version of the checkpoint
 
 .. _description-11:
 
 DESCRIPTION
 '''''''''''
 
-This function marks start of the restart phase.
-
-**FIXME** This call returns the name of the checkpoint in ``name``. The caller
-must provide a pointer to a buffer of at least ``VELOC_MAX_NAME``
-characters to hold this output value.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``.
+This function begins the restart phase. It must be called collectively by all processes within the 
+same checkpoint/restart group. The version of the checkpoint can be either the version returned by ``VELOC_Restart_test``
+or any other lower version that is available.
 
 Memory-based Restart
 ^^^^^^^^^^^^^^^^^^^^
 ::
 
-   int VELOC_Restart_mem (
-   )
+   int VELOC_Recover_mem()
 
 
 .. _arguments-11:
@@ -521,43 +388,28 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-The function is local to each process. This routine reads registered memory regions from the checkpoint file
-
-**FIXME** Each process must specify a unique name in ``file``. If ``file`` is not
-an absolute path, the current working directory is prepended at the time
-of the call. One should not call ``VELOC_Route_file()`` on this file.
-
-Must be called between ``VELOC_Restart_begin()`` and
-``VELOC_Restart_end()``.
+The function restores the memory regions previously registered in memory-based mode from the checkpoint file that was
+specified when beginning the restart phase. Must be called between ``VELOC_Restart_begin()`` and ``VELOC_Restart_end()``.
 
 Close Restart Phase
 ^^^^^^^^^^^^^^^^^^^
 
 ::
 
-   int VELOC_Restart_end (
-     IN int success
-   )
+   int VELOC_Restart_end (IN int success)
 
 .. _arguments-12:
 
 ARGUMENTS
 '''''''''
 
--  **sucess**: set to 1 if the state restore was successful, 0 otherwise.
+-  **sucess**: Bool flag indicating whether the calling process restored its state from the checkpoint successfully.
 
 .. _description-13:
 
 DESCRIPTION
 '''''''''''
 
-This function marks the end of a restart phase.
-
-A process should set ``success`` to 1 if either if state store is sucessful. It should set
-``success`` to 0 otherwise. VELOC will determine whether all processes
-read their checkpoint files successfully.
-
-It is collective across the set of processes in the job. Within an MPI
-application, it must be called collectively by all processes within
-``MPI_COMM_WORLD``.
-
+This function ends the restart phase. It must be called collectively by all processes within the 
+same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
+to restore the cricial data structures from the checkpoint specified in ``VELOC_Restart_begin()``. 
