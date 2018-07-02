@@ -9,6 +9,7 @@ Download and Install
 --------------------
 
 ::
+
     $git clone -b 'veloc-1.0' --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
     $bootstrap.sh
     $auto-install.py <install_dir>
@@ -20,6 +21,7 @@ Create and swich to the temporary working directory ``/tmp/work``.
 Open ``test.cfg`` and add the following contents:
 
 ::
+
     scratch = /tmp/scratch
     persistent = /tmp/persistent
     mode = async
@@ -30,12 +32,14 @@ Run VeloC
 Open a terminal and run the active backend:
 
 ::
+
     $export LD_LIBRARY_PATH=<install_dir>/lib
     $<install_dir>/src/backend/veloc-backend test.cfg
 
 Open a second terminal and run the heatdis example application using two MPI ranks:
 
 ::
+
     $export LD_LIBRARY_PATH=<install_dir>/lib
     $mpirun -np 2 <install_dir>/test/heatdis_mem 256 test.cfg
 
