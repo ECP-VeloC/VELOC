@@ -1,7 +1,5 @@
-VELOC Software API
-==================
-
-.. _ch:audience:
+VeloC API
+=========
 
 Who should use this document?
 -----------------------------
@@ -12,10 +10,10 @@ that VeloC exposes for this purpose.
 
 .. _ch:veloc_client_api:
 
-VELOC API
----------
+API Specifications
+------------------
 
-VELOC supports two modes of operation: memory-based and file-based
+VeloC supports two modes of operation: memory-based and file-based
 checkpoints. With memory-based checkpoints, an application registers regions
 of its memory that should be saved with each checkpoint and restored upon a restart. 
 In this mode, the serialization of the memory regions happens automatically.
@@ -351,3 +349,85 @@ DESCRIPTION
 This function ends the restart phase. It must be called collectively by all processes within the 
 same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
 to restore the cricial data structures from the checkpoint specified in ``VELOC_Restart_begin()``. 
+
+.. _ch:veloc_example:
+
+Example
+-------
+
+To illustrate the API, we have included with VeloC a sample MPI application that simulates the propagation of heat in a
+medium. This application can be found in the ``test`` sub-directory and includes both the original and two modified versions
+that use VeloC: one using the memory-based API (``heatdis_mem``) and the other using the file-based API (``headis_file``).
+
+Original Code
+^^^^^^^^^^^^^
+
+In a nutshell, the original heatdis application has the following basic structure:
+
+::
+
+MPI_Init(&argc, &argv);
+// further initialization code
+// allocate two critical double arrays of size M
+h = (double *) malloc(sizeof(double *) * M * nbLines);
+g = (double *) malloc(sizeof(double *) * M * nbLines);
+// set the number of iterations to 0
+i = 0;
+while (i < n) {
+      // iteratively compute the heat distribution
+      // increment the number of iterations
+      i++;
+}
+MPI_Finalize();
+
+Memory-based API
+^^^^^^^^^^^^^^^^
+
+To add checkpoint/restart functionality using VeloC in memory-based mode, several modifications are necessary: 
+(1) initialize VeloC (immediately after ``MPI_Init``); (2) register the memory regions corresponding to the critical arrays; 
+(3) check if there is a previous checkpoint to restart from using ``VeloC_Restart_test``; (4) if yes, restore the memory
+regions to their initial state; (5) every K iterations initiate a checkpoint; (6) finalize VeloC before calling ``MPI_Finalize``. This is illustrated below:
+
+:: 
+
+MPI_Init(&argc, &argv);
+VELOC_Init(MPI_COMM_WORLD, argv[2]); // (1): init
+// further initialization code
+// allocate two critical double arrays of size M
+h = (double *) malloc(sizeof(double *) * M * nbLines);
+g = (double *) malloc(sizeof(double *) * M * nbLines);
+// (2): protect
+VELOC_Mem_protect(0, &i, 1, sizeof(int));
+VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
+VELOC_Mem_protect(2, g, M * nbLines, sizeof(double));
+// (3): check for previous checkpoint version
+int v = VELOC_Restart_test("heatdis", 0);
+// (4): restore memory content if previous version found
+if (v > 0) {
+   printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
+   // v can be any version, independent of what VELOC_Restart_test is returning
+   assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
+   assert(VELOC_Recover_mem() == VELOC_SUCCESS);
+   assert(VELOC_Restart_end(1) == VELOC_SUCCESS);
+} else
+   i = 0;
+while (i < n) {
+   // iteratively compute the heat distribution
+   // (5): checkpoint every K iterations
+   if (i % K == 0) {
+       assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS); // wait for prev. checkpoint if in async mode
+       assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
+       assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
+       assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
+   }
+   // increment the number of iterations
+   i++;
+}
+VELOC_Finalize(0); // (6): finalize
+MPI_Finalize();
+
+
+
+
+
+
