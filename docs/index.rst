@@ -52,12 +52,12 @@ In case of questions and comments or help, please contact the VeloC team at velo
 
 Documentation
 --------------
--
--.. toctree::
--   :maxdepth: 2
--   
--   api.rst
--   userguide.rst
--   design.rst
--
--* :ref:`search`
+
+.. toctree::
+   :maxdepth: 2
+   
+   api.rst
+   userguide.rst
+   design.rst
+
+* :ref:`search`
