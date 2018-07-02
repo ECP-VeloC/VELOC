@@ -1,10 +1,7 @@
 VeloC API
 =========
 
-Who should use this document?
------------------------------
-
-| This document is intended for application developers that need to
+This document is intended for application developers that need to
 integrate VeloC into their application code. It focuses on the API
 that VeloC exposes for this purpose.
 
@@ -426,3 +423,51 @@ regions to their initial state; (5) every K iterations initiate a checkpoint; (6
     }
     VELOC_Finalize(0); // (6): finalize
     MPI_Finalize();
+
+File-based API
+~~~~~~~~~~~~~~
+
+To add checkpoint/restart functionality using VeloC in file-based mode, the same modifications are needed as in the case of
+memory-based API mode, except for the checkpoint and restart, which need to be manually implemented:
+
+Checkpoint
+^^^^^^^^^^
+::
+
+    if (i % K == 0) {
+        assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
+        assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
+        char veloc_file[VELOC_MAX_NAME];
+        assert(VELOC_Route_file(veloc_file) == VELOC_SUCCESS);
+        int valid = 1;
+        FILE* fd = fopen(veloc_file, "wb");
+        if (fd != NULL) {
+            if (fwrite(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
+            if (fwrite( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+            if (fwrite( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+            fclose(fd);
+        } else 
+            // failed to open file
+            valid = 0;
+        assert(VELOC_Checkpoint_end(valid) == VELOC_SUCCESS);
+    }
+
+Restart
+^^^^^^^
+:: 
+
+    assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
+    char veloc_file[VELOC_MAX_NAME];
+    assert(VELOC_Route_file(veloc_file) == VELOC_SUCCESS);
+    int valid = 1;
+    FILE* fd = fopen(veloc_file, "rb");
+    if (fd != NULL) {
+        if (fread(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
+        if (fread( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+        if (fread( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+        fclose(fd);
+    } else
+        // failed to open file
+        valid = 0;
+    assert(VELOC_Restart_end(valid) == VELOC_SUCCESS);
+
