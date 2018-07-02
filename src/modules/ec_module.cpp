@@ -78,7 +78,7 @@ int ec_module_t::process_command(const command_t &c) {
     switch (c.command) {
     case command_t::INIT:
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
-	return VELOC_SUCCESS;
+	return interval >= 0 ? 1 : 0;
 	
     case command_t::TEST:
 	DBG("get latest EC version for " << c.name);

@@ -10,7 +10,7 @@
 #include "common/debug.hpp"
 
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
-    cfg(cfg_file), comm(c), collective(coll) {    
+    cfg(cfg_file), comm(c), collective(coll) {
     MPI_Comm_rank(comm, &rank);
     if (!cfg.get_optional("max_versions", max_versions)) {
 	INFO("Max number of versions to keep not specified, keeping all");
@@ -19,11 +19,9 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg, comm, true);
-	modules->notify_command(command_t(rank, command_t::INIT, 0, ""));
-    } else {
+    } else
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
-	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
-    }
+    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
 }
 
@@ -71,6 +69,18 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	return false;
     }
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
+    // remove old versions (only if EC is not active)
+    if (!ec_active && max_versions > 0) {
+	auto &version_history = checkpoint_history[name];
+	version_history.push_back(version);
+	if ((int)version_history.size() > max_versions) {
+	    // wait for operations to complete in async mode before deleting old versions
+	    if (!cfg.is_sync())
+		queue->wait_completion(false);
+	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
+	    version_history.pop_front();
+	}
+    }
     checkpoint_in_progress = true;
     return true;
 }
@@ -133,7 +143,7 @@ std::string veloc_client_t::route_file() {
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
-    int result;
+    int result, end_result;
     
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
@@ -144,12 +154,19 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	result = VELOC_SUCCESS;
     else 
 	result = run_blocking(current_ckpt);
-    if (collective) {
-	int end_result;
+    if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
-	return end_result == VELOC_SUCCESS;
+    else
+	end_result = result;
+    if (end_result == VELOC_SUCCESS) {
+	if (max_versions > 0) {
+	    auto &version_history = checkpoint_history[name];
+	    version_history.clear();
+	    version_history.push_back(version);
+	}
+	return VELOC_SUCCESS;
     } else
-	return result;
+	return VELOC_FAILURE;
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
