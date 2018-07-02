@@ -6,7 +6,7 @@
 VELOC
 =====
 
-   Very-Low Overhead Checkpointing system
+   Very-Low Overhead Checkpointing System
 
 Project Details
 ---------------
