@@ -1,12 +1,8 @@
-VELOC User Guide
-================
+User Guide
+===========
 
-.. _ch:users:
-
-Who should use this document?
------------------------------
-
-| This document is intended for users who need to run applications that make use of VeloC for checkpoint/restart.
+This documentation is intended for users who need to run applications that make use of VeloC for 
+checkpoint/restart.
 
 .. _ch:velocsetup:
 
@@ -21,11 +17,20 @@ Download VeloC
 ~~~~~~~~~~~~~~
 
 The source code of VeloC is publicly available on ``github``. To download it,
-enter the following command:
+look for the latest stable version x.y, which should appear under the 
+'Releases/Tags' tab as 'veloc-x.y'. Then, use the following command:
 
 ::
 
-   git clone git@github.com:ECP-VeloC/VELOC.git
+    git clone -b 'veloc-x.y' --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
+    
+If you want to experiment with the latest development version, you can directly check out
+the master branch. This is helpful to stay up-to-date with the latest features but will likely
+have issues:
+
+::
+
+    git clone https://github.com/ECP-VeloC/veloc.git
 
 Install VeloC
 ~~~~~~~~~~~~~
@@ -101,7 +106,7 @@ asynchronous mode, each node needs to run an active backend instance:
 
    mpirun -np N --map-by ppr:1:node <path>/veloc-backend <config_file>
    
-After the active backend are up and running, the application can run as a normal MPI job. Each application process will 
+After the active backends are up and running, the application can run as a normal MPI job. Each application process will 
 then connect to the local backend present on the node where it is running.
 
 Examples
