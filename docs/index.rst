@@ -50,14 +50,3 @@ Contact Us
 
 In case of questions and comments or help, please contact the VeloC team at veloc-users@lists.mcs.anl.gov
 
-Documentation
---------------
-
-.. toctree::
-   :maxdepth: 2
-   
-   api.rst
-   userguide.rst
-   design.rst
-
-* :ref:`search`
