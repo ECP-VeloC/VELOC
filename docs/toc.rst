@@ -14,6 +14,7 @@ Project Details
 .. toctree::
    :maxdepth: 2
 
+   quick.rst
    api.rst
    userguide.rst
 

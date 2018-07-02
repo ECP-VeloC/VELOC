@@ -20,11 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'VeloC'
-copyright = '''Copyright (c) 2018, UChicago Argonne LLC, operator of Argonne National Laboratory.
-<br>
-Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory.
-<br>
-'''
+copyright = ''' 2018, UChicago Argonne LLC and Lawrence Livermore National Security, LLC'''
 author = ''
 
 # The short X.Y version
