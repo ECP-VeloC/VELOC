@@ -164,9 +164,9 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	    version_history.clear();
 	    version_history.push_back(version);
 	}
-	return VELOC_SUCCESS;
+	return true;
     } else
-	return VELOC_FAILURE;
+	return false;
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
