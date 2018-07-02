@@ -159,7 +159,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
     else
 	end_result = result;
     if (end_result == VELOC_SUCCESS) {
-	if (max_versions > 0) {
+	if (!ec_active && max_versions > 0) {
 	    auto &version_history = checkpoint_history[name];
 	    version_history.clear();
 	    version_history.push_back(version);

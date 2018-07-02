@@ -10,7 +10,7 @@
 #include "er.h"
 #include "rankstr_mpi.h"
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 static int get_latest_version(const std::string &p, const std::string &cname, int needed_version) {

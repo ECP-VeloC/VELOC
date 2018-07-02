@@ -9,7 +9,7 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/containers/list.hpp>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 namespace veloc_ipc {

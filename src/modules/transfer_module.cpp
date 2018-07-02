@@ -13,7 +13,7 @@
 
 #include "axl.h"
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 static int posix_transfer_file(const std::string &source, const std::string &dest) {

@@ -2,17 +2,16 @@
 
 #include "common/status.hpp"
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 client_watchdog_t::client_watchdog_t(const config_t &c) : cfg(c) {
     if(cfg.get_optional("watchdog_interval", timeout)) {
 	watchdog_thread = std::thread([this]() { timeout_check(); });
 	watchdog_thread.detach();
-    } else {
-	INFO("no watchdog_interval defined in config file, watchdog is disabled");
+	INFO("watchdog enabled, checking liveness every " << timeout << " seconds");
+    } else
 	timeout = 0;
-    }
 }
 
 void client_watchdog_t::timeout_check() {
