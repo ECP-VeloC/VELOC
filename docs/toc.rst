@@ -6,7 +6,7 @@
 VELOC
 =====
 
-   Very-Low Overhead Checkpointing system
+   Very-Low Overhead Checkpointing System
 
 Project Details
 ---------------
@@ -15,14 +15,6 @@ Project Details
    :maxdepth: 2
 
    index.rst
-
-
-Documentation
--------------
-
-.. toctree::
-   :maxdepth: 2
-
    api.rst
    userguide.rst
 
