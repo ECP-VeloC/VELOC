@@ -6,8 +6,8 @@ checkpoint/restart.
 
 .. _ch:velocsetup:
 
-VeloC Setup
------------
+Setup
+-----
 
 Due to the large number of software and hardware configurations where VeloC
 can run, it must be built from source. Once built and installed, VeloC needs
@@ -92,8 +92,8 @@ take advantage of additional hardware to accelerate I/O (such as burst buffers).
 
 .. _ch:velocrun:
 
-Running VeloC
--------------
+Execution
+---------
 
 VeloC can be run in either synchronous mode (all resilience strategies are embedded in the client library and run directly 
 in the application processes in blocking fashion) or asynchronous mode (the resilience strategies run in the active backend
@@ -119,3 +119,18 @@ the application as follows (run the active backend first as mentioned above if i
 ::
 
    mpirun -np N test/heatdis_mem <mem_per_process> <config_file>
+
+Batch Jobs
+----------
+
+HPC machines are typically configured to run the user applications as batch jobs. Therefore, the user needs to make sure
+that the job scheduler is not configured to kill the entire job when a node fails. Assuming the job scheduler is configured
+correctly, the user needs to write a script as follows:
+
+::
+
+    reserve N+K nodes (to survive a maximum of K total failures over the entire application runtime) 
+    do
+        run the active backend if not alive (on the surviving nodes)
+        run the application (on the surviving nodes)
+    while (failure detected) // e.g, exit code of the application
