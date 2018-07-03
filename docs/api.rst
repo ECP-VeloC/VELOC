@@ -249,6 +249,27 @@ This routine waits for any resilience strategies employed by VeloC in the backgr
 indicates whether they were successful or not. The function is meaningul only in asynchronous mode. It has no effect 
 in synchronous mode and simply returns success.
 
+Convenience Checkpoint Wrapper
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    int VELOC_Checkpoint(IN const char *name, int version)   
+    
+.. _arguments-9:
+
+ARGUMENTS
+'''''''''
+-  **name**: The label of the checkpoint.
+-  **version**: The version of the checkpoint, needs to increase with each checkpoint (e.g. iteration number) 
+
+.. _description-10:
+
+DESCRIPTION
+'''''''''''
+This function is a convenience wrapper equivalent with waiting for the previous checkpoint (if in asynchronous mode), 
+then starting a new checkpoint phase, writing all registered memory regions and closing the checkpoint phase. 
+
 Restart Functions
 ~~~~~~~~~~~~~~~~~
 
@@ -309,7 +330,6 @@ Memory-based Restart
 
    int VELOC_Recover_mem()
 
-
 .. _arguments-11:
 
 ARGUMENTS
@@ -347,6 +367,29 @@ DESCRIPTION
 This function ends the restart phase. It must be called collectively by all processes within the 
 same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
 to restore the cricial data structures from the checkpoint specified in ``VELOC_Restart_begin()``. 
+
+Convenience Restart Wrapper
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    int VELOC_Restart(IN const char *name, IN int version)
+
+.. _arguments-10:
+
+ARGUMENTS
+'''''''''
+
+- **name** : Label of the checkpoint
+- **version** :  Version of the checkpoint
+
+.. _description-11:
+
+DESCRIPTION
+'''''''''''
+
+This function is a convenience wrapper for opening a new restart phase, recovering the registered memory regions from the
+checkpoint and closing the restart phase.
 
 .. _ch:veloc_example:
 
@@ -404,20 +447,14 @@ regions to their initial state; (5) every K iterations initiate a checkpoint; (6
    if (v > 0) {
        printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
        // v can be any version, independent of what VELOC_Restart_test is returning
-       assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-       assert(VELOC_Recover_mem() == VELOC_SUCCESS);
-       assert(VELOC_Restart_end(1) == VELOC_SUCCESS);
+       assert(VELOC_Restart("heatdis", v) == VELOC_SUCCESS);
     } else
         i = 0;
     while (i < n) {
         // iteratively compute the heat distribution
         // (5): checkpoint every K iterations
-        if (i % K == 0) {
-            assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS); // wait for prev. checkpoint if in async mode
-            assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
-            assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
-            assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
-         }
+        if (i % K == 0)
+            assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
          // increment the number of iterations
          i++;
     }
