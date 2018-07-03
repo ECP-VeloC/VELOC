@@ -74,6 +74,26 @@ extern "C" int VELOC_Restart_end(int success) {
     return CLIENT_CALL(veloc_client->restart_end(success));
 }
 
+extern "C" int VELOC_Restart(const char *name, int version) {
+    int ret = VELOC_Restart_begin(name, version);
+    if (ret == VELOC_SUCCESS)
+	ret = VELOC_Recover_mem();
+    if (ret == VELOC_SUCCESS)
+	ret = VELOC_Restart_end(1);
+    return ret;
+}
+
+extern "C" int VELOC_Checkpoint(const char *name, int version) {
+    int ret = VELOC_Checkpoint_wait();
+    if (ret == VELOC_SUCCESS)
+	VELOC_Checkpoint_begin(name, version);
+    if (ret == VELOC_SUCCESS)
+	ret = VELOC_Checkpoint_mem();
+    if (ret == VELOC_SUCCESS)
+	ret = VELOC_Checkpoint_end(1);
+    return ret;
+}
+
 extern "C" int VELOC_Finalize(int cleanup) {
     if (veloc_client != NULL) {
 	if (cleanup)

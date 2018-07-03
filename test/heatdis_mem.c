@@ -116,9 +116,7 @@ int main(int argc, char *argv[]) {
     if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	// v can be any version, independent of what VELOC_Restart_test is returning
-	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-	assert(VELOC_Recover_mem() == VELOC_SUCCESS);
-	assert(VELOC_Restart_end(1) == VELOC_SUCCESS);
+	assert(VELOC_Restart("heatdis", v) == VELOC_SUCCESS);
     } else
 	i = 0;
     while(i < ITER_TIMES) {
@@ -130,12 +128,8 @@ int main(int argc, char *argv[]) {
         if (globalerror < PRECISION)
 	    break;
 	i++;
-	if (i % CKPT_FREQ == 0) {
-	    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
-	}
+	if (i % CKPT_FREQ == 0)
+	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);

@@ -92,8 +92,9 @@ int VELOC_Checkpoint_end(int success);
 // Wait for the checkpoint to complete and return the result (success or failure).
 // Only valid in async mode. Typically called before beginning a new checkpoint.
 int VELOC_Checkpoint_wait();
-    
 
+int VELOC_Checkpoint(const char *name, int version);
+    
 /**************************
  * Restart routines
  *************************/
@@ -119,6 +120,8 @@ int VELOC_Recover_mem();
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
 int VELOC_Restart_end(int success);
 
+int VELOC_Restart(const char *name, int version);
+    
 #ifdef __cplusplus
 }
 #endif
