@@ -17,9 +17,9 @@ def install_dep(git_link, dep_vers):
     try:
         os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
         os.system("cd {0} && git fetch && git checkout {1}".format(args.temp + '/' + name, dep_vers))
-        os.system("cd {0} && cmake -DCMAKE_PREFIX_PATH={1}\
-        -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3} && make install".format(args.temp + '/' + name,
-                                                           args.prefix, cmake_build_type, compiler_options))
+        os.system("cd {0} && cmake -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3}\
+                   && make install".format(args.temp + '/' + name,
+                                           args.prefix, cmake_build_type, compiler_options))
     except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
@@ -37,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument('--temp', default='/tmp/veloc',
                         help='temporary directory used during the install (default: /tmp/veloc)')
     args = parser.parse_args()
+    args.prefix = os.path.abspath(args.prefix)
     if not os.path.isdir(args.prefix):
         print("Installation prefix {0} is not a valid directory!".format(args.prefix))
         sys.exit(1)
@@ -81,8 +82,8 @@ if __name__ == "__main__":
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
-    os.system("cmake -DCMAKE_PREFIX_PATH={0}\
-    -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2} && make install".format(args.prefix, cmake_build_type, compiler_options))
+    os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
+               && make install".format(args.prefix, cmake_build_type, compiler_options))
 
     # Cleanup
     if (not args.debug):
