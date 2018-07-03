@@ -1,0 +1,11 @@
+language: c++
+
+script:
+    rm -rf $HOME/deploy
+    bootstrap.sh
+    mkdir -p $HOME/deploy
+    auto-install.py $HOME/deploy
+
+branches:
+  only:
+  - master
