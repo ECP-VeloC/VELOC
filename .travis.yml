@@ -2,9 +2,9 @@ language: c++
 
 script:
     - rm -rf $HOME/deploy
-    - bootstrap.sh
+    - ./bootstrap.sh
     - mkdir -p $HOME/deploy
-    - auto-install.py $HOME/deploy
+    - ./auto-install.py $HOME/deploy
 
 branches:
     only:
