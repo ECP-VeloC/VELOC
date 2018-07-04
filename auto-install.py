@@ -82,8 +82,8 @@ if __name__ == "__main__":
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
-    ret = os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
-                     && make install".format(args.prefix, cmake_build_type, compiler_options))
+    ret = os.WEXITSTATUS(os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
+                                   && make install".format(args.prefix, cmake_build_type, compiler_options)))
 
     # Cleanup
     if (not args.debug):
