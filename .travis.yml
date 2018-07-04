@@ -1,16 +1,16 @@
 language: c++
 
 before_install:
-  - test -n $CC && unset CC
-  - sudo apt-get update
-  - sudo apt-get install -y libopenmpi-dev zlib1g-dev
+- test -n $CC && unset CC
+- sudo apt-get update
+- sudo apt-get install -y libopenmpi-dev zlib1g-dev
 
 script:
-    - rm -rf $HOME/deploy
-    - ./bootstrap.sh
-    - mkdir -p $HOME/deploy
-    - ./auto-install.py $HOME/deploy
+- rm -rf $HOME/deploy
+- ./bootstrap.sh
+- mkdir -p $HOME/deploy
+- ./auto-install.py $HOME/deploy
 
 branches:
     only:
-       - master
+     - master
