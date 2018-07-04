@@ -82,8 +82,8 @@ if __name__ == "__main__":
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
-    os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
-               && make install".format(args.prefix, cmake_build_type, compiler_options))
+    ret = os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
+                     && make install".format(args.prefix, cmake_build_type, compiler_options))
 
     # Cleanup
     if (not args.debug):
@@ -93,4 +93,8 @@ if __name__ == "__main__":
             print("Cannot cleanup temporary directory {0}!".format(args.temp))
             sys.exit(5)
 
-    print("Installation successful!")
+    if ret == 0:
+	print("Installation successful!")
+    else:
+	print("Installation failed!")
+	sys.exit(ret)
