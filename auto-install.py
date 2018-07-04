@@ -94,7 +94,7 @@ if __name__ == "__main__":
             sys.exit(5)
 
     if ret == 0:
-	print("Installation successful!")
+        print("Installation successful!")
     else:
-	print("Installation failed!")
-	sys.exit(ret)
+        print("Installation failed!")
+        sys.exit(ret)
