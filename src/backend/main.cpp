@@ -1,5 +1,3 @@
-#include <mpi.h>
-
 #include "common/config.hpp"
 #include "common/command.hpp"
 #include "common/ipc_queue.hpp"

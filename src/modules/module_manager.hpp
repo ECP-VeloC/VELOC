@@ -11,9 +11,10 @@
 
 #include <functional>
 #include <vector>
+
 #include <mpi.h>
 
-class module_manager_t {    
+class module_manager_t {
     typedef std::function<int (const command_t &)> method_t;
     std::vector<method_t> sig;
     client_watchdog_t *watchdog = NULL;

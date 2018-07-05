@@ -4,7 +4,7 @@ add_executable (veloc-backend
 )
 
 # Link the executable to the necessary libraries.
-target_link_libraries (veloc-backend veloc-modules ${MPI_CXX_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)
+target_link_libraries (veloc-backend veloc-modules ${MPI_CXX_LIBRARIES} rt)
 
 # Install executables
 install (TARGETS veloc-backend

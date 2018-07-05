@@ -21,6 +21,7 @@ find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
+# find dependencies
 find_package(AXL REQUIRED)
 include_directories(${AXL_INCLUDE_DIRS})
 
