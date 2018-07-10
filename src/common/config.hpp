@@ -27,6 +27,9 @@ public:
 	value = reader.GetInteger("", param, std::numeric_limits<int>::lowest());
 	return value != std::numeric_limits<int>::lowest();
     }
+    bool get_optional(const std::string &param, bool def) const {
+	return reader.GetBoolean("", param, def);
+    }
     bool is_sync() const {
 	return sync_mode;
     }

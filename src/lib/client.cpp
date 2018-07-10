@@ -9,13 +9,14 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file, bool coll) :
-    cfg(cfg_file), comm(c), collective(coll) {
+veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
+    cfg(cfg_file), comm(c) {
     MPI_Comm_rank(comm, &rank);
     if (!cfg.get_optional("max_versions", max_versions)) {
 	INFO("Max number of versions to keep not specified, keeping all");
 	max_versions = 0;
     }
+    collective = cfg.get_optional("collective", true);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg, comm, true);

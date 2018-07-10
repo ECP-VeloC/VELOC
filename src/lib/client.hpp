@@ -33,7 +33,7 @@ class veloc_client_t {
     int run_blocking(const command_t &cmd);
 
 public:
-    veloc_client_t(MPI_Comm comm, const char *cfg_file, bool coll);
+    veloc_client_t(MPI_Comm comm, const char *cfg_file);
     void cleanup();
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
