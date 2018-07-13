@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 3.9)
 project (VELOC)
 
 # some global compiler flags
-add_definitions(-O0 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
+add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
+set(CMAKE_CXX_STANDARD 14)
 
 # Now set up the libraries
 # -----------------------------------------------------------------------------------
