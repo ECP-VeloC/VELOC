@@ -13,11 +13,11 @@
 #include "common/debug.hpp"
 
 namespace veloc_ipc {
-    
+
 using namespace boost::interprocess;
 
 typedef std::function<void (int)> completion_t;
-    
+
 inline void cleanup() {
     boost::interprocess::shared_memory_object::remove("veloc_shm");
     boost::interprocess::named_mutex::remove("veloc_pending_mutex");
@@ -37,7 +37,7 @@ template <class T> class shm_queue_t {
 	container_t(const T_allocator &alloc) : pending(alloc), progress(alloc) { }
     };
     typedef typename container_t::list_t::iterator list_iterator_t;
-    
+
     managed_shared_memory segment;
     named_mutex     pending_mutex;
     named_condition pending_cond;

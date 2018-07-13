@@ -59,8 +59,9 @@ if __name__ == "__main__":
         print("Downloading Boost...")
         try:
             soup = bs4.BeautifulSoup(urllib.request.urlopen("https://www.boost.org/users/download"), "html.parser")
-            for link in soup.findAll('a', attrs={'href': re.compile("bz2")}):
-                boost_arch = wget.download(link.get('href'), out=args.temp)
+            link_list = soup.findAll('a', attrs={'href': re.compile("bz2")})
+            if len(link_list) > 0:
+                boost_arch = wget.download(link_list[0].get('href'), out=args.temp)
                 f = tarfile.open(boost_arch, mode='r:bz2')
                 f.extractall(path=args.temp)
                 f.close()

@@ -29,7 +29,6 @@ find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
 
 # -----------------------------------------------------------------------------------
-
 include_directories(${VELOC_SOURCE_DIR})
 add_subdirectory (src)
 add_subdirectory (test)
