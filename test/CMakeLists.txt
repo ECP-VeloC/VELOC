@@ -7,3 +7,8 @@ add_executable (heatdis_file heatdis_file.c)
 target_link_libraries (heatdis_original ${MPI_C_LIBRARIES} m)
 target_link_libraries (heatdis_mem ${MPI_C_LIBRARIES} m veloc-client)
 target_link_libraries (heatdis_file ${MPI_C_LIBRARIES} m veloc-client)
+
+if(ENABLE_FORTRAN)
+  add_executable (fheatdis fheatdis.f90)
+  target_link_libraries (fheatdis ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES} m veloc-fortran veloc-client stdc++)
+endif(ENABLE_FORTRAN)

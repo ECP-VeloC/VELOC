@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 3.9)
 project (VELOC)
 
 # some global compiler flags
-add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
+add_definitions(-O0 -g -D__BENCHMARK -D__ASSERT -D__INFO)
 set(CMAKE_CXX_STANDARD 11)
+option(VELOC_LINK_STATIC "Default to static linking? (Needed for Cray)" OFF)
 
 # Now set up the libraries
 # -----------------------------------------------------------------------------------
@@ -28,6 +29,19 @@ include_directories(${AXL_INCLUDE_DIRS})
 
 find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
+
+find_package(KVTREE REQUIRED)
+include_directories(${KVTREE_INCLUDE_DIRS})
+
+# -----------------------------------------------------------------------------------
+# Fortran addition
+# -----------------------------------------------------------------------------------
+option(ENABLE_FORTRAN "Enables the generation of the Fortran wrapper for VELOC" OFF)
+if(ENABLE_FORTRAN)
+  enable_language(Fortran)
+  include(FortranCInterface)
+  set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
+endif()
 
 # -----------------------------------------------------------------------------------
 include_directories(${VELOC_SOURCE_DIR})

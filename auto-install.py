@@ -6,9 +6,16 @@ import wget, bs4, urllib
 import re
 import tarfile
 
+compiler_options = "-Wall "
 # CRAY-specific compiler options
-# compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
-compiler_options = ""
+# compiler_options += "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic "
+# Static linking (necessary for Cray and Fortran)
+#compiler_options += "-DVELOC_LINK_STATIC=ON -DCMAKE_CXX_FLAGS='-static-libgcc -static-libstdc++' "
+# Fortran compiling 
+#compiler_options += "-DENABLE_FORTRAN=ON "
+# Fortran and cray: 
+#compiler_options += "-DCMAKE_Fortran_FLAGS=-ef"
+
 cmake_build_type="Release"
 
 def install_dep(git_link, dep_vers):
