@@ -1,6 +1,7 @@
 add_library (veloc-client SHARED 
   veloc.cpp
   client.cpp
+  ${VELOC_SOURCE_DIR}/src/common/chunk_stream.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 

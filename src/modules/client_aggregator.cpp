@@ -11,7 +11,9 @@ int client_aggregator_t::process_command(const command_t &c) {
 	return single_function(c);
     case command_t::TEST:
 	return single_function(c);
-    case command_t::CHECKPOINT:
+    // case command_t::CHECKPOINT_BEGIN:
+    // case command_t::CHECKPOINT_CHUNK:
+    // case command_t::CHECKPOINT_END:	    
     case command_t::RESTART:
 	cmds[c.command].push_back(c);
 	if (cmds[c.command].size() == no_clients) {

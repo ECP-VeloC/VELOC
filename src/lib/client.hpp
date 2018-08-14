@@ -4,6 +4,7 @@
 #include "common/config.hpp"
 #include "common/command.hpp"
 #include "common/ipc_queue.hpp"
+#include "common/cache_strategy.hpp"
 #include "modules/module_manager.hpp"
 
 #include <unordered_map>
@@ -29,8 +30,10 @@ class veloc_client_t {
 
     veloc_ipc::shm_queue_t<command_t> *queue = NULL;
     module_manager_t *modules = NULL;
+    cache_strategy_t cache_strategy;
 
     int run_blocking(const command_t &cmd);
+    bool ckpt_notify_callback(int chunk_no);
 
 public:
     veloc_client_t(MPI_Comm comm, const char *cfg_file);

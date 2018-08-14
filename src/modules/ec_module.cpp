@@ -93,12 +93,12 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     if (cmds.size() == 0 || interval < 0)
 	return VELOC_SUCCESS;
     int command = cmds[0].command;
-    ASSERT(command == command_t::CHECKPOINT || command == command_t::RESTART);
+    ASSERT(command == command_t::CHECKPOINT_CHUNK || command == command_t::RESTART);
 
     int version = cmds[0].version;
     int set_id;
     std::string name = cfg.get("scratch") + "/" + cmds[0].name + "-ec-" + std::to_string(version);
-    if (command == command_t::CHECKPOINT) {
+    if (command == command_t::CHECKPOINT_CHUNK) {
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
 	    int checkpoint = 1;

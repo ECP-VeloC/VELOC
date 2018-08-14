@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.9)
 project (VELOC)
 
 # some global compiler flags
-add_definitions(-O0 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
+add_definitions(-D__BENCHMARK -D__ASSERT -D__INFO)
 
 # Now set up the libraries
 # -----------------------------------------------------------------------------------
@@ -21,12 +21,12 @@ find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
+find_package(ER REQUIRED)
+include_directories(${ER_INCLUDE_DIRS})
+
 # find dependencies
 find_package(AXL REQUIRED)
 include_directories(${AXL_INCLUDE_DIRS})
-
-find_package(ER REQUIRED)
-include_directories(${ER_INCLUDE_DIRS})
 
 # -----------------------------------------------------------------------------------
 

@@ -1,13 +1,16 @@
 #include "client.hpp"
 #include "include/veloc.h"
+#include "common/chunk_stream.hpp"
 
 #include <fstream>
 #include <stdexcept>
 #include <unistd.h>
 #include <ftw.h>
 
-//#define __DEBUG
+#define __DEBUG
 #include "common/debug.hpp"
+
+using namespace std::placeholders;
 
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     cfg(cfg_file), comm(c) {
@@ -69,7 +72,7 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
+    current_ckpt = command_t(rank, command_t::CHECKPOINT_BEGIN, version, name);
     // remove old versions (only if EC is not active)
     if (!ec_active && max_versions > 0) {
 	auto &version_history = checkpoint_history[name];
@@ -77,13 +80,35 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	if ((int)version_history.size() > max_versions) {
 	    // wait for operations to complete in async mode before deleting old versions
 	    if (!cfg.is_sync())
-		queue->wait_completion(false);
+		queue->wait_completion();
 	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
 	    version_history.pop_front();
 	}
     }
+    if (cfg.is_sync()) {
+	if (modules->notify_command(current_ckpt) != VELOC_SUCCESS)
+	    return false;
+    } else
+	queue->enqueue(current_ckpt);
+    current_ckpt.command = command_t::CHECKPOINT_CHUNK;
     checkpoint_in_progress = true;
     return true;
+}
+
+bool veloc_client_t::ckpt_notify_callback(int chunk_no) {
+    if (chunk_no >= 0) {
+	current_ckpt.chunk_no = chunk_no;
+	if (cfg.is_sync()) {
+	    if (modules->notify_command(current_ckpt) != VELOC_SUCCESS)
+		throw std::runtime_error("cannot write chunk id " + std::to_string(chunk_no) +
+					 " of checkpoint " + current_ckpt.stem());
+	    return false;
+	} else
+	    queue->enqueue(current_ckpt);
+    }
+    bool cached = cache_strategy.claim_slot();
+    current_ckpt.cached = cached;
+    return cached;
 }
 
 bool veloc_client_t::checkpoint_mem() {
@@ -91,10 +116,10 @@ bool veloc_client_t::checkpoint_mem() {
 	ERROR("must call checkpoint_begin() first");
 	return false;
     }
-    std::ofstream f;
-    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
-	f.open(current_ckpt.filename(cfg.get("scratch")), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	chunk_stream_t f(cfg, std::bind(&veloc_client_t::ckpt_notify_callback, this, _1));
+	f.open(current_ckpt.stem(), std::ios_base::out |
+	       std::ios_base::binary | std::ios_base::trunc);
 	size_t regions_size = mem_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : mem_regions) {
@@ -112,6 +137,7 @@ bool veloc_client_t::checkpoint_mem() {
 
 bool veloc_client_t::checkpoint_end(bool /*success*/) {
     checkpoint_in_progress = false;
+    current_ckpt.command = command_t::CHECKPOINT_END;
     if (cfg.is_sync())
 	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
     else {

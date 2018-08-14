@@ -56,9 +56,8 @@ int main(int argc, char *argv[]) {
 	}
     }
     
-    if (ec_active) {
+    if (ec_active)
 	MPI_Finalize();
-    }
 
     return 0;
 }

@@ -1,6 +1,7 @@
 add_executable (veloc-backend
-  main.cpp 
+  main.cpp  
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
+  ${VELOC_SOURCE_DIR}/src/common/chunk_stream.cpp
 )
 
 # Link the executable to the necessary libraries.

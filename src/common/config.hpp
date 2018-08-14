@@ -17,7 +17,6 @@ public:
 	if (ret.empty())
 	    throw std::runtime_error("config parameter " + param + " missing or empty");
 	return ret;
-
     }
     bool get_optional(const std::string &param, std::string &value) const {
 	value = reader.Get("", param, "");

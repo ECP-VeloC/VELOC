@@ -8,13 +8,16 @@
 class command_t {
 public:
     static const size_t MAX_SIZE = 128;
-    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
+    static const int INIT = 0, CHECKPOINT_BEGIN = 1, CHECKPOINT_CHUNK = 2, CHECKPOINT_END = 3,
+	RESTART = 4, TEST = 5;
     
-    int unique_id, command, version;
+    int unique_id, command, version, chunk_no;
+    bool cached;
     char name[MAX_SIZE] = "";
 
-    command_t() { }
-    command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {
+    command_t() : chunk_no(-1) { }
+    command_t(int r, int c, int v, const std::string &s) :
+	unique_id(r), command(c), version(v), chunk_no(-1), cached(false) {
 	if (s.length() > MAX_SIZE)
 	    throw std::runtime_error("checkpoint name '" + s + "' is longer than admissible size " + std::to_string(MAX_SIZE));
 	std::strcpy(name, s.c_str());

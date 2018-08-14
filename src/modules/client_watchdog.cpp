@@ -36,7 +36,7 @@ int client_watchdog_t::process_command(const command_t &c) {
 	client_map[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(timeout);
 	DBG("watchdog init, next check in " << timeout << " seconds");
         return VELOC_SUCCESS;
-    case command_t::CHECKPOINT:
+    case command_t::CHECKPOINT_BEGIN:
 	if (client_map.find(c.unique_id) == client_map.end()) {
 	    ERROR("unknown client " << c.unique_id << " issued checkpoint request");
 	    return VELOC_FAILURE;
