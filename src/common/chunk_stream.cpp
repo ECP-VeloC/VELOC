@@ -4,7 +4,7 @@
 #include "common/debug.hpp"
 
 chunk_stream_t::chunk_stream_t(const config_t &c, callback_t cb) : cfg(c), callback(cb) {
-    if (!cfg.get_optional("cache_prefix", cache_prefix))
+    if (!cfg.get_optional("cache", cache_prefix))
 	cache_prefix = cfg.get("scratch");
     c_stream.exceptions(std::ios::failbit | std::ios::badbit);
 }
@@ -25,7 +25,7 @@ std::string chunk_stream_t::get_chunk_name(const std::string &fname, int chunk_i
 void chunk_stream_t::next_chunk() {
     if (c_stream.is_open())
 	c_stream.close();
-    bool cached = callback(chunk_no);
+    bool cached = callback(chunk_no, false);
     chunk_no++;    
     c_stream.open(get_chunk_name(file_name, chunk_no, cached), file_mode);
     c_offset = 0;
@@ -62,7 +62,7 @@ void chunk_stream_t::read(char *str, size_t size) {
 void chunk_stream_t::close() {
     if (c_stream.is_open()) {
 	if (c_offset > 0)
-	    callback(chunk_no);
+	    callback(chunk_no, true);
 	c_stream.close();
     }
 }

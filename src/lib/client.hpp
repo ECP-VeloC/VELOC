@@ -33,7 +33,7 @@ class veloc_client_t {
     cache_strategy_t cache_strategy;
 
     int run_blocking(const command_t &cmd);
-    bool ckpt_notify_callback(int chunk_no);
+    bool ckpt_notify_callback(int chunk_no, bool last);
 
 public:
     veloc_client_t(MPI_Comm comm, const char *cfg_file);

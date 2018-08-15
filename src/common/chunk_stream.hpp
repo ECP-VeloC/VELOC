@@ -8,7 +8,7 @@
 
 class chunk_stream_t {
 public:
-    typedef std::function<bool (int)> callback_t;
+    typedef std::function<bool (int, bool)> callback_t;
     const size_t CHUNK_SIZE = 1 << 26; // 64 MB
 private:    
     size_t c_offset = 0, chunk_no = -1;

@@ -95,20 +95,18 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     return true;
 }
 
-bool veloc_client_t::ckpt_notify_callback(int chunk_no) {
+bool veloc_client_t::ckpt_notify_callback(int chunk_no, bool last) {
     if (chunk_no >= 0) {
 	current_ckpt.chunk_no = chunk_no;
 	if (cfg.is_sync()) {
 	    if (modules->notify_command(current_ckpt) != VELOC_SUCCESS)
-		throw std::runtime_error("cannot write chunk id " + std::to_string(chunk_no) +
-					 " of checkpoint " + current_ckpt.stem());
-	    return false;
+		return false;
 	} else
 	    queue->enqueue(current_ckpt);
     }
-    bool cached = cache_strategy.claim_slot();
-    current_ckpt.cached = cached;
-    return cached;
+    if (!last)
+	current_ckpt.cached = cache_strategy.claim_slot();
+    return current_ckpt.cached;
 }
 
 bool veloc_client_t::checkpoint_mem() {
@@ -117,7 +115,7 @@ bool veloc_client_t::checkpoint_mem() {
 	return false;
     }
     try {
-	chunk_stream_t f(cfg, std::bind(&veloc_client_t::ckpt_notify_callback, this, _1));
+	chunk_stream_t f(cfg, std::bind(&veloc_client_t::ckpt_notify_callback, this, _1, _2));
 	f.open(current_ckpt.stem(), std::ios_base::out |
 	       std::ios_base::binary | std::ios_base::trunc);
 	size_t regions_size = mem_regions.size();

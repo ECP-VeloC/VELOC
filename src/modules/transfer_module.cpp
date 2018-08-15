@@ -47,7 +47,7 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 }
 
 transfer_module_t::transfer_module_t(const config_t &c) :
-    cfg(c), axl_type(AXL_XFER_NULL), chunk_stream(cfg, [](int){ return true; }) {
+    cfg(c), axl_type(AXL_XFER_NULL), chunk_stream(cfg, [](int, bool){ return true; }) {
     std::string axl_config, axl_type_str;
 
     if (!cfg.get_optional("persistent_interval", interval)) {
