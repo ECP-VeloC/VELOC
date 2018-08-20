@@ -54,10 +54,11 @@ extern "C" int VELOC_Restart_test(const char *name, int version) {
     return veloc_client->restart_test(name, version);
 }
 
-extern "C" int VELOC_Route_file(char *ckpt_file_name) {
-    std::string cname = veloc_client->route_file();
-    cname.copy(ckpt_file_name, cname.length());
-    ckpt_file_name[cname.length()] = 0;
+extern "C" int VELOC_Route_file(const char *original, char *routed) {
+    std::string cname = veloc_client->route_file(original);
+    cname.copy(routed, cname.length());
+    routed[cname.length()] = 0;
+    
     return VELOC_SUCCESS;
 }
 

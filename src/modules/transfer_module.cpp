@@ -127,7 +127,12 @@ int transfer_module_t::process_command(const command_t &c) {
     if (interval < 0)
 	return VELOC_SUCCESS;
     
-    std::string local = c.filename(cfg.get("scratch")), remote = c.filename(cfg.get("persistent"));
+    std::string local = c.filename(cfg.get("scratch")), remote;
+    if (c.original[0])
+	remote = cfg.get("persistent") + "/" + std::string(c.original);
+    else
+	remote = c.filename(cfg.get("persistent"));
+   
     switch (c.command) {
     case command_t::INIT:
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);

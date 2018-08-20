@@ -98,7 +98,6 @@ template <class T> class shm_queue_t {
 	scoped_lock<named_mutex> cond_lock(pending_mutex);
 	while ((first_found = find_non_empty_pending()) == NULL)
 	    pending_cond.wait(cond_lock);
-	cond_lock.unlock();
 	// remove the head of the pending queue and move it to the progress queue
 	scoped_lock<interprocess_mutex> queue_lock(first_found->mutex);
 	e = first_found->pending.front();

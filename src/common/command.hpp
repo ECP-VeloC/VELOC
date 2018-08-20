@@ -11,7 +11,7 @@ public:
     static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
     
     int unique_id, command, version;
-    char name[MAX_SIZE] = "";
+    char name[MAX_SIZE] = "", original[MAX_SIZE] = "";
 
     command_t() { }
     command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {
@@ -20,10 +20,11 @@ public:
 	std::strcpy(name, s.c_str());
     }
     std::string stem() const {
-	return std::string(name) + "-" + std::to_string(unique_id) + "-" + std::to_string(version);
+	return std::string(name) + "-" + std::to_string(unique_id) +
+	    "-" + std::to_string(version) + ".dat";
     }
     std::string filename(const std::string &prefix) const {
-	return prefix + "/" + stem() + ".dat";
+	return prefix + "/" + stem();
     }
     std::string filename(const std::string &prefix, int new_version) const {
 	return prefix + "/" + name +

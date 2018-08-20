@@ -38,7 +38,7 @@ public:
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
     bool mem_unprotect(int id);
-    std::string route_file();
+    std::string route_file(const char *original);
 
     bool checkpoint_begin(const char *name, int version);
     bool checkpoint_mem();

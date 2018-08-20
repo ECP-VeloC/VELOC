@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <ftw.h>
 
-//#define __DEBUG
+#define __DEBUG
 #include "common/debug.hpp"
 
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
@@ -72,6 +72,7 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
     // remove old versions (only if EC is not active)
     if (!ec_active && max_versions > 0) {
+	DBG("remove old versions");
 	auto &version_history = checkpoint_history[name];
 	version_history.push_back(version);
 	if ((int)version_history.size() > max_versions) {
@@ -139,7 +140,12 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 	return version;
 }
 
-std::string veloc_client_t::route_file() {
+std::string veloc_client_t::route_file(const char *original) {
+    if (!checkpoint_in_progress) {
+	ERROR("must call checkpoint_begin() first");
+	return "";
+    }
+    std::strncpy(current_ckpt.original, original, command_t::MAX_SIZE);
     return std::string(current_ckpt.filename(cfg.get("scratch")));
 }
 

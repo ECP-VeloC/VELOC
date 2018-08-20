@@ -69,7 +69,7 @@ int VELOC_Mem_unprotect(int id);
     
 // obtain the full path for the file associated with the named checkpoint and version number
 // can be used to manually read/write checkpointing data without registering memory regions
-int VELOC_Route_file(char *ckpt_file_name);
+int VELOC_Route_file(const char *original, char *routed);
 
 /**************************
  * Checkpoint routines
