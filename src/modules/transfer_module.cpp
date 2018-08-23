@@ -13,11 +13,10 @@
 
 #include "axl.h"
 
-//#define __DEBUG
+#define __DEBUG
 #include "common/debug.hpp"
 
 static int posix_transfer_file(const std::string &source, const std::string &dest) {
-    DBG("transfer file " << source << " to " << dest);
     int fi = open(source.c_str(), O_RDONLY);
     if (fi == -1) {
 	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
@@ -62,7 +61,7 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
     // 	return;
     // }
     if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
-	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
+	INFO("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
     }    
     int ret = AXL_Init(NULL);
