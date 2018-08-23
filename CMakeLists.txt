@@ -3,7 +3,7 @@ project (VELOC)
 
 # some global compiler flags
 add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 # Now set up the libraries
 # -----------------------------------------------------------------------------------

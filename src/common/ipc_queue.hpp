@@ -9,6 +9,9 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/containers/list.hpp>
 
+#include <functional>
+using namespace std::placeholders;
+
 //#define __DEBUG
 #include "common/debug.hpp"
 
@@ -104,7 +107,9 @@ template <class T> class shm_queue_t {
 	first_found->pending.pop_front();
 	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return [this, q = first_found, it = std::prev(first_found->progress.end())](int status) { set_completion(q, it, status); };
+	return std::bind([this](container_t *q, const list_iterator_t &it, int status) { set_completion(q, it, status); },
+	                 first_found, std::prev(first_found->progress.end()), _1);
+	//return [this, q = first_found, it = std::prev(first_found->progress.end())](int status) { set_completion(q, it, status); };
     }
     size_t get_num_queues() {
 	return segment.get_num_named_objects();

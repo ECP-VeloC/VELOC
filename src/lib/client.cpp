@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <ftw.h>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
