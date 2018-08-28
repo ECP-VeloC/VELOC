@@ -44,10 +44,10 @@ int main(int argc, char *argv[]) {
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
     std::queue<std::future<void> > work_queue;
+    command_t c;
     while (true) {
-	work_queue.push(std::async(std::launch::async, [&modules, &command_queue] {
-		    command_t c;
-		    auto f = command_queue.dequeue_any(c);
+	auto f = command_queue.dequeue_any(c);
+	work_queue.push(std::async(std::launch::async, [=, &modules] {
 		    f(modules.notify_command(c));
 		}));
 	if (work_queue.size() > MAX_PARALLELISM) {
