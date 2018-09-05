@@ -15,6 +15,6 @@ int VELOC_Mem_protect_wrapper(int id, void* ptr, long count, long base_size);
 int VELOC_Restart_test_wrapper(char *name, int needed_version);  
 int VELOC_Restart_begin_wrapper(char *name, int version);
 int VELOC_Restart_wrapper(char *name, int version);
-int VELOC_Route_file_wrapper(char *ckpt_file_name);
+int VELOC_Route_file_wrapper(char *ckpt_file_name, char *routed);
 
 #endif

@@ -201,13 +201,14 @@ module veloc
   end interface
 
   interface
-    function VELOC_Route_file_impl(ckpt_file_name)&
+    function VELOC_Route_file_impl(ckpt_file_name, routed)&
             bind(c, name='VELOC_Route_file_wrapper')
 
       use ISO_C_BINDING
 
       integer(c_int) :: VELOC_Route_file_impl
       character(c_char), intent(in) :: ckpt_file_name(*)
+      character(c_char), intent(in) :: routed(*)
 
     end function VELOC_Route_file_impl
   end interface
@@ -1376,9 +1377,11 @@ contains
   end subroutine VELOC_Restart
 
 
-  subroutine VELOC_Route_file(ckpt_file_name, err)
+  subroutine VELOC_Route_file(ckpt_file_name, routed, err)
     character(len=*), intent(in) :: ckpt_file_name
+    character(len=*), intent(in) :: routed
     character, target, dimension(1:len_trim(ckpt_file_name)+1) :: ckpt_file_name_c
+    character, target, dimension(1:len_trim(routed)+1) :: routed_c
     integer, intent(out) :: err
     integer :: ii, ll
 
@@ -1388,7 +1391,13 @@ contains
     enddo
     ckpt_file_name_c(ll+1) = c_null_char
 
-    err = int(VELOC_Route_file_impl(ckpt_file_name_c))
+    ll = len_trim(routed)
+    do ii = 1, ll
+      routed_c(ii) = routed(ii:ii)
+    enddo
+    routed_c(ll+1) = c_null_char
+
+    err = int(VELOC_Route_file_impl(ckpt_file_name_c, routed_c))
 
   end subroutine VELOC_Route_file
 

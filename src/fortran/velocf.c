@@ -150,8 +150,8 @@ int VELOC_Restart_wrapper(char *name, int version)
  *
  **/
 /*-------------------------------------------------------------------------*/
-int VELOC_Route_file_wrapper(char *ckpt_file_name)
+int VELOC_Route_file_wrapper(char *ckpt_file_name, char *routed)
 {
-    int ierr = VELOC_Route_file(ckpt_file_name);
+    int ierr = VELOC_Route_file(ckpt_file_name, routed);
     return ierr;
 }
