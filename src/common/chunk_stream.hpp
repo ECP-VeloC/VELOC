@@ -3,7 +3,6 @@
 
 #include "config.hpp"
 
-#include <fstream>
 #include <functional>
 
 class chunk_stream_t {
@@ -13,8 +12,7 @@ public:
 private:    
     size_t c_offset = 0, chunk_no = -1;
     std::string file_name, cache_prefix;
-    std::ios_base::openmode file_mode;
-    std::fstream c_stream;
+    int fd, file_mode;
     const config_t &cfg;
     callback_t callback;
     
@@ -23,7 +21,7 @@ private:
 public:        
     chunk_stream_t(const config_t &cfg, callback_t cb);
     std::string get_chunk_name(const std::string &fname, int chunk_no, bool cached);
-    void open(const std::string &fname, std::ios_base::openmode mode);
+    void open(const std::string &fname, int mode);
     void write(char *str, size_t size);
     void read(char *str, size_t size);
     void close();

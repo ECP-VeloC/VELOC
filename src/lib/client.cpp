@@ -116,8 +116,7 @@ bool veloc_client_t::checkpoint_mem() {
     }
     try {
 	chunk_stream_t f(cfg, std::bind(&veloc_client_t::ckpt_notify_callback, this, _1, _2));
-	f.open(current_ckpt.stem(), std::ios_base::out |
-	       std::ios_base::binary | std::ios_base::trunc);
+	f.open(current_ckpt.stem(), O_CREAT | O_WRONLY | O_TRUNC);
 	size_t regions_size = mem_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : mem_regions) {
