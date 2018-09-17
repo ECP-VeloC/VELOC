@@ -134,14 +134,17 @@ File Registration
 
 ::
 
-   int VELOC_Route_file(OUT char *ckpt_file_name)
+   int VELOC_Route_file(IN char *original_name, OUT char *ckpt_file_name)
    
 .. _arguments-4:
 
 ARGUMENTS
 '''''''''
 
--  **ckpt_file_name**: Holds the name of the checkpoint file that the user needs to use to perform I/O
+- **ckpt_file_name**: The name of the checkpoint file that the user needs to use to perform I/O
+- **original_name**: The original name of the checkpoint file. VELOC will use **ckpt_file_name** internally 
+but will stick to the original name when persisting the checkpoint on the parallel file system. This enables
+users to customize the checkpoint namespace to facilitate their use for other purposes than restart (e.g. analytics).
 
 .. _description-5:
 
