@@ -123,9 +123,6 @@ static int get_latest_version(const std::string &p, const command_t &c) {
 }
 
 int transfer_module_t::process_command(const command_t &c) {
-    if (interval < 0)
-	return VELOC_SUCCESS;
-    
     std::string local = c.filename(cfg.get("scratch")), remote;
     if (c.original[0])
 	remote = cfg.get("persistent") + "/" + std::string(c.original);
@@ -134,6 +131,8 @@ int transfer_module_t::process_command(const command_t &c) {
    
     switch (c.command) {
     case command_t::INIT:
+	if (interval < 0)
+	    return VELOC_SUCCESS;
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
 	
@@ -143,6 +142,8 @@ int transfer_module_t::process_command(const command_t &c) {
 			get_latest_version(cfg.get("persistent"), c));
 	
     case command_t::CHECKPOINT:
+	if (interval < 0) 
+	    return VELOC_SUCCESS;
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
 	    if (t < last_timestamp[c.unique_id])
@@ -163,6 +164,8 @@ int transfer_module_t::process_command(const command_t &c) {
 	return transfer_file(local, remote);
 
     case command_t::RESTART:
+	if (interval < 0)
+	    return VELOC_SUCCESS;
 	DBG("transfer file " << remote << " to " << local);
 	if (access(local.c_str(), R_OK) == 0) {
 	    INFO("request to transfer file " << remote << " to " << local << " ignored as destination already exists");
