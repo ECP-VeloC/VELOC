@@ -74,6 +74,7 @@ template <class T> class shm_queue_t {
     shm_queue_t(const char *id) : segment(open_or_create, "veloc_shm" , MAX_SIZE),
 				  pending_mutex(open_or_create, "veloc_pending_mutex"),
 				  pending_cond(open_or_create, "veloc_pending_cond") {
+	scoped_lock<named_mutex> cond_lock(pending_mutex);
 	if (id != NULL)
 	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
     }
