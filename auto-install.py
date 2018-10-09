@@ -79,7 +79,7 @@ if __name__ == "__main__":
         install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
         install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
         install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.3')
+        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
