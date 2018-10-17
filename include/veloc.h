@@ -18,14 +18,7 @@
 #define VELOC_FAILURE (-1)
 #endif
 
-/** Constants */
-static const unsigned int VELOC_VERSION_MAJOR = 0;
-static const unsigned int VELOC_VERSION_MINOR = 0;
-static const unsigned int VELOC_VERSION_PATH = 0;
-static const char VELOC_VERSION[] = "v0.0.0";
-static const size_t VELOC_MAX_NAME = 1024;
-
-static const int VELOC_RECOVER_ALL = 0;
+#define VELOC_MAX_NAME (1024)
 
 #ifdef __cplusplus
 extern "C" {
