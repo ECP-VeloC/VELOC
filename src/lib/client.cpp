@@ -22,7 +22,7 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 	modules->add_default_modules(cfg, comm, true);
     } else
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
-    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
+    ec_active = dispatch_command(command_t(rank, command_t::INIT, 0, ""), true) > 0;
     DBG("VELOC initialized");
 }
 
@@ -31,6 +31,8 @@ static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW 
 }
 
 void veloc_client_t::cleanup() {
+    // TODO: Does not clean up EC files. Needs to be moved to the active backend.
+    // Maybe a separate cleanup module
     nftw(cfg.get("scratch").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
     nftw(cfg.get("persistent").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
@@ -69,22 +71,9 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
-    // remove old versions (only if EC is not active)
-    if (!ec_active && max_versions > 0) {
-	DBG("remove old versions");
-	auto &version_history = checkpoint_history[name];
-	version_history.push_back(version);
-	if ((int)version_history.size() > max_versions) {
-	    // wait for operations to complete in async mode before deleting old versions
-	    if (!cfg.is_sync())
-		queue->wait_completion(false);
-	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
-	    version_history.pop_front();
-	}
-    }
+    current_ckpt = command_t(rank, command_t::CHECKPOINT_BEGIN, version, name);
     checkpoint_in_progress = true;
-    return true;
+    return dispatch_command(current_ckpt, false) == VELOC_SUCCESS;
 }
 
 bool veloc_client_t::checkpoint_mem() {
@@ -108,30 +97,37 @@ bool veloc_client_t::checkpoint_mem() {
 	ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
 	return false;
     }
-    return true;
+    current_ckpt.command = CHECKPOINT_CHUNK;
+    return dispatch_command(current_ckpt, false) == VELOC_SUCCESS;
 }
 
 bool veloc_client_t::checkpoint_end(bool /*success*/) {
-    checkpoint_in_progress = false;
-    if (cfg.is_sync())
-	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
-    else {
-	queue->enqueue(current_ckpt);
-	return true;
+    current_ckpt.command = CHECKPOINT_CHUNK;
+    for (f: route_queue) {
+	strncpy(current_ckpt.name, f.first.c_str(), f.first.length());
+	strncpy(current_ckpt.original, f.second.c_str(), f.second.length());
+	dispatch_command(current_ckpt, false);
     }
+    route_queue.clear();      
+    checkpoint_in_progress = false;
+    current_ckpt.command = CHECKPOINT_END;
+    return dispatch_command(current_ckpt, false) == VELOC_SUCCESS;
 }
 
-int veloc_client_t::run_blocking(const command_t &cmd) {
+int veloc_client_t::dispatch_command(const command_t &cmd, bool blocking) {
     if (cfg.is_sync())
 	return modules->notify_command(cmd);
     else {
 	queue->enqueue(cmd);
-	return queue->wait_completion();
+	if (blocking)
+	    return queue->wait_completion();
+	else
+	    return VELOC_SUCCESS;
     }
 }
 
 int veloc_client_t::restart_test(const char *name, int needed_version) {
-    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
+    int version = dispatch_command(command_t(rank, command_t::TEST, needed_version, name), true);
     if (collective) {
 	int min_version;
 	MPI_Allreduce(&version, &min_version, 1, MPI_INT, MPI_MIN, comm);
@@ -141,10 +137,12 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 }
 
 std::string veloc_client_t::route_file(const char *original) {
-    if (!checkpoint_in_progress) {
-	ERROR("must call checkpoint_begin() first");
-	return "";
+    if (checkpoint_in_progress) {
+	// add file to checkpointing list
+	route_queue.push_back(original);
+	current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
     }
+
     std::strncpy(current_ckpt.original, original, command_t::MAX_SIZE);
     return std::string(current_ckpt.filename(cfg.get("scratch")));
 }
@@ -160,20 +158,12 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
     if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
 	result = VELOC_SUCCESS;
     else 
-	result = run_blocking(current_ckpt);
+	result = dispatch_command(current_ckpt, true);
     if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
     else
 	end_result = result;
-    if (end_result == VELOC_SUCCESS) {
-	if (!ec_active && max_versions > 0) {
-	    auto &version_history = checkpoint_history[name];
-	    version_history.clear();
-	    version_history.push_back(version);
-	}
-	return true;
-    } else
-	return false;
+    return end_result == VELOC_SUCCESS;
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {

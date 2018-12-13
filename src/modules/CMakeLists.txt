@@ -1,6 +1,6 @@
 add_library (veloc-modules SHARED 
   module_manager.cpp
-  client_watchdog.cpp transfer_module.cpp
+  client_watchdog.cpp transfer_module.cpp versioning_module.cpp
   client_aggregator.cpp ec_module.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )

@@ -30,7 +30,7 @@ class veloc_client_t {
     veloc_ipc::shm_queue_t<command_t> *queue = NULL;
     module_manager_t *modules = NULL;
 
-    int run_blocking(const command_t &cmd);
+    int dispatch_command(const command_t &cmd, bool blocking);
 
 public:
     veloc_client_t(MPI_Comm comm, const char *cfg_file);

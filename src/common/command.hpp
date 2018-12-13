@@ -8,10 +8,10 @@
 class command_t {
 public:
     static const size_t MAX_SIZE = 128;
-    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
+    enum command_code { INIT, CHECKPOINT_BEGIN, CHECKPOINT_CHUNK, CHECKPOINT_END, CHECKPOINT_RESTART, CHECKPOINT_TEST };
     
     int unique_id, command, version;
-    char name[MAX_SIZE] = "", original[MAX_SIZE] = "";
+    char name[MAX_SIZE] = "";
 
     command_t() { }
     command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {
@@ -30,6 +30,9 @@ public:
 	return prefix + "/" + name +
 	    "-" + std::to_string(unique_id) + "-" +
 	    std::to_string(new_version) + ".dat";
+    }
+    std::string metaname(const std::string &prefix) const {
+	return prefix + ".meta";
     }
     friend std::ostream &operator<<(std::ostream &output, const command_t &c) {
 	output << "(Rank = '" << c.unique_id << "', Command = '" << c.command

@@ -5,20 +5,32 @@ client_aggregator_t::client_aggregator_t(const agg_function_t &f, const single_f
 
 int client_aggregator_t::process_command(const command_t &c) {
     int res = VELOC_SUCCESS;
-        switch (c.command) {
+    switch (c.command) {
     case command_t::INIT:
 	no_clients++;
 	return single_function(c);
     case command_t::TEST:
 	return single_function(c);
-    case command_t::CHECKPOINT:
-    case command_t::RESTART:
-	cmds[c.command].push_back(c);
-	if (cmds[c.command].size() == no_clients) {
-	    res = agg_function(cmds[c.command]);
-	    cmds[c.command].clear();
+    case command_t::CHECKPOINT_BEGIN:	
+	ckpt_count++;
+	return VELOC_SUCCESS;
+    case command_t::CHECKPOINT_CHUNK:
+	ckpt_parts.push_back(c);
+	return VELOC_SUCCESS;
+    case command_t::CHECKPOINT_END:
+	ckpt_count--;
+	if (ckpt_count == 0) {
+	    res = agg_function(ckpt_parts);
+	    ckpt_parts.clear();
 	}
 	return res;
+    case command_t::RESTART:
+	restart_parts.push_back(c);
+	if (restart_parts.size() == no_clients) {
+	    res = agg_function(ckpt_parts);
+	    restart_parts.clear();
+	}
+	return res;    
     default:
 	return VELOC_SUCCESS;
     }
