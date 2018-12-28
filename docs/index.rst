@@ -13,6 +13,12 @@ using the checkpoint-restart pattern.
 VeloC is a collaboration between Argonne National Laboratory and Lawrence Livermore National Laboratory as part of the
 Exascale Computing Project.
 
+News
+----
+
+We are interested in learning about the checkpoint/restart needs of HPC applications. Please feel free to complete the following survey multiple times if you are familiar with more than one application:
+https://docs.google.com/forms/d/1aDfDlCw3qZcJdpeVzIw2DLnvDADD2hG3gP06yDaUisw/
+
 Software
 --------
 
