@@ -16,8 +16,7 @@ Exascale Computing Project.
 News
 ----
 
-We are interested in learning about the checkpoint/restart needs of HPC applications. Please feel free to complete the following survey multiple times if you are familiar with more than one application:
-https://docs.google.com/forms/d/1aDfDlCw3qZcJdpeVzIw2DLnvDADD2hG3gP06yDaUisw/
+We are interested in learning about the checkpoint/restart needs of HPC applications. Please feel free to complete the following survey multiple times if you are familiar with more than one application: https://goo.gl/forms/xBxv4pmv7MH0z5582
 
 Software
 --------
