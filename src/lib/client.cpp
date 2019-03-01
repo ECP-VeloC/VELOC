@@ -95,7 +95,7 @@ bool veloc_client_t::checkpoint_mem() {
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
-	f.open(current_ckpt.filename(cfg.get("scratch")), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	size_t regions_size = mem_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : mem_regions) {
@@ -185,7 +185,7 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
     std::ifstream f;
     f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {
-	f.open(current_ckpt.filename(cfg.get("scratch")), std::ios_base::in | std::ios_base::binary);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
 	size_t no_regions, region_size;
 	int id;
 	f.read((char *)&no_regions, sizeof(size_t));
@@ -196,9 +196,10 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 		ERROR("protected memory region " << id << " does not exist");
 		return false;
 	    }
-	    if (mem_regions[id].second != region_size) {
-		ERROR("protected memory region " << id << " has size " << region_size
-		      << " instead of expected " << mem_regions[id].second);
+	    if (mem_regions[id].second < region_size) {
+		ERROR("protected memory region " << id << " is too small ("
+		      << mem_regions[id].second << ") to hold required size ("
+		      << region_size << ")");
 		return false;
 	    }
 	}
