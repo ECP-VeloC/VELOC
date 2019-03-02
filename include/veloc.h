@@ -21,6 +21,8 @@
 #define VELOC_MAX_NAME (1024)
 
 #define VELOC_RECOVER_ALL (0)
+#define VELOC_RECOVER_SOME (1)
+#define VELOC_RECOVER_REST (2)
 
 #ifdef __cplusplus
 extern "C" {

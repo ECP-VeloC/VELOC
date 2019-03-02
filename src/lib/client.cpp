@@ -177,12 +177,9 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
-    if (mode != VELOC_RECOVER_ALL) {
-	ERROR("only VELOC_RECOVER_ALL mode currently supported");
-	return false;
-    }
-
     std::ifstream f;
+    std::map<int, size_t> region_info;
+
     f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {
 	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
@@ -192,19 +189,26 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 	for (unsigned int i = 0; i < no_regions; i++) {
 	    f.read((char *)&id, sizeof(int));
 	    f.read((char *)&region_size, sizeof(size_t));
-	    if (mem_regions.find(id) == mem_regions.end()) {
-		ERROR("protected memory region " << id << " does not exist");
-		return false;
-	    }
-	    if (mem_regions[id].second < region_size) {
-		ERROR("protected memory region " << id << " is too small ("
-		      << mem_regions[id].second << ") to hold required size ("
-		      << region_size << ")");
-		return false;
-	    }
+	    region_info.insert(std::make_pair(id, region_size));
 	}
-	for (auto &e : mem_regions)
-	    f.read((char *)e.second.first, e.second.second);
+	for (auto &e : region_info) {
+	    bool found = ids.find(e.first) != ids.end();
+	    if ((mode == VELOC_RECOVER_SOME && !found) || (mode == VELOC_RECOVER_REST && found)) {
+		f.seekg(e.second, std::ifstream::cur);
+		continue;
+	    }
+	    if (mem_regions.find(e.first) == mem_regions.end()) {
+		ERROR("no protected memory region defined for id " << e.first);
+		return false;
+	    }
+	    if (mem_regions[e.first].second < e.second) {
+		ERROR("protected memory region " << e.first << " is too small ("
+		      << mem_regions[e.first].second << ") to hold required size ("
+		      << e.second << ")");
+		return false;
+	    }
+	    f.read((char *)mem_regions[e.first].first, e.second);
+	}
     } catch (std::ifstream::failure &e) {
 	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
 	return false;

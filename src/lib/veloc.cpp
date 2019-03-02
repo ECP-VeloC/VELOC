@@ -71,6 +71,13 @@ extern "C" int VELOC_Recover_mem() {
     return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, ids));
 }
 
+extern "C" int VELOC_Recover_selective(int mode, int *ids, int no_ids) {
+    std::set<int> id_set = {};
+    for (int i = 0; i < no_ids; i++)
+	id_set.insert(ids[i]);
+    return CLIENT_CALL(veloc_client->recover_mem(mode, id_set));
+}
+
 extern "C" int VELOC_Restart_end(int success) {
     return CLIENT_CALL(veloc_client->restart_end(success));
 }
