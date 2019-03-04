@@ -109,9 +109,15 @@ int VELOC_Restart_begin(const char *name, int version);
 
 // read registered memory regions from the checkpoint file
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-//   IN version - version of the checkpoint
+// each requested id must be protected with a previous call to VELOC_Mem_protect
+//   IN ids - array of ids to be recovered
+//   IN id_count - length of ids array
+//   IN mode - VELOC_RECOVER_ALL (all ids, ignores array), VELOC_RECOVER_SOME (only ids in array), VELOC_RECOVER_REST (all ids not in array)
+int VELOC_Recover_selective(int mode, int *ids, int id_count);
+
+// convenenice wrapper equivalent to VELOC_Restart_selective(VELOC_RECOVER_ALL, NULL, 0)
 int VELOC_Recover_mem();
-        
+
 // mark end of restart phase
 //   IN version - version of the checkpoint 
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
