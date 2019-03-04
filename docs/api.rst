@@ -331,6 +331,22 @@ Memory-based Restart
 
 ::
 
+   int VELOC_Recover_selective(IN int mode, INT int *ids, IN int length)
+
+ARGUMENTS
+'''''''''
+
+- **mode** : One of VELOC_RECOVER_ALL (all regions from the checkpoint, ignores rest of arguments), VELOC_RECOVER_SOME (regions explicitly specified in ids), VELOC_RECOVER_REST (all regions except those specified in ids)
+- **ids** :  Array of ids corresponding to the memory regions previously saved in the checkpoint
+- **length**: Numer of elements in array of ids
+
+DESCRIPTION
+'''''''''''
+
+This function restores the memory regions from the checkpoint speficied when calling ``VELOC_Restart_begin()``. Must be called between ``VELOC_Restart_begin()`` and ``VELOC_Restart_end()``. For all ids that will be restored, a previous call to ``VELOC_Mem_protect()`` must have been issued. The size of the registered memory region must be large enough to fit the data from the checkpoint. A typical use of this function relies on VELOC_RECOVER_SOME to figure out the size of data structures (assumed to be saved into the checkpoint), allocate and protect memory regions large enough to hold them, the use VELOC_RECOVER_REST to restore the content.
+
+::
+
    int VELOC_Recover_mem()
 
 .. _arguments-11:
@@ -345,8 +361,7 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-The function restores the memory regions previously registered in memory-based mode from the checkpoint file that was
-specified when beginning the restart phase. Must be called between ``VELOC_Restart_begin()`` and ``VELOC_Restart_end()``.
+This is a convenience wrapper equivalent to calling ``VELOC_Recover_selective(VELOC_RECOVER_ALL, NULL, 0)``
 
 Close Restart Phase
 ^^^^^^^^^^^^^^^^^^^
