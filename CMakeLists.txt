@@ -12,7 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${VELOC_SOURCE_DIR}/cmake")
 
 # set up boost
 set(Boost_FIND_REQUIRED True)
-find_package(Boost 1.60)
+find_package(Boost 1.53)
 include_directories(${Boost_INCLUDE_DIR})
 
 # set up PThreads
