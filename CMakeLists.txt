@@ -32,4 +32,7 @@ include_directories(${ER_INCLUDE_DIRS})
 # -----------------------------------------------------------------------------------
 include_directories(${VELOC_SOURCE_DIR})
 add_subdirectory (src)
+
+# -----------------------------------------------------------------------------------
+enable_testing()
 add_subdirectory (test)
