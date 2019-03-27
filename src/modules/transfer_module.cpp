@@ -49,6 +49,15 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
     std::string axl_config, axl_type_str;
 
+    std::map<std::string, axl_xfer_t> axl_type_strs = {
+        {"default", AXL_XFER_DEFAULT},
+        {"native", AXL_XFER_NATIVE},
+        {"AXL_XFER_SYNC", AXL_XFER_SYNC},
+        {"AXL_XFER_ASYNC_DW", AXL_XFER_ASYNC_DW},
+        {"AXL_XFER_ASYNC_BBAPI", AXL_XFER_ASYNC_BBAPI},
+        {"AXL_XFER_ASYNC_CPPR", AXL_XFER_ASYNC_CPPR},
+    };
+
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
 	interval = 0;
@@ -56,21 +65,38 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
 
-    // if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
-    // 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
-    // 	return;
-    // }
-    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
-	INFO("AXL transfer type (axl_type) missing or invalid, deactivated!");
-	return;
-    }    
+    /* Did the user specify an axl_type in the config file? */
+    if (cfg.get_optional("axl_type", axl_type_str)) {
+        auto e = axl_type_strs.find(axl_type_str);
+        if (e == axl_type_strs.end()) {
+            axl_type = AXL_XFER_NULL;
+        } else {
+            axl_type = e->second;
+        }
+
+        if (axl_type == AXL_XFER_NULL) {
+            /* It's an invalid axl_type */
+            ERROR("AXL has no transfer type called \"" << axl_type_str <<"\"");
+            ERROR("Valid transfer types are:");
+            for (auto s = axl_type_strs.cbegin(); s != axl_type_strs.cend(); s++) {
+                ERROR("\t" << s->first);
+            }
+            return;
+        } else {
+            axl_type = e->second;
+        }
+
+    } else {
+        INFO("AXL transfer type (axl_type) missing or invalid, deactivated!");
+        return;
+    }
+
     int ret = AXL_Init(NULL);
     if (ret)
-	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
+        ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
     else {
-	INFO("AXL successfully initialized");
-	use_axl = true;
-	axl_type = AXL_XFER_SYNC;
+        INFO("AXL successfully initialized");
+        use_axl = true;
     }
 }
 
