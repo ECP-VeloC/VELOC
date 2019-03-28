@@ -46,16 +46,9 @@ static int posix_transfer_file(const std::string &source, const std::string &des
     return VELOC_SUCCESS;
 }
 
-transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
+transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
     std::string axl_config, axl_type_str;
-    std::map<std::string, axl_xfer_t> axl_str_to_id = {
-	{"AXL_XFER_SYNC", AXL_XFER_SYNC},
-	{"AXL_XFER_ASYNC_DW", AXL_XFER_ASYNC_DW},
-	{"AXL_XFER_ASYNC_BBAPI", AXL_XFER_ASYNC_BBAPI},
-	{"AXL_XFER_ASYNC_CPPR", AXL_XFER_ASYNC_CPPR},
-	{"AXL_XFER_BEST", AXL_XFER_BEST}
-    };
-    
+
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
 	interval = 0;
@@ -63,24 +56,21 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
 
-    // AXL initialization
-    if (!cfg.get_optional("axl_type", axl_type_str)) {
-	INFO("AXL transfer type (axl_type) missing, deactivated!");
+    // if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
+    // 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
+    // 	return;
+    // }
+    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
+	INFO("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
-    } else {
-	auto e = axl_str_to_id.find(axl_type_str);
-	if (e == axl_str_to_id.end()) {
-	    INFO("AXL transfer type (axl_type) invalid, deactivated!");
-	    return;
-	}
-	axl_type = e->second;
-    }
+    }    
     int ret = AXL_Init(NULL);
     if (ret)
 	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
     else {
 	INFO("AXL successfully initialized");
 	use_axl = true;
+	axl_type = AXL_XFER_SYNC;
     }
 }
 
