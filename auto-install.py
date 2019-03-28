@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # Other depenencies
     if (not args.no_deps):
         install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
+        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.2.0')
         install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
         install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
         install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
