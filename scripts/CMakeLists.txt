@@ -31,6 +31,14 @@ IF(${VELOC_RESOURCE_MANAGER} STREQUAL "LSF")
 	)
 ENDIF(${VELOC_RESOURCE_MANAGER} STREQUAL "LSF")
 
+IF(${VELOC_RESOURCE_MANAGER} STREQUAL "ALPS")
+	SET(cliveloc_dir_name "ALPS")
+	SET(cliveloc_run_name "veloc_aprun")
+	LIST(APPEND resource_manager_bins
+		veloc_aprun
+	)
+ENDIF(${VELOC_RESOURCE_MANAGER} STREQUAL "ALPS")
+
 IF(${VELOC_RESOURCE_MANAGER} STREQUAL "NONE")
 	MESSAGE("No resource manager selected. Some of the VELOC command line interface will not be built.")
 ELSE(${VELOC_RESOURCE_MANAGER} STREQUAL "NONE")
