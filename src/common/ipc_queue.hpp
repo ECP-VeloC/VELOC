@@ -9,6 +9,9 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/containers/list.hpp>
 
+#include <functional>
+using namespace std::placeholders;
+
 //#define __DEBUG
 #include "common/debug.hpp"
 
@@ -17,10 +20,10 @@ namespace veloc_ipc {
 using namespace boost::interprocess;
 
 typedef std::function<void (int)> completion_t;
-    
+
 inline void cleanup() {
-    boost::interprocess::shared_memory_object::remove("veloc_shm");
     boost::interprocess::shared_memory_object::remove("veloc_mon");
+    boost::interprocess::shared_memory_object::remove("veloc_shm");
     boost::interprocess::named_mutex::remove("veloc_pending_mutex");
     boost::interprocess::named_condition::remove("veloc_pending_cond");
 }
@@ -37,15 +40,15 @@ template <class T> class shm_queue_t {
 	list_t pending, progress;
 	container_t(const T_allocator &alloc) : pending(alloc), progress(alloc) { }
     };
-    typedef typename container_t::list_t::iterator list_iterator_t;    
+    typedef typename container_t::list_t::iterator list_iterator_t;
 
     managed_shared_memory segment;
     named_mutex     pending_mutex;
     named_condition pending_cond;
-    container_t *data = NULL;   
+    container_t *data = NULL;
 
     container_t *find_non_empty_pending() {
-	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {	    
+	for (managed_shared_memory::const_named_iterator it = segment.named_begin(); it != segment.named_end(); ++it) {
 	    container_t *result = (container_t *)it->value();
 	    if (!result->pending.empty())
 		return result;
@@ -72,15 +75,17 @@ template <class T> class shm_queue_t {
     shm_queue_t(const char *id) : segment(open_or_create, "veloc_shm" , MAX_SIZE),
 				  pending_mutex(open_or_create, "veloc_pending_mutex"),
 				  pending_cond(open_or_create, "veloc_pending_cond") {
+	scoped_lock<named_mutex> cond_lock(pending_mutex);
 	if (id != NULL)
 	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
     }
-    int wait_completion() {
+    int wait_completion(bool reset_status = true) {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
 	while (!check_completion())
 	    data->cond.wait(cond_lock);
 	int ret = data->status;
-	data->status = VELOC_SUCCESS;
+	if (reset_status)
+	    data->status = VELOC_SUCCESS;
 	return ret;
     }
     void enqueue(const T &e) {
@@ -104,7 +109,7 @@ template <class T> class shm_queue_t {
 	first_found->pending.pop_front();
 	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return [this, q = first_found, it = std::prev(first_found->progress.end())](int status) { set_completion(q, it, status); };
+	return std::bind(&shm_queue_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
     }
     size_t get_num_queues() {
 	return segment.get_num_named_objects();

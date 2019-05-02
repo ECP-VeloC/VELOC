@@ -9,10 +9,10 @@
 
 chunk_stream_t::chunk_stream_t(const config_t &c, callback_t cb) : cfg(c), callback(cb) {
     if (!cfg.get_optional("cache", cache_prefix))
-	cache_prefix = cfg.get("scratch");    
+	cache_prefix = cfg.get("scratch");
 }
 
-void chunk_stream_t::open(const std::string &fname, int fmode) {    
+void chunk_stream_t::open(const std::string &fname, int fmode) {
     file_name = fname;
     file_mode = fmode;
     next_chunk();
@@ -29,7 +29,7 @@ void chunk_stream_t::next_chunk() {
     ::close(fd);
     bool cached = callback(chunk_no, false);
     chunk_no++;
-    fd = ::open(get_chunk_name(file_name, chunk_no, cached).c_str(), file_mode, 0644);
+    fd = ::open(get_chunk_name(file_name, chunk_no, cached).c_str(), file_mode | O_SYNC, 0644);
     if (fd == -1)
 	throw std::runtime_error("failed to open: " + file_name);
     c_offset = 0;

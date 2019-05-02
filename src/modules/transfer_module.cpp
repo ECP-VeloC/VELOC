@@ -6,16 +6,15 @@
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
 
-#include "axl.h"
-
 #define __DEBUG
 #include "common/debug.hpp"
 
-static int posix_transfer_file(const std::string &source, const std::string &dest, loff_t dest_off) {
+static int posix_transfer_file(const std::string &source, const std::string &dest, loff_t dest_off, size_t size) {
     int fi = open(source.c_str(), O_RDONLY);
     if (fi == -1) {
 	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
@@ -27,11 +26,10 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 	ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
 	return VELOC_FAILURE;
     }
-    struct stat st;
-    stat(source.c_str(), &st);
-    size_t remaining = st.st_size;
+    size_t remaining = size;
+    lseek(fo, dest_off, SEEK_SET);
     while (remaining > 0) {
-	ssize_t transferred = copy_file_range(fi, NULL, fo, &dest_off, remaining, 0);
+	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
 	if (transferred == -1) {
 	    close(fi);
 	    close(fo);
@@ -41,13 +39,14 @@ static int posix_transfer_file(const std::string &source, const std::string &des
 	    remaining -= transferred;
     }
     close(fi);
+    fsync(fo);
     close(fo);
     return VELOC_SUCCESS;
 }
 
 transfer_module_t::transfer_module_t(const config_t &c) :
-    cfg(c), axl_type(AXL_XFER_NULL), chunk_stream(cfg, [](int, bool){ return true; }) {
-    std::string axl_config, axl_type_str;
+    cfg(c), /*axl_type(AXL_XFER_NULL),*/ chunk_stream(cfg, [](int, bool){ return true; }) {
+//    std::string axl_config, axl_type_str;
 
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
@@ -60,6 +59,7 @@ transfer_module_t::transfer_module_t(const config_t &c) :
     // 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
     // 	return;
     // }
+    /*
     if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
 	ERROR("AXL transfer type (axl_type) missing or invalid, deactivated!");
 	return;
@@ -72,12 +72,14 @@ transfer_module_t::transfer_module_t(const config_t &c) :
 	use_axl = true;
 	axl_type = AXL_XFER_SYNC;
     }
+    */
 }
 
 transfer_module_t::~transfer_module_t() {
-    AXL_Finalize();
+    //AXL_Finalize();
 }
 
+/*
 static int axl_transfer_file(axl_xfer_t type, const std::string &source, const std::string &dest) {
     int id = AXL_Create(type, source.c_str());
     if (id < 0)
@@ -92,14 +94,18 @@ static int axl_transfer_file(axl_xfer_t type, const std::string &source, const s
     	return VELOC_FAILURE;
     return VELOC_SUCCESS;
 }
+*/
 
 int transfer_module_t::transfer_file(const std::string &source, const std::string &dest) {
-    // if (use_axl) {
-    // 	ERROR("chunk transfers not yet implemented in AXL");
-    // 	return VELOC_FAILURE;
-    // }
-    // return posix_transfer_file(source, dest);
+/*
+    if (use_axl) {
+     	ERROR("chunk transfers not yet implemented in AXL");
+     	return VELOC_FAILURE;
+    }
+    else
+        return posix_transfer_file(source, dest);
     return VELOC_FAILURE;
+*/
 }
 
 static int get_latest_version(const std::string &p, const command_t &c) {
@@ -128,11 +134,15 @@ int transfer_module_t::process_command(const command_t &c) {
     if (interval < 0)
 	return VELOC_SUCCESS;
 
-    std::string local, remote(c.filename(cfg.get("persistent")));
+    std::string local, remote(c.filename(cfg.get("persistent"))),
+	remote_dir = cfg.get("persistent") + "/" + std::to_string(c.unique_id);
     switch (c.command) {
     case command_t::INIT:
+	map_mutex.lock();
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
-	state[c.unique_id] = command_t::CHECKPOINT_END;	
+	state[c.unique_id] = command_t::CHECKPOINT_END;
+	map_mutex.unlock();
+	mkdir(remote_dir.c_str(), 0755);
 	return VELOC_SUCCESS;
 	
     case command_t::TEST:
@@ -162,17 +172,24 @@ int transfer_module_t::process_command(const command_t &c) {
     case command_t::CHECKPOINT_CHUNK:
 	if (state[c.unique_id] != command_t::CHECKPOINT_BEGIN)
 	    return VELOC_SUCCESS;
-	else {	    
+	else {
 	    local = chunk_stream.get_chunk_name(c.stem(), c.chunk_no, c.cached);
-	    DBG("transfer file " << local << " to " << remote);
+	    remote = remote_dir + "/" + c.stem() + "." + std::to_string(c.chunk_no);
+	    struct stat st;
+	    stat(local.c_str(), &st);
 	    auto before = std::chrono::high_resolution_clock::now();
-	    int res = posix_transfer_file(local, remote, c.chunk_no * chunk_stream.CHUNK_SIZE);
-	    auto now = std::chrono::high_resolution_clock::now();    
-	    auto d = std::chrono::duration<double, std::milli>(now - before).count();
-	    cache_strategy.release_slot(c.cached);
+	    int res = posix_transfer_file(local, remote, 0 /*c.chunk_no * chunk_stream.CHUNK_SIZE*/, st.st_size);
+	    auto now = std::chrono::high_resolution_clock::now();
+	    auto d = std::chrono::duration<double>(now - before).count();
+	    if (c.cached)
+		cache_strategy.release_cache();
+	    cache_strategy.update_pfs_flush(st.st_size / d);
+	    unlink(local.c_str());
+	    unlink(remote.c_str());
+	    DBG("transfer file " << local << " to " << remote << ", st.st_size = " << st.st_size << ", d = " << d);
 	    return res;
 	}
-	
+
     case command_t::CHECKPOINT_END:
 	state[c.unique_id] = command_t::CHECKPOINT_END;
 	return VELOC_SUCCESS;

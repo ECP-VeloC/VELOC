@@ -12,6 +12,8 @@
 #include <set>
 #include <deque>
 
+#include <mpi.h>
+
 class veloc_client_t {
     config_t cfg;
     MPI_Comm comm;

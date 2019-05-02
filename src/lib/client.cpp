@@ -22,7 +22,7 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     collective = cfg.get_optional("collective", true);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
-	modules->add_default_modules(cfg, comm, true);
+	modules->add_default_modules(cfg, /*comm,*/ true);
     } else
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
@@ -98,6 +98,8 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 bool veloc_client_t::ckpt_notify_callback(int chunk_no, bool last) {
     if (chunk_no >= 0) {
 	current_ckpt.chunk_no = chunk_no;
+	if (!current_ckpt.cached)
+	    cache_strategy.release_ssd();
 	if (cfg.is_sync()) {
 	    if (modules->notify_command(current_ckpt) != VELOC_SUCCESS)
 		return false;
@@ -173,7 +175,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::RESTART, version, name);    
+    current_ckpt = command_t(rank, command_t::RESTART, version, name);
     if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
 	result = VELOC_SUCCESS;
     else 

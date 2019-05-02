@@ -17,17 +17,6 @@ include_directories(${Boost_INCLUDE_DIR})
 # set up PThreads
 find_package(Threads REQUIRED)
 
-# set up MPI
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-
-find_package(ER REQUIRED)
-include_directories(${ER_INCLUDE_DIRS})
-
-# find dependencies
-find_package(AXL REQUIRED)
-include_directories(${AXL_INCLUDE_DIRS})
-
 # -----------------------------------------------------------------------------------
 
 include_directories(${VELOC_SOURCE_DIR})

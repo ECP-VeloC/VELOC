@@ -12,7 +12,7 @@ public:
 private:    
     size_t c_offset = 0, chunk_no = -1;
     std::string file_name, cache_prefix;
-    int fd, file_mode;
+    int fd = -1, file_mode;
     const config_t &cfg;
     callback_t callback;
     

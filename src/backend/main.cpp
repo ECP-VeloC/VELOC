@@ -10,7 +10,7 @@
 #define __DEBUG
 #include "common/debug.hpp"
 
-const unsigned int MAX_PARALLELISM = 64;
+const unsigned int MAX_PARALLELISM = 32;
 
 int main(int argc, char *argv[]) {
     bool ec_active = true;
@@ -31,23 +31,25 @@ int main(int argc, char *argv[]) {
 	ec_active = false;
     }
 
+/*
     if (ec_active) {
 	int rank;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	DBG("Active backend rank = " << rank);
     }
+*/
 
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
-    modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
+    modules.add_default_modules(cfg, ec_active);
 
     std::queue<std::future<void> > work_queue;
+    command_t c;
     while (true) {
-	work_queue.push(std::async(std::launch::async, [&modules, &command_queue] {
-		    command_t c;
-		    auto f = command_queue.dequeue_any(c);
+	auto f = command_queue.dequeue_any(c);
+	work_queue.push(std::async(std::launch::async, [=, &modules] {
 		    f(modules.notify_command(c));
 		}));
 	if (work_queue.size() > MAX_PARALLELISM) {
@@ -55,9 +57,12 @@ int main(int argc, char *argv[]) {
 	    work_queue.pop();
 	}
     }
-    
-    if (ec_active)
+
+/*
+    if (ec_active) {
 	MPI_Finalize();
+    }
+*/
 
     return 0;
 }

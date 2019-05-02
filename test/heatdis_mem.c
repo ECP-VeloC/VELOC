@@ -95,8 +95,8 @@ int main(int argc, char *argv[]) {
 	
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
     nbLines = (M / nbProcs) + 3;
-    h = (double *) malloc(sizeof(double *) * M * nbLines);
-    g = (double *) malloc(sizeof(double *) * M * nbLines);
+    h = (double *) malloc(sizeof(double) * M * nbLines);
+    g = (double *) malloc(sizeof(double) * M * nbLines);
     initData(nbLines, M, rank, g);
     memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
 

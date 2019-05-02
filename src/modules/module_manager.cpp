@@ -5,11 +5,12 @@
 
 module_manager_t::module_manager_t() { }
 
-void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm, bool ec_active) {
+void module_manager_t::add_default_modules(const config_t &cfg, /*MPI_Comm comm,*/ bool ec_active) {
     watchdog = new client_watchdog_t(cfg);
     add_module([this](const command_t &c) { return watchdog->process_command(c); });
+    /*
     if (ec_active) {
-	redset = new ec_module_t(cfg, comm);
+	redset = new ec_module_t(cfg, comm);	
 	ec_agg = new client_aggregator_t(
 	    [this](const std::vector<command_t> &cmds) {
 		return redset->process_commands(cmds);
@@ -19,14 +20,15 @@ void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm, b
 	    });
 	add_module([this](const command_t &c) { return ec_agg->process_command(c); });
     }
+    */
     transfer = new transfer_module_t(cfg);
     add_module([this](const command_t &c) { return transfer->process_command(c); });
 }
 
 module_manager_t::~module_manager_t() {
     delete watchdog;
-    delete ec_agg;
-    delete redset;
+//    delete ec_agg;
+//    delete redset;
     delete transfer;
 }
 
