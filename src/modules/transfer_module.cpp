@@ -11,8 +11,6 @@
 #include <cerrno>
 #include <cstring>
 
-#include "axl.h"
-
 #define __DEBUG
 #include "common/debug.hpp"
 
@@ -46,65 +44,27 @@ static int posix_transfer_file(const std::string &source, const std::string &des
     return VELOC_SUCCESS;
 }
 
-transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
-    std::string axl_config, axl_type_str;
-
+transfer_module_t::transfer_module_t(const config_t &c) : cfg(c) {
     if (!cfg.get_optional("persistent_interval", interval)) {
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
 	interval = 0;
     }
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
-
-    // if (!cfg.get_optional("axl_config", axl_config) || access(axl_config.c_str(), R_OK) != 0) {
-    // 	ERROR("AXL configuration file (axl_config) missing or invalid, deactivated!");
-    // 	return;
-    // }
-    if (!cfg.get_optional("axl_type", axl_type_str) || (axl_type_str != "AXL_XFER_SYNC")) {
-	INFO("AXL transfer type (axl_type) missing or invalid, deactivated!");
-	return;
-    }    
-    int ret = AXL_Init(NULL);
-    if (ret)
-	ERROR("AXL initialization failure, error code: " << ret << "; falling back to POSIX");
-    else {
-	INFO("AXL successfully initialized");
-	use_axl = true;
-	axl_type = AXL_XFER_SYNC;
-    }
 }
 
 transfer_module_t::~transfer_module_t() {
-    AXL_Finalize();
-}
-
-static int axl_transfer_file(axl_xfer_t type, const std::string &source, const std::string &dest) {
-    int id = AXL_Create(type, source.c_str());
-    if (id < 0)
-    	return VELOC_FAILURE;
-    if (AXL_Add(id, (char *)source.c_str(), (char *)dest.c_str()))
-    	return VELOC_FAILURE;
-    if (AXL_Dispatch(id))
-    	return VELOC_FAILURE;
-    if (AXL_Wait(id))
-    	return VELOC_FAILURE;
-    if (AXL_Free(id))
-    	return VELOC_FAILURE;
-    return VELOC_SUCCESS;
 }
 
 int transfer_module_t::transfer_file(const std::string &source, const std::string &dest) {
-    if (use_axl)
-	return axl_transfer_file(axl_type, source, dest);
-    else
-	return posix_transfer_file(source, dest);
+    return posix_transfer_file(source, dest);
 }
 
 static int get_latest_version(const std::string &p, const command_t &c) {
     struct dirent *dentry;
     DIR *dir;
     int id, version, ret = -1;
-    
+
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return -1;

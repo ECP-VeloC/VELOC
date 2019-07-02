@@ -9,12 +9,8 @@
 #include <deque>
 #include <map>
 
-#include "axl.h"
-
 class transfer_module_t {
     const config_t &cfg;
-    bool use_axl = false;
-    axl_xfer_t axl_type;
     int interval, max_versions;
     std::map<int, std::chrono::system_clock::time_point> last_timestamp;
     typedef std::map<std::string, std::deque<int> > checkpoint_history_t;

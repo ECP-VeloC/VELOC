@@ -13,8 +13,6 @@
 const unsigned int MAX_PARALLELISM = 64;
 
 int main(int argc, char *argv[]) {
-    bool ec_active = true;
-    
     if (argc < 2 || argc > 3) {
 	veloc_ipc::cleanup();
 	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
@@ -26,22 +24,13 @@ int main(int argc, char *argv[]) {
 	ERROR("configuration requests sync mode, backend is not needed");
 	return 3;
     }
-    if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
-	INFO("EC module disabled by commmand line switch");
-	ec_active = false;
-    }
-
-    if (ec_active) {
-	int rank;
-	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	DBG("Active backend rank = " << rank);
-    }
+    if (argc == 3 && std::string(argv[2]) == "--disable-ec")
+	INFO("EC module not available in barebone version, disabled by default");
 
     veloc_ipc::cleanup();
     veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
     module_manager_t modules;
-    modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
+    modules.add_default_modules(cfg, MPI_COMM_WORLD);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
@@ -54,10 +43,6 @@ int main(int argc, char *argv[]) {
 	    work_queue.front().wait();
 	    work_queue.pop();
 	}
-    }
-    
-    if (ec_active) {
-	MPI_Finalize();
     }
 
     return 0;

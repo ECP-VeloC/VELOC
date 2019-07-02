@@ -75,24 +75,25 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.no_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
-        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
+	print("Barebone version does not have extra depenencies!")
+    #    install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
+    #    install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
+    #    install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
+    #    install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
+    #    install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
+    #    install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
-        # build pdsh
-        pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
-        f = tarfile.open(pdsh_tarball, mode='r:gz')
-        f.extractall(path=args.temp)
-        f.close()
-        os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
-                       && make install".format(args.temp + '/pdsh-2.33', args.prefix))
-    
+         # build pdsh
+    #    pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
+    #    f = tarfile.open(pdsh_tarball, mode='r:gz')
+    #    f.extractall(path=args.temp)
+    #    f.close()
+    #    os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
+    #                   && make install".format(args.temp + '/pdsh-2.33', args.prefix))
+
     # VeloC
-    ret = os.WEXITSTATUS(os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} -DWITH_PDSH_PREFIX={2} {3}\
-                                   && make install".format(args.prefix, cmake_build_type, args.prefix, compiler_options)))
+    ret = os.WEXITSTATUS(os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} {2}\
+                                   && make install".format(args.prefix, cmake_build_type, compiler_options)))
 
     # Cleanup
     if (not args.debug):
