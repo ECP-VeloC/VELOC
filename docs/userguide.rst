@@ -76,7 +76,7 @@ VeloC uses a INI-style configuration with the following options:
    ec_interval = <seconds> (default: 0)
    persistent_interval = <seconds> (default: 0)
    max_versions = <int> (default: 0)
-   axl_type = AXL_XFER_SYNC (default: N/A)
+   axl_type = <default|native|[axl specific type]> (default: N/A)
 
 The first three options are mandatory and specify where VeloC can save local checkpoints and redundancy information 
 for collaborative resilience strategies (currently set to XOR encoding). All other options are not 
@@ -88,7 +88,16 @@ checkpoints to the parallel file system is active by default and can be controll
 preserve space, users can specify ``max_versions`` to instruct VeloC to keep only the latest N checkpoint versions. This
 applies to the scratch and persistent level individually. Finally, the user can specify whether to use a built-in POSIX
 file transfer routine to flush the files to a parallel file system or to use the AXL library for optimized flushes that can
-take advantage of additional hardware to accelerate I/O (such as burst buffers).
+take advantage of additional hardware to accelerate I/O (such as burst buffers).  If the user wants to use the AXL library,
+they must specify ``axl_type``.  If omitted, it will use the built-in POSIX.  Some ``axl_type`` values are:
+
+default:    Let AXL choose the fastest transfer type that is compatible with all VeloC transfers.  This may or may not
+            be the node's native transfer library.
+
+native:     Use the node's native transfer library (like IBM Burst Buffer or Cray DataWarp) for transfers.  These native
+            libraries may or may not support all VeloC transfers.
+
+AXL_XFER_*: Use a specific AXL transfer type (like AXL_XFER_SYNC, AXL_XFER_ASYNC_IBMBB, etc).
 
 .. _ch:velocrun:
 
