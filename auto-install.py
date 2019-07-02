@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.no_deps):
-	print("Barebone version does not have extra depenencies!")
+        print("Barebone version does not have extra depenencies!")
     #    install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
     #    install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.1.1')
     #    install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
