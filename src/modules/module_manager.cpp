@@ -14,8 +14,6 @@ void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm) {
 
 module_manager_t::~module_manager_t() {
     delete watchdog;
-    delete ec_agg;
-    delete redset;
     delete transfer;
 }
 
