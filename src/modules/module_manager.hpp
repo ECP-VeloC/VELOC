@@ -10,8 +10,6 @@
 #include <functional>
 #include <vector>
 
-#include <mpi.h>
-
 class module_manager_t {
     typedef std::function<int (const command_t &)> method_t;
     std::vector<method_t> sig;
@@ -21,7 +19,7 @@ class module_manager_t {
 public:
     module_manager_t();
     ~module_manager_t();
-    void add_default_modules(const config_t &cfg, MPI_Comm comm);
+    void add_default_modules(const config_t &cfg);
     void add_module(const method_t &m) {
 	sig.push_back(m);
     }
