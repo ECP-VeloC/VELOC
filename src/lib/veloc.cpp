@@ -59,7 +59,7 @@ extern "C" int VELOC_Route_file(const char *original, char *routed) {
     cname.copy(routed, cname.length());
     routed[cname.length()] = 0;
     
-    return VELOC_SUCCESS;
+    return routed[0] != 0 ? VELOC_SUCCESS : VELOC_FAILURE;
 }
 
 extern "C" int VELOC_Restart_begin(const char *name, int version) {

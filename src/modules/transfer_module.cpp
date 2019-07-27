@@ -6,7 +6,8 @@
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
 
 #include <cerrno>
 #include <cstring>
@@ -149,12 +150,9 @@ static int get_latest_version(const std::string &p, const command_t &c) {
 }
 
 int transfer_module_t::process_command(const command_t &c) {
-    std::string local = c.filename(cfg.get("scratch")), remote;
-    if (c.original[0])
-	remote = cfg.get("persistent") + "/" + std::string(c.original);
-    else
+    std::string local = c.filename(cfg.get("scratch")),
 	remote = c.filename(cfg.get("persistent"));
-   
+
     switch (c.command) {
     case command_t::INIT:
 	if (interval < 0)
@@ -187,8 +185,20 @@ int transfer_module_t::process_command(const command_t &c) {
 	    }
 	}
 	DBG("transfer file " << local << " to " << remote);
-	return transfer_file(local, remote);
-
+	if (c.original[0] == 0)
+	    return transfer_file(local, remote);
+	else {
+	    // at this point, we in file-based mode with custom file names
+	    if (transfer_file(local, c.original) == VELOC_FAILURE)
+		return VELOC_FAILURE;
+	    unlink(remote.c_str());
+	    if (symlink(c.original, remote.c_str()) != 0) {
+		ERROR("cannot create symlink " << remote.c_str() << " pointing at " << c.original << ", error: " << std::strerror(errno));
+		return VELOC_FAILURE;
+	    } else
+		return VELOC_SUCCESS;	
+	}
+	
     case command_t::RESTART:
 	if (interval < 0)
 	    return VELOC_SUCCESS;

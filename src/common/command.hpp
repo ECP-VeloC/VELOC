@@ -4,20 +4,23 @@
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
+#include <limits.h>
 
 class command_t {
 public:
-    static const size_t MAX_SIZE = 128;
     static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
     
     int unique_id, command, version;
-    char name[MAX_SIZE] = {}, original[MAX_SIZE] = {};
+    char name[PATH_MAX] = {}, original[PATH_MAX] = {};
 
     command_t() { }
     command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {
-	if (s.length() > MAX_SIZE)
-	    throw std::runtime_error("checkpoint name '" + s + "' is longer than admissible size " + std::to_string(MAX_SIZE));
-	std::strcpy(name, s.c_str());
+	assign_path(name, s.c_str());
+    }
+    void assign_path(char *dest, const std::string &src) {
+	if (src.length() > PATH_MAX)
+	    throw std::runtime_error("checkpoint name '" + src + "' is longer than admissible size " + std::to_string(PATH_MAX));
+	std::strcpy(dest, src.c_str());
     }
     std::string stem() const {
 	return std::string(name) + "-" + std::to_string(unique_id) +
