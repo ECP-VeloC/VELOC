@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <unistd.h>
 #include <ftw.h>
+#include <limits.h>
+#include <stdlib.h>
 
 //#define __DEBUG
 #include "common/debug.hpp"
@@ -19,7 +21,7 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     collective = cfg.get_optional("collective", true);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
-	modules->add_default_modules(cfg, comm, true);
+	modules->add_default_modules(cfg, comm);
     } else
 	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
@@ -141,12 +143,10 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 }
 
 std::string veloc_client_t::route_file(const char *original) {
-    if (!checkpoint_in_progress) {
-	ERROR("must call checkpoint_begin() first");
-	return "";
-    }
-    std::strncpy(current_ckpt.original, original, command_t::MAX_SIZE);
-    return std::string(current_ckpt.filename(cfg.get("scratch")));
+    char abs_path[PATH_MAX + 1];
+    if (original[0] != '/' && getcwd(abs_path, PATH_MAX) != NULL)
+	current_ckpt.assign_path(abs_path, std::string(abs_path) + "/" + std::string(original));
+    return current_ckpt.filename(cfg.get("scratch"));    	
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {

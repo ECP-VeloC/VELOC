@@ -8,6 +8,11 @@ set(CMAKE_CXX_STANDARD 11)
 # Now set up the libraries
 # -----------------------------------------------------------------------------------
 
+# set up boost
+set(Boost_FIND_REQUIRED True)
+find_package(Boost 1.53)
+include_directories(${Boost_INCLUDE_DIR})
+
 # set up PThreads
 find_package(Threads REQUIRED)
 
