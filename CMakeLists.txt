@@ -20,7 +20,7 @@ find_package(PDSH)
 
 # set up boost
 set(Boost_FIND_REQUIRED True)
-find_package(Boost 1.53)
+find_package(Boost 1.60)
 include_directories(${Boost_INCLUDE_DIR})
 
 # set up PThreads

@@ -22,6 +22,16 @@ extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
     }
 }
 
+extern "C" int VELOC_Init_single(unsigned int id, const char *cfg_file) {
+    try {
+	veloc_client = new veloc_client_t(id, cfg_file);
+	return VELOC_SUCCESS;
+    } catch (std::exception &e) {
+	ERROR(e.what());
+	return VELOC_FAILURE;
+    }
+}
+
 #define CLIENT_CALL(x) (veloc_client != NULL && (x)) ? VELOC_SUCCESS : VELOC_FAILURE;
 
 extern "C" int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size) {

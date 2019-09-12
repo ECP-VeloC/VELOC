@@ -37,12 +37,14 @@ extern "C" {
  *************************/
 
 // initializes the VELOC library
-//   IN rank      - unique global ID of the process (e.g. MPI rank) 
+//   IN comm      - MPI communicator (activates the collective checkpointing mode)
+//   IN id        - unique global ID of the process (activates the standalone checkpointing mode)
 //   IN cfg_file  - configuration file with the following fields:
 //                     scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation) 
 //                     persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
 
 int VELOC_Init(MPI_Comm comm, const char *cfg_file);
+int VELOC_Init_single(unsigned int id, const char *cfg_file);
 int VELOC_Finalize(int cleanup);
     
 /**************************
