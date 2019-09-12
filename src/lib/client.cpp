@@ -11,14 +11,13 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
-    cfg(cfg_file), comm(c) {
-    MPI_Comm_rank(comm, &rank);
+veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
+    cfg(cfg_file), collective(false), rank(id) {
     if (!cfg.get_optional("max_versions", max_versions)) {
 	INFO("Max number of versions to keep not specified, keeping all");
 	max_versions = 0;
     }
-    collective = cfg.get_optional("collective", true);
+    collective = true;
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
@@ -27,6 +26,23 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
 }
+
+veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
+    cfg(cfg_file), comm(c), collective(true) {
+    MPI_Comm_rank(comm, &rank);
+    if (!cfg.get_optional("max_versions", max_versions)) {
+	INFO("Max number of versions to keep not specified, keeping all");
+	max_versions = 0;
+    }
+    if (cfg.is_sync()) {
+	modules = new module_manager_t();
+	modules->add_default_modules(cfg);
+    } else
+	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
+    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
+    DBG("VELOC initialized");
+}
+
 
 static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
     return remove(f);
