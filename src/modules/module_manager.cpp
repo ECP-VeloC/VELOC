@@ -5,6 +5,13 @@
 
 module_manager_t::module_manager_t() { }
 
+void module_manager_t::add_default_modules(const config_t &cfg) {
+    watchdog = new client_watchdog_t(cfg);
+    add_module([this](const command_t &c) { return watchdog->process_command(c); });
+    transfer = new transfer_module_t(cfg);
+    add_module([this](const command_t &c) { return transfer->process_command(c); });
+}
+
 void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm, bool ec_active) {
     watchdog = new client_watchdog_t(cfg);
     add_module([this](const command_t &c) { return watchdog->process_command(c); });
