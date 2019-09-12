@@ -17,7 +17,6 @@ veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
 	INFO("Max number of versions to keep not specified, keeping all");
 	max_versions = 0;
     }
-    collective = true;
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
