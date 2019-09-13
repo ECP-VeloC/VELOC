@@ -117,6 +117,10 @@ int VELOC_Restart_begin(const char *name, int version);
 //   IN mode - VELOC_RECOVER_ALL (all ids, ignores array), VELOC_RECOVER_SOME (only ids in array), VELOC_RECOVER_REST (all ids not in array)
 int VELOC_Recover_selective(int mode, int *ids, int id_count);
 
+// return the size of the data saved under id in the checkpoint or -1 if id does not exist
+//   IN id - the id of data structure saved under id
+int VELOC_Recover_size(int id);
+
 // convenenice wrapper equivalent to VELOC_Restart_selective(VELOC_RECOVER_ALL, NULL, 0)
 int VELOC_Recover_mem();
 
