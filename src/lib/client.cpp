@@ -149,6 +149,7 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
 
 int veloc_client_t::restart_test(const char *name, int needed_version) {
     int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
+    DBG(name << ": latest version = " << version);
     if (collective) {
 	int min_version;
 	MPI_Allreduce(&version, &min_version, 1, MPI_INT, MPI_MIN, comm);
@@ -186,17 +187,16 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	    version_history.clear();
 	    version_history.push_back(version);
 	}
-	return true;
+	return read_header();
     } else
 	return false;
 }
 
-bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
-    std::ifstream f;
-    std::map<int, size_t> region_info;
-
-    f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+bool veloc_client_t::read_header() {
+    region_info.clear();
     try {
+	std::ifstream f;
+	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
 	size_t no_regions, region_size;
 	int id;
@@ -206,6 +206,33 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 	    f.read((char *)&region_size, sizeof(size_t));
 	    region_info.insert(std::make_pair(id, region_size));
 	}
+	header_size = f.tellg();
+    } catch (std::ifstream::failure &e) {
+	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
+	header_size = 0;
+	return false;
+    }
+    return true;
+}
+
+size_t veloc_client_t::recover_size(int id) {
+    auto it = region_info.find(id);
+    if (it == region_info.end())
+	return 0;
+    else
+	return it->second;
+}
+
+bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
+    if (header_size == 0) {
+	ERROR("cannot recover before successful restart begin");
+	return false;
+    }	
+    try {
+	std::ifstream f;
+	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
+	f.seekg(header_size);
 	for (auto &e : region_info) {
 	    bool found = ids.find(e.first) != ids.end();
 	    if ((mode == VELOC_RECOVER_SOME && !found) || (mode == VELOC_RECOVER_REST && found)) {

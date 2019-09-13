@@ -88,6 +88,10 @@ extern "C" int VELOC_Recover_selective(int mode, int *ids, int no_ids) {
     return CLIENT_CALL(veloc_client->recover_mem(mode, id_set));
 }
 
+extern "C" int VELOC_Recover_size(int id) {
+    return veloc_client->recover_size(id);
+}
+
 extern "C" int VELOC_Restart_end(int success) {
     return CLIENT_CALL(veloc_client->restart_end(success));
 }

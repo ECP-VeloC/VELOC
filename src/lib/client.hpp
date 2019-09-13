@@ -28,10 +28,14 @@ class veloc_client_t {
     command_t current_ckpt;
     bool checkpoint_in_progress = false;
 
+    std::map<int, size_t> region_info;
+    size_t header_size = 0;
+
     veloc_ipc::shm_queue_t<command_t> *queue = NULL;
     module_manager_t *modules = NULL;
 
     int run_blocking(const command_t &cmd);
+    bool read_header();
 
 public:
     veloc_client_t(unsigned int id, const char *cfg_file);
@@ -49,6 +53,7 @@ public:
 
     int restart_test(const char *name, int version);
     bool restart_begin(const char *name, int version);
+    size_t recover_size(int id);
     bool recover_mem(int mode, std::set<int> &ids);
     bool restart_end(bool success);
 
