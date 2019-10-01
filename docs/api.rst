@@ -45,7 +45,25 @@ ARGUMENTS
 DESCRIPTION
 '''''''''''
 
-This function initializes the VELOC library. It must be called collectively by all processes before any other VELOC function. A good practice is to call it immediately after ``MPI_Init()``.
+This function initializes the VELOC library. It must be called collectively by all processes before any other VELOC function. A good practice is to call it immediately after ``MPI_Init()``. 
+
+Non-collective initialization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+   int VELOC_Init_single(unsigned int unique_id, IN const char *cfg_file)
+
+ARGUMENTS
+'''''''''
+
+- **unique_id**: A unique identifier of the process that needs to checkpoint individually
+- **cfg_file**: The VeloC configuration file, detailed in the user guide.
+
+DESCRIPTION
+'''''''''''
+
+This function initializes the VELOC library in non-collective mode, which enables each process to checkpoint and restart independently of the other processes. Notably, this will impact the behavior of ``VELOC_Restart_test`` (detailed below), which will return the latest version available for the calling process, rather than the whole group.
 
 Finalize
 ^^^^^^^^
