@@ -92,6 +92,10 @@ extern "C" int VELOC_Recover_size(int id) {
     return veloc_client->recover_size(id);
 }
 
+extern "C" int VELOC_Recover_no_regions() {
+    return veloc_client->recover_size();
+}
+
 extern "C" int VELOC_Restart_end(int success) {
     return CLIENT_CALL(veloc_client->restart_end(success));
 }

@@ -121,6 +121,10 @@ int VELOC_Recover_selective(int mode, int *ids, int id_count);
 //   IN id - the id of data structure saved under id
 int VELOC_Recover_size(int id);
 
+// return the size of the data saved under id in the checkpoint or -1 if id does not exist
+//   IN id - the id of data structure saved under id
+int VELOC_Recover_no_regions();
+    
 // convenenice wrapper equivalent to VELOC_Restart_selective(VELOC_RECOVER_ALL, NULL, 0)
 int VELOC_Recover_mem();
 

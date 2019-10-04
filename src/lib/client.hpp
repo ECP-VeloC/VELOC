@@ -54,6 +54,7 @@ public:
     int restart_test(const char *name, int version);
     bool restart_begin(const char *name, int version);
     size_t recover_size(int id);
+    size_t recover_size();
     bool recover_mem(int mode, std::set<int> &ids);
     bool restart_end(bool success);
 

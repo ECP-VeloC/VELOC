@@ -215,6 +215,10 @@ bool veloc_client_t::read_header() {
     return true;
 }
 
+size_t veloc_client_t::recover_size() {
+  return region_info.size();
+}
+
 size_t veloc_client_t::recover_size(int id) {
     auto it = region_info.find(id);
     if (it == region_info.end())
