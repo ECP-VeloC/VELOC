@@ -4,7 +4,7 @@ if __name__ == "__main__":
     print("VELOC-Python test suite")
 
     ### Checkpoint
-    ckpt = veloc.Ckpt(0, sys.argv[1])
+    ckpt = veloc.PickleCkpt(0, sys.argv[1])
     data_1 = "abc"
     data_2 = [1, 2, 3]
     ckpt.protected = (data_1, data_2)

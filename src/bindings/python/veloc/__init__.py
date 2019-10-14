@@ -1,4 +1,4 @@
-import ctypes, ctypes.util, pickle
+import ctypes, ctypes.util, pickle, os
 
 def loadLib(id, cfg):
     veloc_lib = ctypes.util.find_library("veloc-client")
@@ -23,13 +23,17 @@ class NumPyCkpt:
         if self.lib.VELOC_Checkpoint(name.encode(), version) != 0:
             raise RuntimeError("VELOC-Python: checkpoint failure; name=%s, version=%d" % (name, version))
 
-    def restart_test(self, name, version):
+    def get_version(self, name, version):
         return self.lib.VELOC_Restart_test(name.encode(), version)
 
-    def restart(self, name, version):
-        raise RuntimeError("VELOC-Python: not yet implemented")
+    def restore(self, name, version):
+        if self.lib.VELOC_Restart(name.encode(), version) != 0:
+            raise RuntimeError("VELOC-Python: restart failure; name=%s, version=%d" % (name, version))
 
-class Ckpt:
+    def __del__(self):
+        self.lib.VELOC_Finalize(0)
+
+class PickleCkpt:
     def __init__(self, id, cfg):
         self.protected = None
         self.lib = loadLib(id, cfg)
