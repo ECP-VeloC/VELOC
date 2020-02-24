@@ -161,7 +161,9 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 std::string veloc_client_t::route_file(const char *original) {
     char abs_path[PATH_MAX + 1];
     if (original[0] != '/' && getcwd(abs_path, PATH_MAX) != NULL)
-	current_ckpt.assign_path(abs_path, std::string(abs_path) + "/" + std::string(original));
+	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + std::string(original));
+    else
+	current_ckpt.assign_path(current_ckpt.original, std::string(original));
     return current_ckpt.filename(cfg.get("scratch"));    	
 }
 
