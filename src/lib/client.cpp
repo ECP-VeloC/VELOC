@@ -42,7 +42,6 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     DBG("VELOC initialized");
 }
 
-
 static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
     return remove(f);
 }

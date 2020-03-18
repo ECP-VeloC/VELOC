@@ -26,6 +26,9 @@ include_directories(${Boost_INCLUDE_DIR})
 # set up PThreads
 find_package(Threads REQUIRED)
 
+# set up OpenSSL
+find_package(OpenSSL REQUIRED)
+
 # set up MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})

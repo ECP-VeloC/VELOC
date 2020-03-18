@@ -1,39 +1,15 @@
 #include "ec_module.hpp"
 #include "common/status.hpp"
 
-#include <stdexcept>
-
-#include <limits.h>
-#include <unistd.h>
-#include <dirent.h>
-
 #include "er.h"
 #include "rankstr_mpi.h"
+#include "common/file_util.hpp"
 
-//#define __DEBUG
+#include <unistd.h>
+
+#define __DEBUG
 #include "common/debug.hpp"
 
-static int get_latest_version(const std::string &p, const std::string &cname, int needed_version) {
-    struct dirent *dentry;
-    DIR *dir;
-    int version, ret = -1;
-
-    dir = opendir(p.c_str());
-    if (dir == NULL)
-	return -1;
-    while ((dentry = readdir(dir)) != NULL) {
-	std::string fname = std::string(dentry->d_name);
-	if (fname.compare(0, cname.length(), cname) == 0 &&
-	    sscanf(fname.substr(cname.length()).c_str(), "-%d", &version) == 1 &&
-	    (needed_version == 0 || version <= needed_version) &&
-	    access((p + "/" + fname).c_str(), R_OK) == 0) {
-	    if (version > ret)
-		ret = version;
-	}
-    }
-    closedir(dir);
-    return ret;
-}
 
 ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
     if(ER_Init(cfg.get_cfg_file().c_str()) != ER_SUCCESS)
@@ -64,8 +40,6 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
     }
     if (!cfg.get_optional("max_versions", max_versions))
 	max_versions = 0;
-	
-    DBG("EC scheme successfully initialized");
 }
 
 ec_module_t::~ec_module_t() {
@@ -79,9 +53,8 @@ int ec_module_t::process_command(const command_t &c) {
     case command_t::INIT:
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return interval >= 0 ? 1 : 0;
-	
+
     case command_t::TEST:
-	DBG("get latest EC version for " << c.name);
 	return get_latest_version(cfg.get("scratch"), std::string(c.name) + "-ec", c.version);
 
     default:
@@ -89,7 +62,7 @@ int ec_module_t::process_command(const command_t &c) {
     }
 }
 
-int ec_module_t::process_commands(const std::vector<command_t> &cmds) {    
+int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     if (cmds.size() == 0 || interval < 0)
 	return VELOC_SUCCESS;
     int command = cmds[0].command;
@@ -121,7 +94,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	if (max_versions > 0) {
 	    auto &version_history = checkpoint_history[cmds[0].name];
 	    version_history.push_back(version);
-	    if ((int)version_history.size() > max_versions) {		
+	    if ((int)version_history.size() > max_versions) {
 		std::string old_name = cfg.get("scratch") + "/" + cmds[0].name +
 		    "-ec-" + std::to_string(version_history.front());
 		for (auto &c : cmds)
@@ -137,6 +110,17 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	    }
 	}
     } else {
+        bool local_alive = true;
+	for (auto &c : cmds)
+            if (access(c.filename(cfg.get("scratch")).c_str(), R_OK) != 0) {
+                local_alive = false;
+                break;
+            }
+        if (local_alive)
+            return VELOC_SUCCESS;
+
+        // Attempt ER rebuild only if something is missing from the local set
+        DBG("Rebuild needed for " << cmds[0].name << ", version = " << cmds[0].version);
 	set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint " << name);

@@ -10,6 +10,8 @@ void module_manager_t::add_default_modules(const config_t &cfg) {
     add_module([this](const command_t &c) { return watchdog->process_command(c); });
     transfer = new transfer_module_t(cfg);
     add_module([this](const command_t &c) { return transfer->process_command(c); });
+    chksum = new chksum_module_t(cfg);
+    add_module([this](const command_t &c) { return chksum->process_command(c); });
 }
 
 void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm, bool ec_active) {
@@ -28,6 +30,8 @@ void module_manager_t::add_default_modules(const config_t &cfg, MPI_Comm comm, b
     }
     transfer = new transfer_module_t(cfg);
     add_module([this](const command_t &c) { return transfer->process_command(c); });
+    chksum = new chksum_module_t(cfg);
+    add_module([this](const command_t &c) { return chksum->process_command(c); });
 }
 
 module_manager_t::~module_manager_t() {
@@ -35,6 +39,7 @@ module_manager_t::~module_manager_t() {
     delete ec_agg;
     delete redset;
     delete transfer;
+    delete chksum;
 }
 
 int module_manager_t::notify_command(const command_t &c) {
