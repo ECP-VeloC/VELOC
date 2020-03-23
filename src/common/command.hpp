@@ -5,6 +5,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <limits.h>
+#include <iostream>
 
 class command_t {
 public:
