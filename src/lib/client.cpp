@@ -188,7 +188,8 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	    version_history.clear();
 	    version_history.push_back(version);
 	}
-	return read_header();
+        header_size = 0;
+	return true;
     } else
 	return false;
 }
@@ -209,7 +210,7 @@ bool veloc_client_t::read_header() {
 	}
 	header_size = f.tellg();
     } catch (std::ifstream::failure &e) {
-	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
+	ERROR("cannot read header from checkpoint file " << current_ckpt << ", reason: " << e.what());
 	header_size = 0;
 	return false;
     }
@@ -217,6 +218,8 @@ bool veloc_client_t::read_header() {
 }
 
 size_t veloc_client_t::recover_size(int id) {
+    if (header_size == 0)
+        read_header();
     auto it = region_info.find(id);
     if (it == region_info.end())
 	return 0;
@@ -225,10 +228,10 @@ size_t veloc_client_t::recover_size(int id) {
 }
 
 bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
-    if (header_size == 0) {
-	ERROR("cannot recover before successful restart begin");
+    if (header_size == 0 && !read_header()) {
+	ERROR("cannot recover in memory mode if header unavailable or corrupted");
 	return false;
-    }	
+    }
     try {
 	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
