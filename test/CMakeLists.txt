@@ -1,13 +1,8 @@
-# Comment as needed to reduce build time
-add_executable (heatdis_original heatdis_original.c)
-add_executable (heatdis_mem heatdis_mem.c)
-add_executable (heatdis_file heatdis_file.c)
-add_executable (heatdis_fault heatdis_fault.cpp)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc_slurm.cfg DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# Link the executable to the necessary libraries.
-target_link_libraries (heatdis_original ${MPI_C_LIBRARIES} m)
-target_link_libraries (heatdis_mem ${MPI_C_LIBRARIES} m veloc-client)
-target_link_libraries (heatdis_file ${MPI_C_LIBRARIES} m veloc-client)
-target_link_libraries (heatdis_fault ${MPI_C_LIBRARIES} m veloc-client)
+ADD_EXECUTABLE(veloc_test veloc_test.c)
+TARGET_LINK_LIBRARIES(veloc_test ${MPI_C_LIBRARIES} veloc-client)
 
-add_test(async test-async.sh ${CMAKE_INSTALL_PREFIX})
+VELOC_ADD_TEST(veloc_test 256 "")
+
+ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)

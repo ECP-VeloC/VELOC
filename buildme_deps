@@ -1,0 +1,152 @@
+#!/bin/bash
+
+source /etc/profile.d/z00_lmod.sh
+module load gcc/7.1.0
+#module load cmake/3.9.2
+
+set -x
+
+installdir=`pwd`/install
+
+mkdir install
+
+mkdir deps
+cd deps
+
+depsdir=`pwd`
+
+#rm -rf build
+#mkdir build
+
+## spath
+#cd build
+#cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$installdir -DMPI=ON ../AXL
+##cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$installdir -DMPI=ON ../filo
+#make clean
+#make
+#make install
+#make test
+#cd ..
+#exit 0
+
+if [ ! -d KVTree ] ; then
+  git clone git@github.com:ECP-Veloc/KVTree.git KVTree
+fi
+if [ ! -d AXL ] ; then
+  git clone git@github.com:ECP-Veloc/AXL.git AXL
+fi
+if [ ! -d spath ] ; then
+  git clone git@github.com:ECP-Veloc/spath.git spath
+fi
+if [ ! -d rankstr ] ; then
+  git clone git@github.com:ECP-Veloc/rankstr.git rankstr
+fi
+if [ ! -d redset ] ; then
+  git clone git@github.com:ECP-Veloc/redset.git redset
+fi
+if [ ! -d shuffile ] ; then
+  git clone git@github.com:ECP-Veloc/shuffile.git shuffile
+fi
+if [ ! -d er ] ; then
+  git clone git@github.com:ECP-Veloc/er.git er
+fi
+if [ ! -d filo ] ; then
+  git clone git@github.com:ECP-Veloc/filo.git filo
+fi
+
+rm -rf KVTree/build
+mkdir KVTree/build
+
+cd KVTree/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make check 
+cd $depsdir
+
+rm -rf AXL/build
+mkdir AXL/build
+
+cd AXL/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DAXL_ASYNC_DAEMON=OFF -DMPI=ON ..
+make clean
+make
+make install
+#make check 
+cd $depsdir
+
+rm -rf spath/build
+mkdir spath/build
+
+# spath
+cd spath/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir 
+
+rm -rf rankstr/build
+mkdir rankstr/build
+
+# rankstr
+cd rankstr/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir 
+
+rm -rf redset/build
+mkdir redset/build
+
+# redset
+cd redset/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DWITH_KVTREE_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir
+
+rm -rf shuffile/build
+mkdir shuffile/build
+
+# shuffile
+cd shuffile/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DWITH_KVTREE_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir
+
+rm -rf er/build
+mkdir er/build
+
+# er
+cd er/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DWITH_KVTREE_PREFIX=$installdir -DWITH_REDSET_PREFIX=$installdir -DWITH_SHUFFILE_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir 
+
+rm -rf filo/build
+mkdir filo/build
+
+# filo
+cd filo/build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-O0" -DCMAKE_INSTALL_PREFIX=$installdir -DWITH_KVTREE_PREFIX=$installdir -DWITH_AXL_PREFIX=$installdir -DMPI=ON ..
+make clean
+make
+make install
+#make test
+cd $depsdir
+
+# build codec with cmake
+##cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_KVTREE_PREFIX=`pwd`/install -DWITH_AXL_PREFIX=`pwd`/install .

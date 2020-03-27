@@ -1,0 +1,11 @@
+job:
+  tags:
+    - quartz
+    - shell
+  script:
+    - module load cmake/3.9.2
+    - ./buildme_deps
+    - ./buildme_veloc 
+    - make VERBOSE=1
+    - make check
+

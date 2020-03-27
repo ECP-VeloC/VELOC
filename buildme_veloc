@@ -1,0 +1,44 @@
+#!/bin/bash
+
+source /etc/profile.d/z00_lmod.sh
+module load gcc/7.1.0
+#module load cmake/3.9.2
+#module load boost
+
+echo $BOOST_ROOT
+#exit 0
+
+set -x
+
+installdir=`pwd`/install
+mkdir $installdir
+
+mkdir -p deps
+cd deps
+
+if [ ! -d boost_1_67_0 ] ; then
+  if [ ! -f boost_1_67_0.tar ] ; then
+    wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
+    bunzip2 boost_1_67_0.tar.bz2
+  fi
+  tar -xf boost_1_67_0.tar
+  mv boost_1_67_0 $installdir/boost
+fi
+
+export BOOST_ROOT=$installdir/boost
+
+cd ..
+
+rm -rf build
+mkdir build
+cd build
+
+#export BOOST_INCLUDEDIR=/usr/tce/packages/boost/boost-1.66.0-mvapich2-2.2-intel-18.0.1/include
+#export BOOST_LIBRARYDIR=/usr/tce/packages/boost/boost-1.66.0-mvapich2-2.2-intel-18.0.1/lib
+
+#cmake -DCMAKE_INSTALL_PREFIX=$installdir -DCMAKE_BOOST_PATH=/usr/tce/packages/boost/boost-1.66.0-mvapich2-2.2-intel-18.0.1 ..
+cmake -DCMAKE_INSTALL_PREFIX=$installdir -DVELOC_RESOURCE_MANAGER=SLURM -DCMAKE_BUILD=Debug -DCMAKE_C_FLAGS="-O0" -DOPENSSL_ROOT_DIR=/usr -DCMAKE_VERBOSE_BUILD=1 ..
+#cmake -DCMAKE_INSTALL_PREFIX=$installdir -DCMAKE_BUILD_TYPE=Debug -DWITH_KVTREE_PREFIX=`pwd`/install -DWITH_AXL_PREFIX=`pwd`/install -DWITH_ER_PREFIX=`pwd`/install .
+
+make
+make install

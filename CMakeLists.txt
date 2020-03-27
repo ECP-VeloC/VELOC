@@ -57,4 +57,5 @@ add_subdirectory (src)
 
 # -----------------------------------------------------------------------------------
 enable_testing()
+INCLUDE(VELOC_ADD_TEST)
 add_subdirectory (test)
