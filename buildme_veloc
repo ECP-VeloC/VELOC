@@ -1,9 +1,10 @@
 #!/bin/bash
 
 source /etc/profile.d/z00_lmod.sh
-module load gcc/7.1.0
+module load gcc/8.1.0
+#module load gcc/7.1.0
 #module load cmake/3.9.2
-#module load boost
+module load boost/1.69.0
 
 echo $BOOST_ROOT
 #exit 0
@@ -13,21 +14,18 @@ set -x
 installdir=`pwd`/install
 mkdir $installdir
 
-mkdir -p deps
-cd deps
-
-if [ ! -d boost_1_67_0 ] ; then
-  if [ ! -f boost_1_67_0.tar ] ; then
-    wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
-    bunzip2 boost_1_67_0.tar.bz2
-  fi
-  tar -xf boost_1_67_0.tar
-  mv boost_1_67_0 $installdir/boost
-fi
-
-export BOOST_ROOT=$installdir/boost
-
-cd ..
+#mkdir -p deps
+#cd deps
+#if [ ! -d boost_1_67_0 ] ; then
+#  if [ ! -f boost_1_67_0.tar ] ; then
+  #  wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
+#    bunzip2 boost_1_67_0.tar.bz2
+#  fi
+#  tar -xf boost_1_67_0.tar
+#  mv boost_1_67_0 $installdir/boost
+#fi
+#export BOOST_ROOT=$installdir/boost
+#cd ..
 
 rm -rf build
 mkdir build
