@@ -1,8 +1,8 @@
 function(veloc_add_test name args outputs)
 
   ### Change value here -- will run 1 task per node
-  #set(parallel_nodes 4)
-  set(parallel_nodes 1)
+  set(parallel_nodes 4)
+  #set(parallel_nodes 1)
 
   # job launcher
   if(${VELOC_RESOURCE_MANAGER} STREQUAL "NONE")
