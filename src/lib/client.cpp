@@ -3,22 +3,52 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <unistd.h>
+#include <ftw.h>
+#include <limits.h>
+#include <stdlib.h>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
-veloc_client_t::veloc_client_t(int r, const char *cfg_file) : rank(r) {
-    if (!cfg.init(cfg_file))
-	throw std::runtime_error("configuration error, cannot initialize VELOC");
+veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
+    cfg(cfg_file), collective(false), rank(id) {
+    if (!cfg.get_optional("max_versions", max_versions)) {
+	INFO("Max number of versions to keep not specified, keeping all");
+	max_versions = 0;
+    }
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
-	modules->notify_command(command_t(rank, command_t::INIT, 0, ""));
-    } else {
-	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(r).c_str());
-	queue->enqueue(command_t(rank, command_t::INIT, 0, ""));
-    }
+    } else
+	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
+    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
+}
+
+veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
+    cfg(cfg_file), comm(c), collective(true) {
+    MPI_Comm_rank(comm, &rank);
+    if (!cfg.get_optional("max_versions", max_versions)) {
+	INFO("Max number of versions to keep not specified, keeping all");
+	max_versions = 0;
+    }
+    if (cfg.is_sync()) {
+	modules = new module_manager_t();
+	modules->add_default_modules(cfg, comm, true);
+    } else
+	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
+    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
+    DBG("VELOC initialized");
+}
+
+static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
+    return remove(f);
+}
+
+void veloc_client_t::cleanup() {
+    nftw(cfg.get("scratch").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
+    nftw(cfg.get("persistent").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 veloc_client_t::~veloc_client_t() {
@@ -36,17 +66,9 @@ bool veloc_client_t::mem_unprotect(int id) {
     return mem_regions.erase(id) > 0;
 }
 
-command_t veloc_client_t::gen_ckpt_details(int cmd, const char *name, int version) {
-    std::ostringstream os;
-    os << name << "-" << rank << "-" << version;
-    return command_t(rank, cmd, version, cfg.get("scratch") + bf::path::preferred_separator + os.str() + ".dat");
-}
-
 bool veloc_client_t::checkpoint_wait() {
-    if (cfg.is_sync()) {
-	INFO("waiting for a checkpoint in sync mode is not necessary, result is returned by checkpoint_end() directly");
+    if (cfg.is_sync())
 	return true;
-    }    
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
 	return false;
@@ -54,12 +76,29 @@ bool veloc_client_t::checkpoint_wait() {
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
-bool veloc_client_t::checkpoint_begin(const char *name, int version) {    
+bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     if (checkpoint_in_progress) {
 	ERROR("nested checkpoints not yet supported");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::CHECKPOINT, name, version);
+    if (version < 0) {
+	ERROR("checkpoint version needs to be non-negative integer");
+	return false;
+    }
+    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
+    // remove old versions (only if EC is not active)
+    if (!ec_active && max_versions > 0) {
+	DBG("remove old versions");
+	auto &version_history = checkpoint_history[name];
+	version_history.push_back(version);
+	if ((int)version_history.size() > max_versions) {
+	    // wait for operations to complete in async mode before deleting old versions
+	    if (!cfg.is_sync())
+		queue->wait_completion(false);
+	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
+	    version_history.pop_front();
+	}
+    }
     checkpoint_in_progress = true;
     return true;
 }
@@ -72,7 +111,7 @@ bool veloc_client_t::checkpoint_mem() {
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
-	f.open(current_ckpt.ckpt_name, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	size_t regions_size = mem_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : mem_regions) {
@@ -107,49 +146,115 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
     }
 }
 
-int veloc_client_t::restart_test(const char *name) {
-    return run_blocking(command_t(rank, command_t::TEST, 0, name));
+int veloc_client_t::restart_test(const char *name, int needed_version) {
+    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
+    DBG(name << ": latest version = " << version);
+    if (collective) {
+	int min_version;
+	MPI_Allreduce(&version, &min_version, 1, MPI_INT, MPI_MIN, comm);
+	return min_version;
+    } else
+	return version;
 }
 
-std::string veloc_client_t::route_file() {
-    return std::string(current_ckpt.ckpt_name);
+std::string veloc_client_t::route_file(const char *original) {
+    char abs_path[PATH_MAX + 1];
+    if (original[0] != '/' && getcwd(abs_path, PATH_MAX) != NULL)
+	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + std::string(original));
+    else
+	current_ckpt.assign_path(current_ckpt.original, std::string(original));
+    return current_ckpt.filename(cfg.get("scratch"));    	
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
+    int result, end_result;
+    
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = gen_ckpt_details(command_t::RESTART, name, version);
-    if (bf::exists(current_ckpt.ckpt_name))
-	return true;
+    current_ckpt = command_t(rank, command_t::RESTART, version, name);    
+    if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
+	result = VELOC_SUCCESS;
+    else 
+	result = run_blocking(current_ckpt);
+    if (collective)
+	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
     else
-	return run_blocking(current_ckpt) == VELOC_SUCCESS;
+	end_result = result;
+    if (end_result == VELOC_SUCCESS) {
+	if (!ec_active && max_versions > 0) {
+	    auto &version_history = checkpoint_history[name];
+	    version_history.clear();
+	    version_history.push_back(version);
+	}
+        header_size = 0;
+	return true;
+    } else
+	return false;
 }
 
-bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
-    if (mode != VELOC_RECOVER_ALL) {
-	ERROR("only VELOC_RECOVER_ALL mode currently supported");
-	return false;
-    }
-
-    std::ifstream f;
-    f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+bool veloc_client_t::read_header() {
+    region_info.clear();
     try {
-	f.open(current_ckpt.ckpt_name, std::ios_base::in | std::ios_base::binary);
+	std::ifstream f;
+	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
 	size_t no_regions, region_size;
 	int id;
 	f.read((char *)&no_regions, sizeof(size_t));
 	for (unsigned int i = 0; i < no_regions; i++) {
 	    f.read((char *)&id, sizeof(int));
 	    f.read((char *)&region_size, sizeof(size_t));
-	    if (mem_regions.find(id) == mem_regions.end() || mem_regions[id].second != region_size) {
-		ERROR("protected memory region " << i << " does not exist or match size in recovery checkpoint");
+	    region_info.insert(std::make_pair(id, region_size));
+	}
+	header_size = f.tellg();
+    } catch (std::ifstream::failure &e) {
+	ERROR("cannot read header from checkpoint file " << current_ckpt << ", reason: " << e.what());
+	header_size = 0;
+	return false;
+    }
+    return true;
+}
+
+size_t veloc_client_t::recover_size(int id) {
+    if (header_size == 0)
+        read_header();
+    auto it = region_info.find(id);
+    if (it == region_info.end())
+	return 0;
+    else
+	return it->second;
+}
+
+bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
+    if (header_size == 0 && !read_header()) {
+	ERROR("cannot recover in memory mode if header unavailable or corrupted");
+	return false;
+    }
+    try {
+	std::ifstream f;
+	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
+	f.seekg(header_size);
+	for (auto &e : region_info) {
+	    bool found = ids.find(e.first) != ids.end();
+	    if ((mode == VELOC_RECOVER_SOME && !found) || (mode == VELOC_RECOVER_REST && found)) {
+		f.seekg(e.second, std::ifstream::cur);
+		continue;
+	    }
+	    if (mem_regions.find(e.first) == mem_regions.end()) {
+		ERROR("no protected memory region defined for id " << e.first);
 		return false;
 	    }
+	    if (mem_regions[e.first].second < e.second) {
+		ERROR("protected memory region " << e.first << " is too small ("
+		      << mem_regions[e.first].second << ") to hold required size ("
+		      << e.second << ")");
+		return false;
+	    }
+	    f.read((char *)mem_regions[e.first].first, e.second);
 	}
-	for (auto &e : mem_regions)
-	    f.read((char *)e.second.first, e.second.second);
     } catch (std::ifstream::failure &e) {
 	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
 	return false;
@@ -157,6 +262,6 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
     return true;
 }
 
-bool veloc_client_t::restart_end(bool /*success*/) {    
+bool veloc_client_t::restart_end(bool /*success*/) {
     return true;
 }

@@ -2,6 +2,7 @@
 #define __VELOC_H
 
 #include <string.h>
+#include <mpi.h>
 
 /*---------------------------------------------------------------------------
                                   Defines
@@ -17,14 +18,11 @@
 #define VELOC_FAILURE (-1)
 #endif
 
-/** Constants */
-static const unsigned int VELOC_VERSION_MAJOR = 0;
-static const unsigned int VELOC_VERSION_MINOR = 0;
-static const unsigned int VELOC_VERSION_PATH = 0;
-static const char VELOC_VERSION[] = "v0.0.0";
-static const size_t VELOC_MAX_NAME = 1024;
+#define VELOC_MAX_NAME (1024)
 
-static const int VELOC_RECOVER_ALL = 0;
+#define VELOC_RECOVER_ALL (0)
+#define VELOC_RECOVER_SOME (1)
+#define VELOC_RECOVER_REST (2)
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,13 +37,15 @@ extern "C" {
  *************************/
 
 // initializes the VELOC library
-//   IN rank      - unique global ID of the process (e.g. MPI rank) 
+//   IN comm      - MPI communicator (activates the collective checkpointing mode)
+//   IN id        - unique global ID of the process (activates the standalone checkpointing mode)
 //   IN cfg_file  - configuration file with the following fields:
 //                     scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation) 
 //                     persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely) 
 
-int VELOC_Init(int rank, const char *cfg_file);
-int VELOC_Finalize();
+int VELOC_Init(MPI_Comm comm, const char *cfg_file);
+int VELOC_Init_single(unsigned int id, const char *cfg_file);
+int VELOC_Finalize(int cleanup);
     
 /**************************
  * Memory registration
@@ -68,7 +68,7 @@ int VELOC_Mem_unprotect(int id);
     
 // obtain the full path for the file associated with the named checkpoint and version number
 // can be used to manually read/write checkpointing data without registering memory regions
-int VELOC_Route_file(char *ckpt_file_name);
+int VELOC_Route_file(const char *original, char *routed);
 
 /**************************
  * Checkpoint routines
@@ -91,15 +91,18 @@ int VELOC_Checkpoint_end(int success);
 // Wait for the checkpoint to complete and return the result (success or failure).
 // Only valid in async mode. Typically called before beginning a new checkpoint.
 int VELOC_Checkpoint_wait();
-    
 
+int VELOC_Checkpoint(const char *name, int version);
+    
 /**************************
  * Restart routines
  *************************/
 
 // determine whether application can restart from a previous checkpoint
-//   returns - VELOC_FAILURE if no checkpoint found, latest version otherwise
-int VELOC_Restart_test(const char *name);
+//   IN name - label of the checkpoint
+//   IN needed_version - maximum version to look for
+//   returns - VELOC_FAILURE if no checkpoint < needed_version found, latest version < needed_version otherwise
+int VELOC_Restart_test(const char *name, int version);
 
 // mark start of restart phase
 //   IN name - label of the checkpoint
@@ -108,14 +111,26 @@ int VELOC_Restart_begin(const char *name, int version);
 
 // read registered memory regions from the checkpoint file
 // must be called between VELOC_Restart_begin/VELOC_Restart_end
-//   IN version - version of the checkpoint
+// each requested id must be protected with a previous call to VELOC_Mem_protect
+//   IN ids - array of ids to be recovered
+//   IN id_count - length of ids array
+//   IN mode - VELOC_RECOVER_ALL (all ids, ignores array), VELOC_RECOVER_SOME (only ids in array), VELOC_RECOVER_REST (all ids not in array)
+int VELOC_Recover_selective(int mode, int *ids, int id_count);
+
+// return the size of the data saved under id in the checkpoint or -1 if id does not exist
+//   IN id - the id of data structure saved under id
+int VELOC_Recover_size(int id);
+
+// convenenice wrapper equivalent to VELOC_Restart_selective(VELOC_RECOVER_ALL, NULL, 0)
 int VELOC_Recover_mem();
-        
+
 // mark end of restart phase
 //   IN version - version of the checkpoint 
 //   IN success - set to 1 if the state restore was successful, 0 otherwise
 int VELOC_Restart_end(int success);
 
+int VELOC_Restart(const char *name, int version);
+    
 #ifdef __cplusplus
 }
 #endif

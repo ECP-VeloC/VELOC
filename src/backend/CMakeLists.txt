@@ -1,11 +1,10 @@
 add_executable (veloc-backend
   main.cpp 
-  topology.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
 # Link the executable to the necessary libraries.
-target_link_libraries (veloc-backend veloc-modules ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt)
+target_link_libraries (veloc-backend veloc-modules ${MPI_CXX_LIBRARIES} rt)
 
 # Install executables
 install (TARGETS veloc-backend

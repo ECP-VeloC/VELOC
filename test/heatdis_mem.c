@@ -1,11 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 
 #include "heatdis.h"
+#include "include/veloc.h"
 
-static const unsigned int CKPT_FREQ = ITER_TIMES / 10;
+// this examples uses asserts so they need to be activated
+#undef NDEBUG
+#include <assert.h>
+
+/*
+    This sample application is based on the heat distribution code
+    originally developed within the FTI project: github.com/leobago/fti
+*/
+
+static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
 
 void initData(int nbLines, int M, int rank, double *h) {
     int i, j;
@@ -79,7 +88,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong memory size! See usage\n");
 	exit(3);
     }
-    if (VELOC_Init(rank, argv[2]) != VELOC_SUCCESS) {
+    if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }
@@ -98,17 +107,16 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
 	printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    VELOC_Mem_protect(0, &i, 1, VELOC_INTG);
-    VELOC_Mem_protect(1, h, M * nbLines, VELOC_DBLE);
-    VELOC_Mem_protect(2, g, M * nbLines, VELOC_DBLE);
+    VELOC_Mem_protect(0, &i, 1, sizeof(int));
+    VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
+    VELOC_Mem_protect(2, g, M * nbLines, sizeof(double));
 
     wtime = MPI_Wtime();
-    int v = VELOC_Restart_test("heatdis");
+    int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
-	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-	assert(VELOC_Recover_mem() == VELOC_SUCCESS);
-	assert(VELOC_Restart_end(1) == VELOC_SUCCESS);
+	// v can be any version, independent of what VELOC_Restart_test is returning
+	assert(VELOC_Restart("heatdis", v) == VELOC_SUCCESS);
     } else
 	i = 0;
     while(i < ITER_TIMES) {
@@ -120,19 +128,15 @@ int main(int argc, char *argv[]) {
         if (globalerror < PRECISION)
 	    break;
 	i++;
-	if (i % CKPT_FREQ == 0) {
-	    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_mem() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_end(1) == VELOC_SUCCESS);
-	}
+	if (i % CKPT_FREQ == 0)
+	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
     free(h);
     free(g);
-    VELOC_Finalize();
+    VELOC_Finalize(0); // no clean up
     MPI_Finalize();
     return 0;
 }

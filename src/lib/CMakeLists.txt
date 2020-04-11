@@ -5,7 +5,7 @@ add_library (veloc-client SHARED
 )
 
 # Link the executable to the necessary libraries.
-target_link_libraries (veloc-client ${Boost_LIBRARIES} veloc-modules)
+target_link_libraries (veloc-client veloc-modules ${ER_LIBRARIES} ${MPI_CXX_LIBRARIES} rt)
 
 # Install libraries
 install (TARGETS veloc-client
