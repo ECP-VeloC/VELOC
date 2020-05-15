@@ -6,17 +6,14 @@
 #include <iostream>
 #include <chrono>
 
-#define safe_printf(...) {\
-    char msg[1024];\
-    sprintf(msg, __VA_ARGS__);\
-    std::cout << msg;}
+static auto beginning = std::chrono::steady_clock::now();
 
 #ifdef __BENCHMARK
 #define TIMER_START(timer) auto timer = std::chrono::steady_clock::now();
 #define TIMER_STOP(timer, message) {\
         auto now = std::chrono::steady_clock::now();\
-	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count();\
-        auto t = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count(); \
+	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count(); \
+        auto t = std::chrono::duration_cast<std::chrono::seconds>(now - beginning).count();\
 	std::clog << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
     }
 #else
@@ -24,8 +21,8 @@
 #define TIMER_STOP(timer, message)
 #endif
 
-#define MESSAGE(out, level, message)\
-    out << "[" << level << " " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() << "] [" \
+#define MESSAGE(out, level, message) \
+    out << "[" << level << " " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - beginning).count() << "] ["\
         << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl
 
 #define FATAL(message) {\

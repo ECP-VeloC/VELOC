@@ -85,6 +85,7 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("checkpoint version needs to be non-negative integer");
 	return false;
     }
+    DBG("called checkpoint_begin");
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
     // remove old versions (only if EC is not active)
     if (!ec_active && max_versions > 0) {
@@ -163,20 +164,20 @@ std::string veloc_client_t::route_file(const char *original) {
 	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + std::string(original));
     else
 	current_ckpt.assign_path(current_ckpt.original, std::string(original));
-    return current_ckpt.filename(cfg.get("scratch"));    	
+    return current_ckpt.filename(cfg.get("scratch"));
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
     int result, end_result;
-    
+
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
-    current_ckpt = command_t(rank, command_t::RESTART, version, name);    
+    current_ckpt = command_t(rank, command_t::RESTART, version, name);
     if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
 	result = VELOC_SUCCESS;
-    else 
+    else
 	result = run_blocking(current_ckpt);
     if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);

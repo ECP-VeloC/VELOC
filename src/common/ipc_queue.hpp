@@ -26,13 +26,13 @@ inline void cleanup() {
     boost::interprocess::named_mutex::remove("veloc_pending_mutex");
     boost::interprocess::named_condition::remove("veloc_pending_cond");
 }
-    
+
 template <class T> class shm_queue_t {
     static const size_t MAX_SIZE = 1 << 20;
     struct container_t {
 	typedef allocator<T, managed_shared_memory::segment_manager> T_allocator;
 	typedef list<T, T_allocator> list_t;
-	
+
 	interprocess_mutex mutex;
 	interprocess_condition cond;
 	int status = VELOC_SUCCESS;
@@ -61,7 +61,7 @@ template <class T> class shm_queue_t {
     void set_completion(container_t *q, const list_iterator_t  &it, int status) {
 	// delete the element from the progress queue and notify the producer
 	scoped_lock<interprocess_mutex> queue_lock(q->mutex);
-	DBG("completed element " << *it);
+	DBG("completed element " << *it << ", status: " << status);
 	q->progress.erase(it);
 	if (q->status < 0 || status < 0)
 	    q->status = std::min(q->status, status);
@@ -69,8 +69,8 @@ template <class T> class shm_queue_t {
 	    q->status = std::max(q->status, status);
 	q->cond.notify_one();
     }
-    
-  public:    
+
+  public:
     shm_queue_t(const char *id) : segment(open_or_create, "veloc_shm" , MAX_SIZE),
 				  pending_mutex(open_or_create, "veloc_pending_mutex"),
 				  pending_cond(open_or_create, "veloc_pending_cond") {
@@ -83,6 +83,7 @@ template <class T> class shm_queue_t {
 	while (!check_completion())
 	    data->cond.wait(cond_lock);
 	int ret = data->status;
+        DBG("wait completion returning: " << ret);
 	if (reset_status)
 	    data->status = VELOC_SUCCESS;
 	return ret;

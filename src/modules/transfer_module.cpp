@@ -5,7 +5,7 @@
 
 #include <unistd.h>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_XFER_NULL) {
@@ -85,28 +85,27 @@ int transfer_module_t::transfer_file(const std::string &source, const std::strin
     if (use_axl)
 	return axl_transfer_file(axl_type, source, dest);
     else
-	return posix_transfer_file(source, dest);
+	return posix_transfer_file(source, dest) ? VELOC_SUCCESS : VELOC_FAILURE;
 }
 
 int transfer_module_t::process_command(const command_t &c) {
+    if (interval < 0)
+        return VELOC_IGNORED;
+
     std::string local = c.filename(cfg.get("scratch")),
 	remote = c.filename(cfg.get("persistent"));
 
-   switch (c.command) {
+    switch (c.command) {
     case command_t::INIT:
-	if (interval < 0)
-	    return VELOC_SUCCESS;
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
-	
+
     case command_t::TEST:
 	DBG("rank " << c.unique_id << ": obtain latest version for " << c.name);
 	return std::max(get_latest_version(cfg.get("scratch"), std::string(c.name) + "-" + std::to_string(c.unique_id), c.version),
 			get_latest_version(cfg.get("persistent"), std::string(c.name) + "-" + std::to_string(c.unique_id), c.version));
-	
+
     case command_t::CHECKPOINT:
-	if (interval < 0) 
-	    return VELOC_SUCCESS;
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
 	    if (t < last_timestamp[c.unique_id])
@@ -135,26 +134,29 @@ int transfer_module_t::process_command(const command_t &c) {
 		ERROR("cannot create symlink " << remote.c_str() << " pointing at " << c.original << ", error: " << std::strerror(errno));
 		return VELOC_FAILURE;
 	    } else
-		return VELOC_SUCCESS;	
+		return VELOC_SUCCESS;
 	}
-	
-    case command_t::RESTART:
-	if (access(local.c_str(), R_OK) == 0)
-	    return VELOC_SUCCESS;
 
-        DBG("transfer file " << remote << " to " << local);
+    case command_t::RESTART:
+        DBG("checking local file: " << local);
+        if (access(local.c_str(), R_OK) == 0) {
+            INFO("skipping remote transfer, local checkpoint available: " << local);
+	    return VELOC_SUCCESS;
+        }
+
 	if (access(remote.c_str(), R_OK) != 0) {
 	    ERROR("request to transfer file " << remote << " to " << local << " failed: source does not exist");
-	    return VELOC_FAILURE;
+	    return VELOC_IGNORED;
 	}
+        DBG("transfer file " << remote << " to " << local);
 	if (max_versions > 0) {
 	    auto &version_history = checkpoint_history[c.unique_id][c.name];
 	    version_history.clear();
 	    version_history.push_back(c.version);
 	}
-	return transfer_file(remote, local);
-	
+	return transfer_file(remote, local) == VELOC_SUCCESS ? VELOC_SUCCESS : VELOC_IGNORED;
+
     default:
-	return VELOC_SUCCESS;
+	return VELOC_IGNORED;
     }
 }
