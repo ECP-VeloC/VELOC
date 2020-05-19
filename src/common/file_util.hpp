@@ -2,6 +2,7 @@
 #define __FILE_UTIL
 
 #include <string>
+#include "common/status.hpp"
 
 bool write_file(const std::string &source, unsigned char *buffer, ssize_t size);
 bool read_file(const std::string &source, unsigned char *buffer, ssize_t size);

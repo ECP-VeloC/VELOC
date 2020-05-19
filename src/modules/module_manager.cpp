@@ -43,13 +43,13 @@ module_manager_t::~module_manager_t() {
 }
 
 int module_manager_t::notify_command(const command_t &c) {
-    int ret = VELOC_SUCCESS;
+    int ret = VELOC_FAILURE;
     for (auto &f : sig) {
 	int mod_ret = f(c);
-	if (c.command == command_t::TEST && mod_ret != VELOC_FAILURE)
-	    ret = std::max(ret, mod_ret);
-	else
-	    ret = std::min(ret, mod_ret);
+        // if any module failed, stop early
+        if (mod_ret == VELOC_FAILURE)
+            return VELOC_FAILURE;
+        ret = std::max(ret, mod_ret);
     }
     return ret;
 }

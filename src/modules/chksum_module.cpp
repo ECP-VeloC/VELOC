@@ -34,33 +34,30 @@ static bool chksum_file(const std::string &source, unsigned char *result) {
     if (buff == MAP_FAILED) {
         ERROR("cannot mmap " << source << ", error = " << std::strerror(errno));
 	return false;
-    }        
+    }
     MD5(buff, size, result);
-    munmap(buff, size); 
+    munmap(buff, size);
     return true;
 }
 
 int chksum_module_t::process_command(const command_t &c) {
     if (!active)
-        return VELOC_SUCCESS;
+        return VELOC_IGNORED;
 
     const unsigned int HASH_SIZE = 16;
-    unsigned char chksum[HASH_SIZE], orig_chksum[HASH_SIZE];    
+    unsigned char chksum[HASH_SIZE], orig_chksum[HASH_SIZE];
     std::string meta = c.filename(cfg.get("meta")) + ".md5",
         local = c.filename(cfg.get("scratch"));
     bool match;
-    
+
     switch (c.command) {
-    case command_t::INIT:
-        return VELOC_SUCCESS;
-        
     case command_t::CHECKPOINT:
         if (!chksum_file(local, chksum))
             return VELOC_FAILURE;
         return write_file(meta, chksum, HASH_SIZE) ? VELOC_SUCCESS : VELOC_FAILURE;
 
     case command_t::RESTART:
-        if (!read_file(meta, orig_chksum, HASH_SIZE)) 
+        if (!read_file(meta, orig_chksum, HASH_SIZE))
             return VELOC_FAILURE;
         if (!chksum_file(local, chksum))
             return VELOC_FAILURE;
@@ -71,8 +68,8 @@ int chksum_module_t::process_command(const command_t &c) {
             ERROR("checksum of file " << local << " does not match records, restart will fail");
             return VELOC_FAILURE;
         }
-        
+
     default:
-        return VELOC_SUCCESS;
+        return VELOC_IGNORED;
     }
 }

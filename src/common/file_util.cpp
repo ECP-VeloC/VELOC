@@ -1,4 +1,5 @@
 #include "file_util.hpp"
+#include "common/status.hpp"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -42,6 +43,7 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
 }
 
 bool posix_transfer_file(const std::string &source, const std::string &dest) {
+    TIMER_START(io_timer);
     int fi = open(source.c_str(), O_RDONLY);
     if (fi == -1) {
 	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
@@ -68,11 +70,12 @@ bool posix_transfer_file(const std::string &source, const std::string &dest) {
     }
     close(fi);
     close(fo);
+    TIMER_STOP(io_timer, "transferred " << source << " to " << dest);
     return true;
 }
 
 bool dir_exists(const std::string &dir) {
-    DIR *entry = opendir(dir.c_str());    
+    DIR *entry = opendir(dir.c_str());
     if (entry == NULL)
         return false;
     closedir(entry);
@@ -82,7 +85,7 @@ bool dir_exists(const std::string &dir) {
 int get_latest_version(const std::string &p, const std::string &cname, int needed_version) {
     struct dirent *dentry;
     DIR *dir;
-    int version, ret = -1;
+    int version, ret = VELOC_IGNORED;
 
     dir = opendir(p.c_str());
     if (dir == NULL)
