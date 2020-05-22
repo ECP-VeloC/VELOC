@@ -9,9 +9,6 @@
 //#include "heatdis.h"
 #include "include/veloc.h"
 
-// memory or file checkpointing
-int checkpoint_file = 1;
-
 /* reliable read from file descriptor (retries, if necessary, until hard error) */
 ssize_t reliable_read(int fd, void* buf, size_t size)
 {
@@ -101,7 +98,7 @@ printf("in read_checkpoint\n");
     n = reliable_read(fd, ckpt_buf, sizeof(ckpt_buf));
 
     /* read the checkpoint data, and check the file size */
-    n = reliable_read(fd, buf, size+1);
+    n = reliable_read(fd, buf, size);
     if (n != size) {
       printf("Filesize not correct. Expected %lu, got %lu\n", size, n);
       close(fd);
