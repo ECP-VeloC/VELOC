@@ -1,7 +1,9 @@
 job:
   tags:
     - quartz
-    - shell
+    - batch
+  variables:
+    - LLNL_SLURM_SCHEDULER_PARAMETERS: "-N 4 -p pbatch"
   script:
     - ./buildme_deps
     - ./buildme_veloc 
