@@ -12,11 +12,12 @@
 
 const unsigned int MAX_PARALLELISM = 64;
 
+using namespace veloc_ipc;
+
 int main(int argc, char *argv[]) {
     bool ec_active = true;
-    
+
     if (argc < 2 || argc > 3) {
-	veloc_ipc::cleanup();
 	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
 	return 1;
     }
@@ -38,8 +39,8 @@ int main(int argc, char *argv[]) {
 	DBG("Active backend rank = " << rank);
     }
 
-    veloc_ipc::cleanup();
-    veloc_ipc::shm_queue_t<command_t> command_queue(NULL);
+    backend_cleanup();
+    backend_t<command_t> command_queue;
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
 	    work_queue.pop();
 	}
     }
-    
+
     if (ec_active) {
 	MPI_Finalize();
     }

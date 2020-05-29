@@ -11,6 +11,8 @@
 #include <set>
 #include <deque>
 
+using namespace veloc_ipc;
+
 class veloc_client_t {
     config_t cfg;
     MPI_Comm comm;
@@ -29,7 +31,7 @@ class veloc_client_t {
     std::map<int, size_t> region_info;
     size_t header_size = 0;
 
-    veloc_ipc::shm_queue_t<command_t> *queue = NULL;
+    client_t<command_t> *queue = NULL;
     module_manager_t *modules = NULL;
 
     int run_blocking(const command_t &cmd);
