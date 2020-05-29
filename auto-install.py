@@ -28,6 +28,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
     parser.add_argument('prefix',
                         help='installation path prefix (typically a home directory)')
+    parser.add_argument('--with-pdsh', action='store_true',
+                        help='add PDSH to installation (optional)')
     parser.add_argument('--no-boost', action='store_true',
                         help='use existing Boost version (must be pre-installed)')
     parser.add_argument('--no-deps', action='store_true',
@@ -73,6 +75,16 @@ if __name__ == "__main__":
             print("Error installing Boost: {0}!".format(err))
             sys.exit(3)
 
+    # PDSH
+    if (args.with_pdsh):
+        print("Installing PDSH...")
+        pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
+        f = tarfile.open(pdsh_tarball, mode='r:gz')
+        f.extractall(path=args.temp)
+        f.close()
+        os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
+                       && make install".format(args.temp + '/pdsh-2.33', args.prefix))
+
     # Other depenencies
     if (not args.no_deps):
         install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
@@ -82,14 +94,6 @@ if __name__ == "__main__":
         install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
 
-        # build pdsh
-        pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
-        f = tarfile.open(pdsh_tarball, mode='r:gz')
-        f.extractall(path=args.temp)
-        f.close()
-        os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
-                       && make install".format(args.temp + '/pdsh-2.33', args.prefix))
-    
     # VeloC
     ret = os.WEXITSTATUS(os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} -DWITH_PDSH_PREFIX={2} {3}\
                                    && make install".format(args.prefix, cmake_build_type, args.prefix, compiler_options)))
