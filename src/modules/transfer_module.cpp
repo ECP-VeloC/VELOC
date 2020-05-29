@@ -139,11 +139,8 @@ int transfer_module_t::process_command(const command_t &c) {
 
     case command_t::RESTART:
         DBG("checking local file: " << local);
-        if (access(local.c_str(), R_OK) == 0) {
-            INFO("skipping remote transfer, local checkpoint available: " << local);
+        if (access(local.c_str(), R_OK) == 0)
 	    return VELOC_SUCCESS;
-        }
-
 	if (access(remote.c_str(), R_OK) != 0) {
 	    ERROR("request to transfer file " << remote << " to " << local << " failed: source does not exist");
 	    return VELOC_IGNORED;

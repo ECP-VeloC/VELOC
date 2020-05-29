@@ -175,10 +175,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	return false;
     }
     current_ckpt = command_t(rank, command_t::RESTART, version, name);
-    if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
-	result = VELOC_SUCCESS;
-    else
-	result = run_blocking(current_ckpt);
+    result = run_blocking(current_ckpt);
     if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
     else
