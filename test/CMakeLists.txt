@@ -5,9 +5,9 @@ add_executable (heatdis_file heatdis_file.c)
 add_executable (heatdis_fault heatdis_fault.cpp)
 
 # Link the executable to the necessary libraries.
-target_link_libraries (heatdis_original ${MPI_C_LIBRARIES} m)
-target_link_libraries (heatdis_mem ${MPI_C_LIBRARIES} m veloc-client)
-target_link_libraries (heatdis_file ${MPI_C_LIBRARIES} m veloc-client)
-target_link_libraries (heatdis_fault ${MPI_C_LIBRARIES} m veloc-client)
+target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
+target_link_libraries (heatdis_mem m veloc-client)
+target_link_libraries (heatdis_file m veloc-client)
+target_link_libraries (heatdis_fault m veloc-client)
 
-add_test(async test-async.sh ${CMAKE_INSTALL_PREFIX})
+add_test(async ${CMAKE_CURRENT_SOURCE_DIR}/test-async.sh ${CMAKE_INSTALL_PREFIX} ${CMAKE_CURRENT_BINARY_DIR})

@@ -1,8 +1,8 @@
 #include "common/config.hpp"
 #include "common/command.hpp"
-#include "common/ipc_queue.hpp"
-
 #include "modules/module_manager.hpp"
+#include "common/ipc_queue.hpp"
+using namespace ipc_queue;
 
 #include <queue>
 #include <future>
@@ -11,8 +11,6 @@
 #include "common/debug.hpp"
 
 const unsigned int MAX_PARALLELISM = 64;
-
-using namespace veloc_ipc;
 
 int main(int argc, char *argv[]) {
     bool ec_active = true;

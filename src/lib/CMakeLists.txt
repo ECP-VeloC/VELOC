@@ -1,11 +1,11 @@
-add_library (veloc-client SHARED 
+add_library (veloc-client SHARED
   veloc.cpp
   client.cpp
   ${VELOC_SOURCE_DIR}/src/common/config.cpp
 )
 
 # Link the executable to the necessary libraries.
-target_link_libraries (veloc-client veloc-modules ${ER_LIBRARIES} ${MPI_CXX_LIBRARIES} rt)
+target_link_libraries (veloc-client veloc-modules rt)
 
 # Install libraries
 install (TARGETS veloc-client

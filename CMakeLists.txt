@@ -3,7 +3,7 @@ project (VELOC)
 
 # some global compiler flags
 add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 # Now set up the libraries
 # -----------------------------------------------------------------------------------
@@ -18,10 +18,13 @@ SET_PROPERTY(CACHE VELOC_RESOURCE_MANAGER PROPERTY STRINGS SLURM LSF ALPS NONE)
 ## PDSH
 find_package(PDSH)
 
-# set up boost
+# set up Boost
 set(Boost_FIND_REQUIRED True)
 find_package(Boost 1.60)
 include_directories(${Boost_INCLUDE_DIR})
+
+# set up Thallium
+#find_package(thallium REQUIRED)
 
 # set up PThreads
 find_package(Threads REQUIRED)

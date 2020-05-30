@@ -14,6 +14,12 @@
 #define __DEBUG
 #include "debug.hpp"
 
+ssize_t file_size(const std::string &source) {
+    struct stat stat_buf;
+    int rc = stat(source.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
 bool write_file(const std::string &source, unsigned char *buffer, ssize_t size) {
     bool ret;
     int fd = open(source.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
@@ -55,9 +61,7 @@ bool posix_transfer_file(const std::string &source, const std::string &dest) {
 	ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
 	return false;
     }
-    struct stat st;
-    stat(source.c_str(), &st);
-    size_t remaining = st.st_size;
+    ssize_t remaining = file_size(source.c_str());
     while (remaining > 0) {
 	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
 	if (transferred == -1) {

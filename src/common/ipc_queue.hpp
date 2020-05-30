@@ -15,7 +15,7 @@ using namespace std::placeholders;
 //#define __DEBUG
 #include "common/debug.hpp"
 
-namespace veloc_ipc {
+namespace ipc_queue {
 
 using namespace boost::interprocess;
 
@@ -53,12 +53,11 @@ template<typename T> class client_t {
     }
 
   public:
-    client_t(const char *id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
-                               pending_mutex(open_or_create, "veloc_pending_mutex"),
-                               pending_cond(open_or_create, "veloc_pending_cond") {
+    client_t(int id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
+                       pending_mutex(open_or_create, "veloc_pending_mutex"),
+                       pending_cond(open_or_create, "veloc_pending_cond") {
 	scoped_lock<named_mutex> cond_lock(pending_mutex);
-        assert(id != NULL);
-        data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
+        data = segment.find_or_construct<container_t>(std::to_string(id).c_str())(segment.get_allocator<typename container_t::T_allocator>());
     }
     int wait_completion(bool reset_status = true) {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
@@ -75,7 +74,6 @@ template<typename T> class client_t {
 	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
 	data->pending.push_back(e);
 	queue_lock.unlock();
-	scoped_lock<named_mutex> cond_lock(pending_mutex);
 	pending_cond.notify_one();
 	DBG("enqueued element " << e);
     }
@@ -105,6 +103,7 @@ template<typename T> class backend_t {
 	    q->status = std::min(q->status, status);
 	else
 	    q->status = std::max(q->status, status);
+        queue_lock.unlock();
 	q->cond.notify_one();
     }
 
