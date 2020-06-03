@@ -7,6 +7,7 @@ using namespace ipc_queue;
 #include <queue>
 #include <future>
 #include <sched.h>
+#include <unistd.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
         max_parallelism = DEFAULT_PARALLELISM;
     INFO("Max number of client requests processed in parallel: " << max_parallelism);
     cpu_set_t cpu_mask;
+    CPU_ZERO(&cpu_mask);
     long nproc = sysconf(_SC_NPROCESSORS_ONLN);
     for (int i = 0; i < nproc; i++)
         CPU_SET(i, &cpu_mask);
@@ -57,7 +59,9 @@ int main(int argc, char *argv[]) {
     while (true) {
 	auto f = command_queue.dequeue_any(c);
 	work_queue.push(std::async(std::launch::async, [=, &modules] {
+                    // lower worker thread priority and set its affinity to whole CPUSET
                     sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
+                    nice(10);
 		    f(modules.notify_command(c));
 		}));
 	if (work_queue.size() > (unsigned int)max_parallelism) {
