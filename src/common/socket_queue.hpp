@@ -40,7 +40,7 @@ static inline void fatal_comm() {
     FATAL("cannot interact with unix socket: " << CHANNEL << "; error = " << std::strerror(errno));
 }
 
-template<typename T> class client_t {
+class client_t {
     int id, fd;
     struct sockaddr_un addr;
 
@@ -70,7 +70,7 @@ public:
     }
 };
 
-template<typename T> class backend_t {
+class backend_t {
     typedef client_queue_t container_t;
     typedef typename container_t::list_t::iterator list_iterator_t;
     std::unordered_map<int, container_t> client_map;
@@ -100,11 +100,10 @@ template<typename T> class backend_t {
         send_wait_reply(q);
     }
 
-    // safety check: must be called with unique_lock aquired
+    // safety check: must be called with unique_lock acquired
     void send_wait_reply(container_t *q) {
-        int reply = q->status;
-        bool ready = q->waiting && q->pending.size() == 0 && q->progress.size() == 0;
-        if (ready) {
+        if (q->waiting && q->pending.empty() && q->progress.empty()) {
+            int reply = q->status;
             if(q->reset_status)
                 q->status = VELOC_SUCCESS;
             q->waiting = false;

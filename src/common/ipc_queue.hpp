@@ -24,9 +24,9 @@ typedef std::function<void (int)> completion_t;
 static const size_t IPC_MAX_SIZE = 1 << 20;
 
 inline void backend_cleanup() {
-    boost::interprocess::shared_memory_object::remove("veloc_shm");
-    boost::interprocess::named_mutex::remove("veloc_pending_mutex");
-    boost::interprocess::named_condition::remove("veloc_pending_cond");
+    shared_memory_object::remove("veloc_shm");
+    named_mutex::remove("veloc_pending_mutex");
+    named_condition::remove("veloc_pending_cond");
 }
 
 template<typename T> struct client_queue_t {
@@ -47,11 +47,6 @@ template<typename T> class client_t {
     named_condition pending_cond;
     container_t *data = NULL;
 
-    bool check_completion() {
-	// this is a predicate intended to be used for condition variables only
-	return data->pending.empty() && data->progress.empty();
-    }
-
   public:
     client_t(int id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
                        pending_mutex(open_or_create, "veloc_pending_mutex"),
@@ -61,7 +56,7 @@ template<typename T> class client_t {
     }
     int wait_completion(bool reset_status = true) {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
-	while (!check_completion())
+	while (!data->pending.empty() || !data->progress.empty())
 	    data->cond.wait(cond_lock);
 	int ret = data->status;
         DBG("wait completion returning: " << ret);
