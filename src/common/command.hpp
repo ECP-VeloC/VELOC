@@ -8,7 +8,7 @@
 
 class command_t {
 public:
-    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
+    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3, STATUS = 4;
 
     int unique_id, command, version;
     char name[PATH_MAX] = {}, original[PATH_MAX] = {};
