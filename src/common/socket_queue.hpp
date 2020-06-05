@@ -40,7 +40,7 @@ static inline void fatal_comm() {
     FATAL("cannot interact with unix socket: " << CHANNEL << "; error = " << std::strerror(errno));
 }
 
-class client_t {
+template<typename T> class client_t {
     int id, fd;
     struct sockaddr_un addr;
 
@@ -70,7 +70,7 @@ public:
     }
 };
 
-class backend_t {
+template<typename T> class backend_t {
     typedef client_queue_t container_t;
     typedef typename container_t::list_t::iterator list_iterator_t;
     std::unordered_map<int, container_t> client_map;
