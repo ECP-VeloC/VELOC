@@ -4,8 +4,10 @@
 #include "status.hpp"
 
 #include <unordered_map>
+#include <functional>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
 #include <list>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -22,7 +24,7 @@ using namespace std::placeholders;
 typedef std::function<void (int)> completion_t;
 
 static const std::string CHANNEL = "/dev/shm/veloc-socket";
-static const unsigned MAX_CLIENTS = 256;
+static const int MAX_CLIENTS = 256;
 
 inline void backend_cleanup() {
     remove(CHANNEL.c_str());
@@ -42,10 +44,10 @@ static inline void fatal_comm() {
 
 template<typename T> class client_t {
     int id, fd;
-    struct sockaddr_un addr;
 
 public:
     client_t(int _id) : id(_id) {
+        sockaddr_un addr;
         if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
             fatal_comm();
         memset(&addr, 0, sizeof(addr));
@@ -54,6 +56,7 @@ public:
         if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1)
             fatal_comm();
     }
+
     int wait_completion(bool reset_status = true) {
         command_t c(id, command_t::STATUS, reset_status, "");
         int reply;
@@ -63,6 +66,7 @@ public:
             fatal_comm();
         return reply;
     }
+
     void enqueue(const command_t &c) {
         if (write(fd, &c, sizeof(c)) != sizeof(c))
             fatal_comm();
@@ -127,7 +131,7 @@ template<typename T> class backend_t {
         }
     }
 
-    void handle_connection() {
+    void handle_connections() {
         pollfd fds[MAX_CLIENTS];
         fds[0].fd = fd;
         fds[0].events = POLLIN;
@@ -155,6 +159,8 @@ template<typename T> class backend_t {
                 int i = 0;
                 while (i < fds_size && fds[i].fd != -1)
                     i++;
+                if (i > MAX_CLIENTS)
+                    FATAL("maximum number of clients (" << MAX_CLIENTS << ") exceeded for unix socket: " << CHANNEL);
                 fds[i].fd = client;
                 fds[i].events = POLLIN;
                 fds_size = std::max(fds_size, i + 1);
@@ -174,7 +180,7 @@ template<typename T> class backend_t {
             fatal_comm();
         if (listen(fd, MAX_CLIENTS) == -1)
             fatal_comm();
-        std::thread t(&backend_t<T>::handle_connection, this);
+        std::thread t(&backend_t<T>::handle_connections, this);
         t.detach();
     }
 

@@ -1,8 +1,7 @@
 #include "common/config.hpp"
 #include "common/command.hpp"
+#include "common/comm_queue.hpp"
 #include "modules/module_manager.hpp"
-#include "common/ipc_queue.hpp"
-using namespace ipc_queue;
 
 #include <queue>
 #include <future>

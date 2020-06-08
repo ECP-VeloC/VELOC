@@ -1,0 +1,7 @@
+#ifndef __COMM_QUEUE
+#define __COMM_QUEUE
+
+#include "@COMM_QUEUE@.hpp"
+using namespace @COMM_QUEUE@;
+
+#endif

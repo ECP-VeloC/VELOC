@@ -3,10 +3,8 @@
 
 #include "common/config.hpp"
 #include "common/command.hpp"
+#include "common/comm_queue.hpp"
 #include "modules/module_manager.hpp"
-
-#include "common/ipc_queue.hpp"
-using namespace ipc_queue;
 
 #include <unordered_map>
 #include <map>
@@ -40,7 +38,6 @@ class veloc_client_t {
 public:
     veloc_client_t(unsigned int id, const char *cfg_file);
     veloc_client_t(MPI_Comm comm, const char *cfg_file);
-    void cleanup();
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
     bool mem_unprotect(int id);

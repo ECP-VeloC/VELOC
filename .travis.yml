@@ -9,7 +9,7 @@ script:
 - ./bootstrap.sh
 - mkdir -p $HOME/deploy
 - ./auto-install.py $HOME/deploy
-- ctest --verbose
+- cd build && ctest --verbose
 
 branches:
     only:

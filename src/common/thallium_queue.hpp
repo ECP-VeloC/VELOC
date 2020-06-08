@@ -9,6 +9,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 #include <thallium.hpp>
 #include <thallium/serialization/stl/pair.hpp>

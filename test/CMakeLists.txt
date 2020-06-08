@@ -10,4 +10,5 @@ target_link_libraries (heatdis_mem m veloc-client)
 target_link_libraries (heatdis_file m veloc-client)
 target_link_libraries (heatdis_fault m veloc-client)
 
-add_test(async ${CMAKE_CURRENT_SOURCE_DIR}/test-async.sh ${CMAKE_INSTALL_PREFIX} ${CMAKE_CURRENT_BINARY_DIR})
+configure_file(test-async.in test-async.sh @ONLY)
+add_test(async test-async.sh)

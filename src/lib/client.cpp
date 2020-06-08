@@ -4,7 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <unistd.h>
-#include <ftw.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -40,15 +39,6 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 	queue = new client_t<command_t>(rank);
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
-}
-
-static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
-    return remove(f);
-}
-
-void veloc_client_t::cleanup() {
-    nftw(cfg.get("scratch").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
-    nftw(cfg.get("persistent").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 veloc_client_t::~veloc_client_t() {
