@@ -23,7 +23,7 @@ set(COMM_QUEUE_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 if (${COMM_QUEUE} STREQUAL "ipc_queue")
     # Boost is required for ipc_queue
     set(Boost_FIND_REQUIRED True)
-    find_package(Boost 1.60)
+    find_package(Boost 1.40)
     include_directories(${Boost_INCLUDE_DIR})
     list(APPEND COMM_QUEUE_LIBRARIES "rt")
 elseif (${COMM_QUEUE} STREQUAL "thallium_queue")
