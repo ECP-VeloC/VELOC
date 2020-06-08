@@ -57,8 +57,11 @@ int ec_module_t::process_command(const command_t &c) {
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return 1; // ec_active flag for client
 
-    case command_t::TEST:
-	return get_latest_version(cfg.get("scratch"), std::string(c.name) + "-ec", c.version);
+    case command_t::TEST: {
+        int max_version, version = get_latest_version(cfg.get("scratch"), std::string(c.name) + "-ec", c.version);
+	MPI_Allreduce(&version, &max_version, 1, MPI_INT, MPI_MAX, comm);
+	return max_version;
+    }
 
     default:
 	return VELOC_IGNORED;
@@ -121,7 +124,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
     } else if (command == command_t::RESTART) {
         int local_alive = 1;
 	for (auto &c : cmds) {
-            DBG("checking local file: " << cfg.get("scratch"));
+            DBG("checking local file: " << c.filename(cfg.get("scratch")));
             if (access(c.filename(cfg.get("scratch")).c_str(), R_OK) != 0) {
                 local_alive = 0;
                 break;

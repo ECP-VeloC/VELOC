@@ -70,12 +70,12 @@ Finalize
 
 ::
 
-   int VELOC_Finalize(IN int cleanup)
+   int VELOC_Finalize(IN int drain)
 
 ARGUMENTS
 '''''''''
 
-- **cleanup**: a bool flag specifying whether to remove all checkpoint files after successful completion (non-zero) or to keep them intact (0).
+- **drain**: a bool flag specifying whether to wait for the active backend to flush any pending checkpoints to persistent storage (non-zero) or to finalize immediately (0).
 
 .. _description-1:
 

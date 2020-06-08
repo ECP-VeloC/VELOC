@@ -5,8 +5,8 @@
 launcher="srun"
 prog="veloc_${launcher}"
 
-libdir="@X_LIBDIR@"
-bindir="@X_BINDIR@"
+libdir="@CMAKE_INSTALL_FULL_LIBDIR@"
+bindir="@CMAKE_INSTALL_FULL_BINDIR@"
 
 # Print usage
 if [ -z "$1" ]; then

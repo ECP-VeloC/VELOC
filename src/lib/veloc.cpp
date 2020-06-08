@@ -116,12 +116,13 @@ extern "C" int VELOC_Checkpoint(const char *name, int version) {
     return ret;
 }
 
-extern "C" int VELOC_Finalize(int cleanup) {
+extern "C" int VELOC_Finalize(int drain) {
     if (veloc_client != NULL) {
-	if (cleanup)
-	    veloc_client->cleanup();
+        int ret = VELOC_SUCCESS;
+	if (drain)
+	    ret = VELOC_Checkpoint_wait();
 	delete veloc_client;
-	return VELOC_SUCCESS;
+	return ret;
     } else {
 	ERROR("Attempting to finalize VELOC before it was initialized");
 	return VELOC_FAILURE;

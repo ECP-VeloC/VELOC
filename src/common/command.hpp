@@ -8,8 +8,8 @@
 
 class command_t {
 public:
-    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3;
-    
+    static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3, STATUS = 4;
+
     int unique_id, command, version;
     char name[PATH_MAX] = {}, original[PATH_MAX] = {};
 
@@ -38,6 +38,12 @@ public:
 	output << "(Rank = '" << c.unique_id << "', Command = '" << c.command
 	       << "', Version = '" << c.version << "', File = '" << c.stem() << "')";
 	return output;
+    }
+    template<typename A> void save(A& ar) {
+        ar.write(this);
+    }
+    template<typename A> void load(A& ar) {
+        ar.read(this);
     }
 };
 

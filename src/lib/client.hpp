@@ -3,7 +3,7 @@
 
 #include "common/config.hpp"
 #include "common/command.hpp"
-#include "common/ipc_queue.hpp"
+#include "common/comm_queue.hpp"
 #include "modules/module_manager.hpp"
 
 #include <unordered_map>
@@ -29,7 +29,7 @@ class veloc_client_t {
     std::map<int, size_t> region_info;
     size_t header_size = 0;
 
-    veloc_ipc::shm_queue_t<command_t> *queue = NULL;
+    client_t<command_t> *queue = NULL;
     module_manager_t *modules = NULL;
 
     int run_blocking(const command_t &cmd);
@@ -38,7 +38,6 @@ class veloc_client_t {
 public:
     veloc_client_t(unsigned int id, const char *cfg_file);
     veloc_client_t(MPI_Comm comm, const char *cfg_file);
-    void cleanup();
 
     bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
     bool mem_unprotect(int id);

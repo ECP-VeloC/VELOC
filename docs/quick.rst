@@ -12,13 +12,13 @@ Download and Install
 
     $git clone -b 'veloc-1.1' --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git <source_dir>
     $cd <source_dir>
-    $bootstrap.sh
-    $auto-install.py <install_dir>
+    $./bootstrap.sh
+    $./auto-install.py <install_dir>
 
 Configure
 ---------
 
-Create and swich to the temporary working directory ``/tmp/work``. 
+Create and swich to the temporary working directory ``/tmp/work``.
 Open ``test.cfg`` and add the following contents:
 
 ::

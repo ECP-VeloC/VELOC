@@ -4,7 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <unistd.h>
-#include <ftw.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -21,7 +20,7 @@ veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
     } else
-	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
+	queue = new client_t<command_t>(rank);
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
 }
@@ -37,18 +36,9 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg, comm, true);
     } else
-	queue = new veloc_ipc::shm_queue_t<command_t>(std::to_string(rank).c_str());
+	queue = new client_t<command_t>(rank);
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
-}
-
-static int rm_file(const char *f, const struct stat *sbuf, int type, struct FTW *ftwb) {
-    return remove(f);
-}
-
-void veloc_client_t::cleanup() {
-    nftw(cfg.get("scratch").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
-    nftw(cfg.get("persistent").c_str(), rm_file, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 veloc_client_t::~veloc_client_t() {
@@ -175,10 +165,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	return false;
     }
     current_ckpt = command_t(rank, command_t::RESTART, version, name);
-    if (access(current_ckpt.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
-	result = VELOC_SUCCESS;
-    else
-	result = run_blocking(current_ckpt);
+    result = run_blocking(current_ckpt);
     if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
     else

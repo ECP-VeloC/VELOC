@@ -15,11 +15,9 @@ def install_dep(git_link, dep_vers):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
-        os.system("git clone {0} {1}".format(git_link, args.temp + '/' + name))
-        os.system("cd {0} && git fetch && git checkout {1}".format(args.temp + '/' + name, dep_vers))
+        os.system("git clone -b '{0}' --depth 1 {1} {2}".format(dep_vers, git_link, args.temp + '/' + name))
         os.system("cd {0} && cmake -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3}\
-                   && make install".format(args.temp + '/' + name,
-                                           args.prefix, cmake_build_type, compiler_options))
+                   && make install".format(args.temp + '/' + name, args.prefix, cmake_build_type, compiler_options))
     except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
@@ -28,10 +26,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
     parser.add_argument('prefix',
                         help='installation path prefix (typically a home directory)')
-    parser.add_argument('--no-boost', action='store_true',
-                        help='use existing Boost version (must be pre-installed)')
-    parser.add_argument('--no-deps', action='store_true',
-                        help='use existing component libraries (must be pre-installed)')
+    parser.add_argument('--protocol', default='ipc_queue',
+                        help='communication protocol between client and active backend (default: ipc_queue). Only for advanced users.')
+    parser.add_argument('--with-pdsh', action='store_true',
+                        help='add PDSH to installation (optional)')
+    parser.add_argument('--without-boost', action='store_true',
+                        help='use existing Boost libraries for ipc_queue protocol (assume pre-installed)')
+    parser.add_argument('--without-deps', action='store_true',
+                        help='use existing component libraries (assume pre-installed)')
     parser.add_argument('--debug', action='store_true',
                         help='build debug and keep temp directory')
     parser.add_argument('--temp', default='/tmp/veloc',
@@ -41,13 +43,6 @@ if __name__ == "__main__":
     if not os.path.isdir(args.prefix):
         print("Installation prefix {0} is not a valid directory!".format(args.prefix))
         sys.exit(1)
-    try:
-        if (os.path.isdir(args.temp)):
-            shutil.rmtree(args.temp)
-        os.mkdir(args.temp)
-    except OSError as err:
-        print("Cannot create temporary directory {0}!".format(args.temp))
-        sys.exit(2)
 
     print("Installing VeloC in {0}...".format(args.prefix))
 
@@ -55,44 +50,53 @@ if __name__ == "__main__":
         cmake_build_type="Debug"
 
     # Boost
-    if (not args.no_boost):
+    if (args.protocol == "ipc_queue" and not args.without_boost):
         print("Downloading Boost...")
         try:
-            soup = bs4.BeautifulSoup(urllib.request.urlopen("https://www.boost.org/users/download"), "html.parser")
+            req = urllib.request.Request('https://www.boost.org/users/download', headers={'User-Agent': 'Mozilla/5.0'})
+            soup = bs4.BeautifulSoup(urllib.request.urlopen(req), 'html.parser')
             link_list = soup.findAll('a', attrs={'href': re.compile("bz2")})
             if len(link_list) > 0:
                 boost_arch = wget.download(link_list[0].get('href'), out=args.temp)
                 f = tarfile.open(boost_arch, mode='r:bz2')
                 f.extractall(path=args.temp)
                 f.close()
-                if os.path.isdir(args.prefix + '/include/boost'):
-                    shutil.rmtree(args.prefix + '/include/boost')
                 shutil.move(args.temp + '/' + os.path.basename(boost_arch).split('.')[0]
                             + '/boost', args.prefix + '/include/boost')
         except Exception as err:
-            print("Error installing Boost: {0}!".format(err))
+            print("Error installing Boost: {0}! Try to install it manually and use --without-boost. Alternatively, use --protocol=socket_queue".format(err))
             sys.exit(3)
 
-    # Other depenencies
-    if (not args.no_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.2')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
-        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
-
-        # build pdsh
+    # PDSH
+    if (args.with_pdsh):
+        print("Installing PDSH...")
         pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
         f = tarfile.open(pdsh_tarball, mode='r:gz')
         f.extractall(path=args.temp)
         f.close()
         os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
                        && make install".format(args.temp + '/pdsh-2.33', args.prefix))
-    
+
+    # Other depenencies
+    if (not args.without_deps):
+        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.3')
+        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
+        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
+        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
+        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
+
     # VeloC
-    ret = os.WEXITSTATUS(os.system("cmake -DCMAKE_INSTALL_PREFIX={0} -DCMAKE_BUILD_TYPE={1} -DWITH_PDSH_PREFIX={2} {3}\
-                                   && make install".format(args.prefix, cmake_build_type, args.prefix, compiler_options)))
+    veloc_build = './build'
+    try:
+        if (os.path.isdir(veloc_build)):
+            shutil.rmtree(veloc_build)
+        os.mkdir(veloc_build)
+    except OSError as err:
+        print("Cannot create build directory {0}!".format(veloc_build))
+        sys.exit(2)
+    ret = os.WEXITSTATUS(os.system("cd {0} && cmake -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} -DCOMM_QUEUE={3} {4} {5}\
+                                   && make install".format(veloc_build, args.prefix, cmake_build_type, args.protocol, compiler_options, os.getcwd())))
 
     # Cleanup
     if (not args.debug):
