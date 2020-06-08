@@ -85,7 +85,7 @@ printf("CONFIG FILE = %s\n", argv[2]);
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
-  if (v > 0) {
+  if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart("veloc_test", v) != VELOC_SUCCESS){
       printf("VELOC_Restart FAILED\n");

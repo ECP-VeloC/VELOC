@@ -197,6 +197,8 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
+printf("printing out scratch directory for rank %d\n", rank);
+  system("ls -l /tmp/scratch");
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -225,7 +227,7 @@ printf("CONFIG FILE = %s\n", argv[2]);
   int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
   system("ls -l /g/g19/kosinov/scratch");
-  if (v > 0) {
+  if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart_begin("veloc_test", v) != VELOC_SUCCESS){
       printf("VELOC_Restart_begin FAILED\n");
