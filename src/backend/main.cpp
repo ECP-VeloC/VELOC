@@ -7,6 +7,7 @@
 #include <future>
 #include <sched.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -52,6 +53,12 @@ int main(int argc, char *argv[]) {
     backend_t<command_t> command_queue;
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
+
+    // install SIGTERM handler to perform clean up
+    struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = [](int) { backend_cleanup(); };
+    sigaction(SIGTERM, &action, NULL);
 
     std::queue<std::future<void> > work_queue;
     command_t c;

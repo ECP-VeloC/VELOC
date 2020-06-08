@@ -23,7 +23,7 @@ using namespace std::placeholders;
 
 typedef std::function<void (int)> completion_t;
 
-static const std::string CHANNEL = "/dev/shm/veloc-socket";
+static const std::string CHANNEL = "/dev/shm/veloc-socket-" + std::to_string(getuid());
 static const int MAX_CLIENTS = 256;
 
 inline void backend_cleanup() {
