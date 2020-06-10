@@ -57,7 +57,10 @@ int main(int argc, char *argv[]) {
     // install SIGTERM handler to perform clean up
     struct sigaction action;
     memset(&action, 0, sizeof(struct sigaction));
-    action.sa_handler = [](int) { backend_cleanup(); };
+    action.sa_handler = [](int signum) {
+        backend_cleanup();
+        exit(signum);
+    };
     sigaction(SIGTERM, &action, NULL);
 
     std::queue<std::future<void> > work_queue;
