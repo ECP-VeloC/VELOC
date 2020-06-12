@@ -226,7 +226,9 @@ printf("printing out scratch directory for rank %d\n", rank);
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
-  system("ls -l /g/g19/kosinov/scratch");
+  int already_initiated = atoi(argv[3]);
+  printf("had already initiated = %d\n",already_initiated);
+//v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart_begin("veloc_test", v) != VELOC_SUCCESS){
@@ -260,9 +262,19 @@ printf("printing out scratch directory for rank %d\n", rank);
     }
     return 0;
   } 
-  if (rank == 0) {
+/*  if (rank == 0) {
       printf("No checkpoint to restart from\n");
+  }*/
+  else{
+    if(already_initiated != 0){ 
+      printf("Checkpoint had been initiated. Should have been found\n");
+      return(1);
+    }
+    if (rank == 0) {
+      printf("No checkpoint to restart from\n");
+    }
   }
+
   if(VELOC_Checkpoint_begin("veloc_test", v+1) != VELOC_SUCCESS){
     printf("VELOC_Checkpoint_begin FAILED\n");
     return 1;
