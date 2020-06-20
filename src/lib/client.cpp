@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "include/veloc.h"
+#include "common/file_util.hpp"
 
 #include <fstream>
 #include <stdexcept>
@@ -42,6 +43,7 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 }
 
 veloc_client_t::~veloc_client_t() {
+    rm_tree(cfg.get("scratch"));
     delete queue;
     delete modules;
     DBG("VELOC finalized");

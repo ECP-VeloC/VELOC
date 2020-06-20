@@ -7,6 +7,7 @@
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ftw.h>
 
 #include <cerrno>
 #include <cstring>
@@ -78,14 +79,6 @@ bool posix_transfer_file(const std::string &source, const std::string &dest) {
     return true;
 }
 
-bool dir_exists(const std::string &dir) {
-    DIR *entry = opendir(dir.c_str());
-    if (entry == NULL)
-        return false;
-    closedir(entry);
-    return true;
-}
-
 int get_latest_version(const std::string &p, const std::string &cname, int needed_version) {
     struct dirent *dentry;
     DIR *dir;
@@ -106,4 +99,19 @@ int get_latest_version(const std::string &p, const std::string &cname, int neede
     }
     closedir(dir);
     return ret;
+}
+
+bool check_dir(const std::string &d) {
+    mkdir(d.c_str(), 0755);
+    DIR *entry = opendir(d.c_str());
+    if (entry == NULL)
+        return false;
+    closedir(entry);
+    return true;
+}
+
+void rm_tree(const std::string &d) {
+    nftw(d.c_str(), [](const char *f, const struct stat *, int, FTW *) {
+                        return remove (f);
+                    }, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }

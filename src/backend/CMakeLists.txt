@@ -1,4 +1,4 @@
-add_executable (veloc-backend main.cpp ${PROJECT_SOURCE_DIR}/src/common/config.cpp)
+add_executable (veloc-backend main.cpp)
 target_link_libraries (veloc-backend veloc-modules ${COMM_QUEUE_LIBRARIES})
 
 # Install executables

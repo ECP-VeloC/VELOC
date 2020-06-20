@@ -1,5 +1,4 @@
 #include "chksum_module.hpp"
-
 #include "common/file_util.hpp"
 
 #include <sys/types.h>
@@ -15,7 +14,7 @@
 
 chksum_module_t::chksum_module_t(const config_t &c) : cfg(c) {
     active = cfg.get_optional("chksum", false);
-    if (active && !dir_exists(cfg.get("meta"))) {
+    if (active && !check_dir(cfg.get("meta"))) {
         ERROR("metadata directory " << cfg.get("meta") << " inaccessible, checksumming deactivated!");
         active = false;
     }

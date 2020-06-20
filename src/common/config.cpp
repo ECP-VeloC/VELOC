@@ -1,21 +1,8 @@
 #include "config.hpp"
-
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/stat.h>
+#include "file_util.hpp"
 
 //#define __DEBUG
 #include "debug.hpp"
-
-static bool check_dir(const std::string dir_name) {
-    mkdir(dir_name.c_str(), 0755);
-    DIR *entry = opendir(dir_name.c_str());
-    if (entry != NULL) {
-	closedir(entry);
-	return true;
-    } else
-	return false;
-}
 
 config_t::config_t(const std::string &f) : cfg_file(f), reader(cfg_file) {
     if (reader.ParseError() < 0)

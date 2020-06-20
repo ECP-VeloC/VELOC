@@ -1,7 +1,6 @@
 add_library (veloc-client SHARED
   veloc.cpp
   client.cpp
-  ${PROJECT_SOURCE_DIR}/src/common/config.cpp
 )
 
 # Link the executable to the necessary libraries.
