@@ -1,9 +1,20 @@
-job:
+slurm-job:
   tags:
     - quartz
     - batch
   variables:
      LLNL_SLURM_SCHEDULER_PARAMETERS: "-N 4 -p pbatch"
+  script:
+    - ./buildme_deps
+    - ./buildme_veloc 
+    - cd build
+    - make check
+lsf-job:
+  tags:
+    - lassen
+    - batch
+  variables:
+     LLNL_LSF_SCHEDULER_PARAMETERS: "-nnodes 4 -q pbatch"
   script:
     - ./buildme_deps
     - ./buildme_veloc 
