@@ -8,6 +8,5 @@ job:
     - ./buildme_deps
     - ./buildme_veloc 
     - cd build
-    - salloc -N4 -ppdebug
     - make check
 
