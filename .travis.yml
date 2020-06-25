@@ -8,7 +8,7 @@ script:
 - rm -rf $HOME/deploy
 - ./bootstrap.sh
 - mkdir -p $HOME/deploy
-- ./auto-install.py $HOME/deploy --without-boost
+- ./auto-install.py --without-boost $HOME/deploy
 - cd build && ctest --verbose
 
 branches:
