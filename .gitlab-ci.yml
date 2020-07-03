@@ -17,7 +17,17 @@ lsf-job:
      LLNL_LSF_SCHEDULER_PARAMETERS: "-nnodes 4 -q pbatch"
   script:
     - ./buildme_deps
-    - ./buildme_veloc 
+#    - ./buildme_veloc 
+    - source /etc/profile.d/z00_lmod.sh
+    - module load gcc/8.1.0
+    - set -x
+    - installdir=`pwd`/install
+    - mkdir $installdir
+    - rm -rf build
+    - mkdir build
     - cd build
+    - cmake -DCMAKE_INSTALL_PREFIX=$installdir -DVELOC_RESOURCE_MANAGER=LSF -DCMAKE_BUILD=Debug -DCMAKE_C_FLAGS="-O0" -DOPENSSL_ROOT_DIR=/usr -DCMAKE_VERBOSE_BUILD=1 ..
+    - make
+    - make install
     - make check
 
