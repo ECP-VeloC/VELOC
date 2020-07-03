@@ -22,6 +22,7 @@ lsf-job:
 #    - module load gcc/8.1.0
     - set -x
     - installdir=`pwd`/install
+    - rm -rf $installdir
     - mkdir $installdir
     - rm -rf build
     - mkdir build
