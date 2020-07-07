@@ -22,12 +22,12 @@ lsf-job:
 #    - module load gcc/8.1.0
     - set -x
     - installdir=`pwd`/install
-    - rm -rf $installdir
-    - mkdir $installdir
+#    - rm -rf $installdir
+#    - mkdir $installdir
     - rm -rf build
     - mkdir build
     - cd build
-    - cmake -DCMAKE_INSTALL_PREFIX=$installdir -DVELOC_RESOURCE_MANAGER=LSF -DCMAKE_BUILD=Debug -DCMAKE_C_FLAGS="-O0" -DOPENSSL_ROOT_DIR=/usr -DCMAKE_VERBOSE_BUILD=1 ..
+    - cmake -DWITH_AXL_PREFIX=../install -DCMAKE_INSTALL_PREFIX=$installdir -DVELOC_RESOURCE_MANAGER=LSF -DCMAKE_BUILD_TYPE=Debug  -DOPENSSL_ROOT_DIR=/usr -DCMAKE_VERBOSE_BUILD=1 ..
     - make
     - make install
     - make check
