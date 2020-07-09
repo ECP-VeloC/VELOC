@@ -4,6 +4,8 @@ slurm-job:
     - batch
   variables:
      LLNL_SLURM_SCHEDULER_PARAMETERS: "-N 4 -p pbatch"
+     PERSISTENT: "/g/g19/kosinov/persistent"
+     SCRATCH: "/tmp/scratch"
   script:
     - ./buildme_deps
     - ./buildme_veloc 
@@ -15,6 +17,8 @@ lsf-job:
     - batch
   variables:
      LLNL_LSF_SCHEDULER_PARAMETERS: "-nnodes 4 -q pbatch"
+     PERSISTENT: "/g/g19/kosinov/persistent"
+     SCRATCH: "/dev/shm/scratch"
   script:
     - ./buildme_deps
 #    - ./buildme_veloc 

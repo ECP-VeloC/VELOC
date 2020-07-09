@@ -1,6 +1,5 @@
 #!/bin/bash
-ls -l /tmp/scratch/*
+ls -l $SCRATCH/*
 
-rm -rf /tmp/scratch/*
-#rm -rf /tmp/persistent/*
-rm -rf /g/g19/kosinov/persistent/*
+rm -rf $SCRATCH/*
+rm -rf $PERSISTENT/*

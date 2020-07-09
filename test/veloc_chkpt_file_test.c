@@ -197,8 +197,6 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
-printf("printing out scratch directory for rank %d\n", rank);
-  system("ls -l /tmp/scratch");
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
