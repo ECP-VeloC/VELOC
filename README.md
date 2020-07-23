@@ -32,8 +32,8 @@ The current Travis status of the VeloC master branch is:
 
 ## Release
 
-Copyright (c) 2018, UChicago Argonne LLC, operator of Argonne National Laboratory <br>
-Copyright (c) 2018, Lawrence Livermore National Security, LLC.
+Copyright (c) 2018-2020, UChicago Argonne LLC, operator of Argonne National Laboratory <br>
+Copyright (c) 2018-2020, Lawrence Livermore National Security, LLC.
 Produced at the Lawrence Livermore National Laboratory.
 
 For release details and restrictions, please read the [LICENSE](https://github.com/ECP-VeloC/VELOC/blob/master/LICENSE) 
