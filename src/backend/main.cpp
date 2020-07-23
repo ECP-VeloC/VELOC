@@ -8,15 +8,27 @@
 #include <sched.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/file.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
 
-const unsigned int DEFAULT_PARALLELISM = 64;
+static const unsigned int DEFAULT_PARALLELISM = 64;
+static const std::string FILE_LOCK = "/dev/shm/veloc-lock-" + std::to_string(getuid());
+
+bool ec_active = false;
+int lock_fd = -1;
+
+void exit_handler(int signum) {
+    if (ec_active)
+        MPI_Finalize();
+    close(lock_fd);
+    remove(FILE_LOCK.c_str());
+    backend_cleanup();
+    exit(signum);
+}
 
 int main(int argc, char *argv[]) {
-    bool ec_active = true;
-
     if (argc < 2 || argc > 3) {
 	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
 	return 1;
@@ -25,13 +37,31 @@ int main(int argc, char *argv[]) {
     config_t cfg(argv[1]);
     if (cfg.is_sync()) {
 	ERROR("configuration requests sync mode, backend is not needed");
-	return 3;
+	return 2;
     }
+
+    // check if an instance is already running
+    int lock_fd = open(FILE_LOCK.c_str(), O_RDWR | O_CREAT, 0644);
+    if (lock_fd == -1) {
+        ERROR("cannot open " << FILE_LOCK << ", error = " << strerror(errno));
+        return 3;
+    }
+    int locked = flock(lock_fd, LOCK_EX | LOCK_NB);
+    if (locked == -1) {
+        if (errno == EWOULDBLOCK)
+            INFO("backend already running, only one instance is needed");
+        else
+            ERROR("cannot acquire file lock: " << FILE_LOCK << ", error = " << strerror(errno));
+        return 4;
+    }
+
+    // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
 	INFO("EC module disabled by commmand line switch");
 	ec_active = false;
     }
 
+    // initialize MPI
     if (ec_active) {
 	int rank;
 	MPI_Init(&argc, &argv);
@@ -54,14 +84,12 @@ int main(int argc, char *argv[]) {
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
-    // install SIGTERM handler to perform clean up
+    // install handler to perform clean up on SIGTERM and SIGINT
     struct sigaction action;
     memset(&action, 0, sizeof(struct sigaction));
-    action.sa_handler = [](int signum) {
-        backend_cleanup();
-        exit(signum);
-    };
+    action.sa_handler = exit_handler;
     sigaction(SIGTERM, &action, NULL);
+    sigaction(SIGINT, &action, NULL);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
@@ -77,10 +105,6 @@ int main(int argc, char *argv[]) {
 	    work_queue.front().wait();
 	    work_queue.pop();
 	}
-    }
-
-    if (ec_active) {
-	MPI_Finalize();
     }
 
     return 0;
