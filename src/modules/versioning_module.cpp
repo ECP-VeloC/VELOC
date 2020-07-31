@@ -3,7 +3,7 @@
 
 #include <unistd.h>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 static void get_version_set(const std::string &p, const char *cname, int id, std::set<int> &result) {
@@ -22,7 +22,7 @@ versioning_module_t::versioning_module_t(const config_t &c) : cfg(c) {
 
     if (!cfg.get_optional("scratch_versions", scratch_versions)) {
         scratch_versions = 0;
-        INFO("cache last " << scratch_versions << " checkpoints to " << cfg.get("scratch") << " (0 means all), change using 'max_scratch'");
+        INFO("caching last " << scratch_versions << " checkpoints to " << cfg.get("scratch") << " (0 means all), change using 'scratch_versions'");
     }
 }
 
