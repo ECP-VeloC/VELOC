@@ -15,10 +15,8 @@ class transfer_module_t {
     const config_t &cfg;
     bool use_axl = false;
     axl_xfer_t axl_type;
-    int interval, max_versions;
+    int interval;
     std::map<int, std::chrono::system_clock::time_point> last_timestamp;
-    typedef std::map<std::string, std::deque<int> > checkpoint_history_t;
-    std::map<int, checkpoint_history_t> checkpoint_history;
 
     int transfer_file(const std::string &source, const std::string &dest);
 public:

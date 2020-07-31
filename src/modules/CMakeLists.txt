@@ -1,7 +1,7 @@
 add_library (veloc-modules SHARED
   module_manager.cpp
-  client_watchdog.cpp transfer_module.cpp chksum_module.cpp
-  client_aggregator.cpp ec_module.cpp
+  client_watchdog.cpp transfer_module.cpp chksum_module.cpp versioning_module.cpp # simple modules
+  client_aggregator.cpp ec_module.cpp # aggregation modules
   ${PROJECT_SOURCE_DIR}/src/common/config.cpp
   ${PROJECT_SOURCE_DIR}/src/common/file_util.cpp
 )

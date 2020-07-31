@@ -38,8 +38,6 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
 	INFO("Running on a single host, EC deactivated");
 	interval = -1;
     }
-    if (!cfg.get_optional("max_versions", max_versions))
-	max_versions = 0;
 }
 
 ec_module_t::~ec_module_t() {
@@ -56,12 +54,6 @@ int ec_module_t::process_command(const command_t &c) {
     case command_t::INIT:
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return 1; // ec_active flag for client
-
-    case command_t::TEST: {
-        int max_version, version = get_latest_version(cfg.get("scratch"), std::string(c.name) + "-ec", c.version);
-	MPI_Allreduce(&version, &max_version, 1, MPI_INT, MPI_MAX, comm);
-	return max_version;
-    }
 
     default:
 	return VELOC_IGNORED;
@@ -94,24 +86,6 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	}
 	for (auto &c : cmds)
 	    ER_Add(set_id, c.filename(cfg.get("scratch")).c_str());
-	if (max_versions > 0) {
-	    auto &version_history = checkpoint_history[cmds[0].name];
-	    version_history.push_back(version);
-	    if ((int)version_history.size() > max_versions) {
-		std::string old_name = cfg.get("scratch") + "/" + cmds[0].name +
-		    "-ec-" + std::to_string(version_history.front());
-		for (auto &c : cmds)
-		    unlink(c.filename(cfg.get("scratch"), version_history.front()).c_str());
-		version_history.pop_front();
-		int old_id = ER_Create(comm, comm_domain, old_name.c_str(), ER_DIRECTION_REMOVE, 0);
-		if (old_id != -1) {
-		    ER_Dispatch(old_id);
-		    if (ER_Wait(old_id) == ER_FAILURE)
-			ERROR("cannot delete old version " << old_name);
-		    ER_Free(old_id);
-		}
-	    }
-	}
         ER_Dispatch(set_id);
         int ret = ER_Wait(set_id);
         ER_Free(set_id);
@@ -142,11 +116,6 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint: " << name);
 	    return VELOC_FAILURE;
-	}
-	if (max_versions > 0) {
-	    auto &version_history = checkpoint_history[cmds[0].name];
-	    version_history.clear();
-	    version_history.push_back(version);
 	}
         ER_Dispatch(set_id);
         int ret = ER_Wait(set_id);

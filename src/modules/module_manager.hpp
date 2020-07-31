@@ -9,6 +9,7 @@
 #include "modules/ec_module.hpp"
 #include "modules/transfer_module.hpp"
 #include "modules/chksum_module.hpp"
+#include "modules/versioning_module.hpp"
 
 #include <functional>
 #include <vector>
@@ -23,7 +24,8 @@ class module_manager_t {
     client_aggregator_t *ec_agg = NULL;
     ec_module_t *redset = NULL;
     chksum_module_t *chksum = NULL;
-    
+    versioning_module_t *versioning = NULL;
+
 public:
     module_manager_t();
     ~module_manager_t();

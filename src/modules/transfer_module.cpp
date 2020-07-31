@@ -24,8 +24,6 @@ transfer_module_t::transfer_module_t(const config_t &c) : cfg(c), axl_type(AXL_X
 	INFO("Persistence interval not specified, every checkpoint will be persisted");
 	interval = 0;
     }
-    if (!cfg.get_optional("max_versions", max_versions))
-	max_versions = 0;
 
     /* Did the user specify an axl_type in the config file? */
     if (cfg.get_optional("axl_type", axl_type_str)) {
@@ -100,11 +98,6 @@ int transfer_module_t::process_command(const command_t &c) {
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
 
-    case command_t::TEST:
-	DBG("rank " << c.unique_id << ": obtain latest version for " << c.name);
-	return std::max(get_latest_version(cfg.get("scratch"), std::string(c.name) + "-" + std::to_string(c.unique_id), c.version),
-			get_latest_version(cfg.get("persistent"), std::string(c.name) + "-" + std::to_string(c.unique_id), c.version));
-
     case command_t::CHECKPOINT:
 	if (interval > 0) {
 	    auto t = std::chrono::system_clock::now();
@@ -112,15 +105,6 @@ int transfer_module_t::process_command(const command_t &c) {
 		return VELOC_SUCCESS;
 	    else
 		last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
-	}
-	// remove old versions if needed
-	if (max_versions > 0) {
-	    auto &version_history = checkpoint_history[c.unique_id][c.name];
-	    version_history.push_back(c.version);
-	    if ((int)version_history.size() > max_versions) {
-		unlink(c.filename(cfg.get("persistent"), version_history.front()).c_str());
-		version_history.pop_front();
-	    }
 	}
 	DBG("transfer file " << local << " to " << remote);
 	if (c.original[0] == 0)
@@ -146,11 +130,6 @@ int transfer_module_t::process_command(const command_t &c) {
 	    return VELOC_IGNORED;
 	}
         DBG("transfer file " << remote << " to " << local);
-	if (max_versions > 0) {
-	    auto &version_history = checkpoint_history[c.unique_id][c.name];
-	    version_history.clear();
-	    version_history.push_back(c.version);
-	}
 	return transfer_file(remote, local) == VELOC_SUCCESS ? VELOC_SUCCESS : VELOC_IGNORED;
 
     default:

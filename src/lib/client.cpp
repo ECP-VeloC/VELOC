@@ -13,10 +13,6 @@
 
 veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
     cfg(cfg_file), collective(false), rank(id) {
-    if (!cfg.get_optional("max_versions", max_versions)) {
-	INFO("Max number of versions to keep not specified, keeping all");
-	max_versions = 0;
-    }
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
@@ -29,10 +25,6 @@ veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
 veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
     cfg(cfg_file), comm(c), collective(true) {
     MPI_Comm_rank(comm, &rank);
-    if (!cfg.get_optional("max_versions", max_versions)) {
-	INFO("Max number of versions to keep not specified, keeping all");
-	max_versions = 0;
-    }
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg, comm, true);
@@ -43,7 +35,6 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 }
 
 veloc_client_t::~veloc_client_t() {
-    rm_tree(cfg.get("scratch"));
     delete queue;
     delete modules;
     DBG("VELOC finalized");
@@ -79,19 +70,6 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     }
     DBG("called checkpoint_begin");
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
-    // remove old versions (only if EC is not active)
-    if (!ec_active && max_versions > 0) {
-	DBG("remove old versions");
-	auto &version_history = checkpoint_history[name];
-	version_history.push_back(version);
-	if ((int)version_history.size() > max_versions) {
-	    // wait for operations to complete in async mode before deleting old versions
-	    if (!cfg.is_sync())
-		queue->wait_completion(false);
-	    remove(current_ckpt.filename(cfg.get("scratch"), version_history.front()).c_str());
-	    version_history.pop_front();
-	}
-    }
     checkpoint_in_progress = true;
     return true;
 }
@@ -173,11 +151,6 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
     else
 	end_result = result;
     if (end_result == VELOC_SUCCESS) {
-	if (!ec_active && max_versions > 0) {
-	    auto &version_history = checkpoint_history[name];
-	    version_history.clear();
-	    version_history.push_back(version);
-	}
         header_size = 0;
 	return true;
     } else

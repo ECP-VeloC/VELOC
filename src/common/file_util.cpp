@@ -1,19 +1,41 @@
 #include "file_util.hpp"
 #include "common/status.hpp"
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <dirent.h>
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ftw.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
+#include <regex>
 
 #define __DEBUG
 #include "debug.hpp"
+
+bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f) {
+    DIR *dir;
+    dir = opendir(p.c_str());
+    if (dir == NULL)
+	return false;
+
+    std::regex e(cname + "-([0-9]+|ec)-([0-9]+).*");
+    dirent *dentry;
+    while ((dentry = readdir(dir)) != NULL) {
+        if (dentry->d_type == DT_REG) {
+            std::smatch sm;
+            std::string dname(dentry->d_name);
+            std::regex_match(dname, sm, e);
+            if (sm.size() == 3)
+                f(p + "/" + dentry->d_name, sm[1], sm[2]);
+        }
+    }
+    closedir(dir);
+
+    return true;
+}
 
 ssize_t file_size(const std::string &source) {
     struct stat stat_buf;
@@ -79,28 +101,6 @@ bool posix_transfer_file(const std::string &source, const std::string &dest) {
     return true;
 }
 
-int get_latest_version(const std::string &p, const std::string &cname, int needed_version) {
-    struct dirent *dentry;
-    DIR *dir;
-    int version, ret = VELOC_IGNORED;
-
-    dir = opendir(p.c_str());
-    if (dir == NULL)
-	return -1;
-    while ((dentry = readdir(dir)) != NULL) {
-	std::string fname = std::string(dentry->d_name);
-	if (fname.compare(0, cname.length(), cname) == 0 &&
-	    sscanf(fname.substr(cname.length()).c_str(), "-%d", &version) == 1 &&
-	    (needed_version == 0 || version <= needed_version) &&
-	    access((p + "/" + fname).c_str(), R_OK) == 0) {
-	    if (version > ret)
-		ret = version;
-	}
-    }
-    closedir(dir);
-    return ret;
-}
-
 bool check_dir(const std::string &d) {
     mkdir(d.c_str(), 0755);
     DIR *entry = opendir(d.c_str());
@@ -108,10 +108,4 @@ bool check_dir(const std::string &d) {
         return false;
     closedir(entry);
     return true;
-}
-
-void rm_tree(const std::string &d) {
-    nftw(d.c_str(), [](const char *f, const struct stat *, int, FTW *) {
-                        return remove (f);
-                    }, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }

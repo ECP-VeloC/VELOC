@@ -15,14 +15,12 @@ class veloc_client_t {
     config_t cfg;
     MPI_Comm comm;
     bool collective, ec_active;
-    int rank, max_versions;
+    int rank;
 
     typedef std::pair <void *, size_t> region_t;
     typedef std::map<int, region_t> regions_t;
-    typedef std::map<std::string, std::deque<int> > checkpoint_history_t;
 
     regions_t mem_regions;
-    checkpoint_history_t checkpoint_history;
     command_t current_ckpt;
     bool checkpoint_in_progress = false;
 
