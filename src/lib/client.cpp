@@ -82,7 +82,7 @@ bool veloc_client_t::checkpoint_mem(int mode, std::set<int> &ids) {
     regions_t ckpt_regions;
     if (mode == VELOC_CKPT_ALL)
         ckpt_regions = mem_regions;
-    else  if (mode == VELOC_CKPT_SOME) {
+    else if (mode == VELOC_CKPT_SOME) {
         for (auto it = ids.begin(); it != ids.end(); it++) {
             auto found = mem_regions.find(*it);
             if (found != mem_regions.end())
@@ -180,6 +180,8 @@ bool veloc_client_t::read_header() {
     region_info.clear();
     try {
 	std::ifstream f;
+        size_t expected_size = 0;
+
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
 	size_t no_regions, region_size;
@@ -189,10 +191,15 @@ bool veloc_client_t::read_header() {
 	    f.read((char *)&id, sizeof(int));
 	    f.read((char *)&region_size, sizeof(size_t));
 	    region_info.insert(std::make_pair(id, region_size));
+            expected_size += region_size;
 	}
 	header_size = f.tellg();
+        f.seekg(0, f.end);
+        size_t file_size = (size_t)f.tellg() - header_size;
+        if (file_size != expected_size)
+            throw std::ifstream::failure("file size " + std::to_string(file_size) + " does not match expected size " + std::to_string(expected_size));
     } catch (std::ifstream::failure &e) {
-	ERROR("cannot read header from checkpoint file " << current_ckpt << ", reason: " << e.what());
+	ERROR("cannot validate header for checkpoint " << current_ckpt << ", reason: " << e.what());
 	header_size = 0;
 	return false;
     }
