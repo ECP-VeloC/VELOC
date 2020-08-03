@@ -42,7 +42,7 @@ public:
     std::string route_file(const char *original);
 
     bool checkpoint_begin(const char *name, int version);
-    bool checkpoint_mem();
+    bool checkpoint_mem(int mode, std::set<int> &ids);
     bool checkpoint_end(bool success);
     bool checkpoint_wait();
 

@@ -47,7 +47,15 @@ extern "C" int VELOC_Checkpoint_begin(const char *name, int version) {
 }
 
 extern "C" int VELOC_Checkpoint_mem() {
-    return CLIENT_CALL(veloc_client->checkpoint_mem());
+    std::set<int> id_set = {};
+    return CLIENT_CALL(veloc_client->checkpoint_mem(VELOC_CKPT_ALL, id_set));
+}
+
+extern "C" int VELOC_Checkpoint_selective(int mode, int *ids, int no_ids) {
+    std::set<int> id_set = {};
+    for (int i = 0; i < no_ids; i++)
+	id_set.insert(ids[i]);
+    return CLIENT_CALL(veloc_client->checkpoint_mem(mode, id_set));
 }
 
 extern "C" int VELOC_Checkpoint_end(int success) {
@@ -68,7 +76,7 @@ extern "C" int VELOC_Route_file(const char *original, char *routed) {
     std::string cname = veloc_client->route_file(original);
     cname.copy(routed, cname.length());
     routed[cname.length()] = 0;
-    
+
     return routed[0] != 0 ? VELOC_SUCCESS : VELOC_FAILURE;
 }
 
@@ -77,8 +85,8 @@ extern "C" int VELOC_Restart_begin(const char *name, int version) {
 }
 
 extern "C" int VELOC_Recover_mem() {
-    std::set<int> ids = {};
-    return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, ids));
+    std::set<int> id_set = {};
+    return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, id_set));
 }
 
 extern "C" int VELOC_Recover_selective(int mode, int *ids, int no_ids) {

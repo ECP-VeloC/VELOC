@@ -74,22 +74,41 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     return true;
 }
 
-bool veloc_client_t::checkpoint_mem() {
+bool veloc_client_t::checkpoint_mem(int mode, std::set<int> &ids) {
     if (!checkpoint_in_progress) {
 	ERROR("must call checkpoint_begin() first");
 	return false;
     }
+    regions_t ckpt_regions;
+    if (mode == VELOC_CKPT_ALL)
+        ckpt_regions = mem_regions;
+    else  if (mode == VELOC_CKPT_SOME) {
+        for (auto it = ids.begin(); it != ids.end(); it++) {
+            auto found = mem_regions.find(*it);
+            if (found != mem_regions.end())
+                ckpt_regions.insert(*found);
+        }
+    } else if (mode == VELOC_CKPT_REST) {
+        ckpt_regions = mem_regions;
+        for (auto it = ids.begin(); it != ids.end(); it++)
+            ckpt_regions.erase(*it);
+    }
+    if (ckpt_regions.size() == 0) {
+	ERROR("empty selection of memory regions to checkpoint, please check protection and/or selective checkpointing primitives");
+	return false;
+    }
+
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     try {
 	f.open(current_ckpt.filename(cfg.get("scratch")), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-	size_t regions_size = mem_regions.size();
+	size_t regions_size = ckpt_regions.size();
 	f.write((char *)&regions_size, sizeof(size_t));
-	for (auto &e : mem_regions) {
+	for (auto &e : ckpt_regions) {
 	    f.write((char *)&(e.first), sizeof(int));
 	    f.write((char *)&(e.second.second), sizeof(size_t));
 	}
-        for (auto &e : mem_regions)
+        for (auto &e : ckpt_regions)
 	    f.write((char *)e.second.first, e.second.second);
     } catch (std::ofstream::failure &f) {
 	ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
