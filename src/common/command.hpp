@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
+#include <regex>
 #include <limits.h>
 
 class command_t {

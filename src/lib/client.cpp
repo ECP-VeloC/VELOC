@@ -4,12 +4,18 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <regex>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
 
 //#define __DEBUG
 #include "common/debug.hpp"
+
+static bool validate_name(const char *name) {
+    std::regex e("[a-zA-Z0-9_]+");
+    return std::regex_match(name, e);
+}
 
 veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
     cfg(cfg_file), collective(false), rank(id) {
@@ -64,10 +70,11 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
 	ERROR("nested checkpoints not yet supported");
 	return false;
     }
-    if (version < 0) {
-	ERROR("checkpoint version needs to be non-negative integer");
+    if (!validate_name(name) || version < 0) {
+	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
 	return false;
     }
+
     DBG("called checkpoint_begin");
     current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
     checkpoint_in_progress = true;
@@ -137,6 +144,10 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
 }
 
 int veloc_client_t::restart_test(const char *name, int needed_version) {
+    if (!validate_name(name) || needed_version < 0) {
+	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
+	return VELOC_FAILURE;
+    }
     int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
     DBG(name << ": latest version = " << version);
     if (collective) {
@@ -157,12 +168,16 @@ std::string veloc_client_t::route_file(const char *original) {
 }
 
 bool veloc_client_t::restart_begin(const char *name, int version) {
-    int result, end_result;
-
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
     }
+    if (!validate_name(name) || version < 0) {
+	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
+	return VELOC_FAILURE;
+    }
+
+    int result, end_result;
     current_ckpt = command_t(rank, command_t::RESTART, version, name);
     result = run_blocking(current_ckpt);
     if (collective)
