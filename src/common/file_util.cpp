@@ -20,7 +20,6 @@ bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f)
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return false;
-
     std::regex e(cname + "-([0-9]+|ec)-([0-9]+).*");
     dirent *dentry;
     while ((dentry = readdir(dir)) != NULL) {

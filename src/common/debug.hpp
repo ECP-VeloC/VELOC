@@ -14,7 +14,7 @@ static auto beginning = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();\
 	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count(); \
         auto t = std::chrono::duration_cast<std::chrono::seconds>(now - beginning).count();\
-	std::clog << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
+	std::cout << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
     }
 #else
 #define TIMER_START(timer)
@@ -27,19 +27,19 @@ static auto beginning = std::chrono::steady_clock::now();
 
 #define FATAL(message) {\
     std::ostringstream out;\
-    MESSAGE(out, "FATAL EXCEPTION", message);\
+    MESSAGE(out, "FATAL", message);\
     throw std::runtime_error(out.str());\
 }
 
 #ifdef __INFO
 #define __ERROR
-#define INFO(message) MESSAGE(std::clog, "INFO", message)
+#define INFO(message) MESSAGE(std::cout, "INFO", message)
 #else
 #define INFO(message)
 #endif
 
 #ifdef __ERROR
-#define ERROR(message) MESSAGE(std::clog, "ERROR", message)
+#define ERROR(message) MESSAGE(std::cerr, "ERROR", message)
 #else
 #define ERROR(message)
 #endif
@@ -61,7 +61,7 @@ static auto beginning = std::chrono::steady_clock::now();
 #undef DBG
 #undef DBG_COND
 #ifdef __DEBUG
-#define DBG(message) MESSAGE(std::clog, "DEBUG", message)
+#define DBG(message) MESSAGE(std::cout, "DEBUG", message)
 #define DBG_COND(cond, message) if (cond) DBG(message)
 #undef __DEBUG
 #else

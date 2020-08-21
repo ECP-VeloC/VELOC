@@ -2,23 +2,15 @@
 #define __CONFIG_HPP
 
 #include "INIReader.h"
-
 #include <limits>
-#include <stdexcept>
 
 class config_t {
     std::string cfg_file;
     INIReader reader;
     bool sync_mode;
-public:    
+public:
     config_t(const std::string &cfg_file);
-    std::string get(const std::string &param) const {
-	std::string ret = reader.Get("", param, "");
-	if (ret.empty())
-	    throw std::runtime_error("config parameter " + param + " missing or empty");
-	return ret;
-
-    }
+    std::string get(const std::string &param) const;
     bool get_optional(const std::string &param, std::string &value) const {
 	value = reader.Get("", param, "");
 	return !value.empty();

@@ -25,7 +25,7 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
 
     scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, 1);
     if (scheme_id < 0)
-	throw std::runtime_error("Failed to create scheme using failure domain: " + fdomain);
+	FATAL("Failed to create scheme using failure domain: " << fdomain);
     rankstr_mpi_comm_split(comm, host_name, 0, 0, 1, &comm_domain);
 
     if (!cfg.get_optional("ec_interval", interval)) {

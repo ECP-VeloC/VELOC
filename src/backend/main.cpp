@@ -14,16 +14,14 @@
 #include "common/debug.hpp"
 
 static const unsigned int DEFAULT_PARALLELISM = 64;
-static const std::string FILE_LOCK = "/dev/shm/veloc-lock-" + std::to_string(getuid());
 
 bool ec_active = false;
-int lock_fd = -1;
+int log_fd = -1;
 
 void exit_handler(int signum) {
     if (ec_active)
         MPI_Finalize();
-    close(lock_fd);
-    remove(FILE_LOCK.c_str());
+    close(log_fd);
     backend_cleanup();
     exit(signum);
 }
@@ -31,29 +29,45 @@ void exit_handler(int signum) {
 int main(int argc, char *argv[]) {
     if (argc < 2 || argc > 3) {
 	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
-	return 1;
+	return -1;
     }
 
     config_t cfg(argv[1]);
-    if (cfg.is_sync()) {
-	ERROR("configuration requests sync mode, backend is not needed");
-	return 2;
-    }
+    if (cfg.is_sync())
+	FATAL("configuration requests sync mode, backend is not needed");
+
+    char host_name[HOST_NAME_MAX] = "";
+    gethostname(host_name, HOST_NAME_MAX);
+    char *prefix = getenv("VELOC_LOG");
+    std::string log_file;
+    if (prefix == NULL)
+        log_file = "/dev/shm/";
+    else
+        log_file = std::string(prefix) + "/";
+    log_file += "veloc-backend-" + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
 
     // check if an instance is already running
-    int lock_fd = open(FILE_LOCK.c_str(), O_RDWR | O_CREAT, 0644);
-    if (lock_fd == -1) {
-        ERROR("cannot open " << FILE_LOCK << ", error = " << strerror(errno));
-        return 3;
-    }
-    int locked = flock(lock_fd, LOCK_EX | LOCK_NB);
+    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT, 0644);
+    if (log_fd == -1)
+        FATAL("cannot open " << log_file << ", error = " << strerror(errno));
+    int locked = flock(log_fd, LOCK_EX | LOCK_NB);
     if (locked == -1) {
-        if (errno == EWOULDBLOCK)
+        if (errno == EWOULDBLOCK) {
             INFO("backend already running, only one instance is needed");
-        else
-            ERROR("cannot acquire file lock: " << FILE_LOCK << ", error = " << strerror(errno));
-        return 4;
+            return 0;
+        } else
+            FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
     }
+
+    // deamonize the backend
+    pid_t my_id = fork();
+    if (my_id < 0 || (my_id == 0 && setsid() == -1))
+        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
+    if (my_id > 0) // parent process quits
+        return 0;
+    close(STDIN_FILENO);
+    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
+        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
 
     // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
