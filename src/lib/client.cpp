@@ -14,7 +14,7 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static const unsigned int INIT_DURATION = 500; 
+static const unsigned int INIT_DURATION = 1000;
 
 static bool validate_name(const char *name) {
     std::regex e("[a-zA-Z0-9_]+");
