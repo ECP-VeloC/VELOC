@@ -6,14 +6,13 @@ TEST_DIR=@CMAKE_CURRENT_BINARY_DIR@
 CFG=@CMAKE_CURRENT_SOURCE_DIR@/heatdis.cfg
 
 export LD_LIBRARY_PATH=$LIB_DIR:$LD_LIBRARY_PATH
+export VELOC_BIN=$BIN_DIR
 rm -rf /tmp/scratch /tmp/persistent /tmp/meta
 mkdir -p /tmp/meta
 
-nohup $BIN_DIR/veloc-backend $CFG > /dev/null 2>&1 &
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 killall veloc-backend
 
-nohup $BIN_DIR/veloc-backend $CFG > /dev/null 2>&1 &
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 EXIT_CODE=$?
 killall veloc-backend
