@@ -18,6 +18,14 @@ News
 
 We are interested in learning about the checkpoint/restart needs of HPC applications. Please feel free to complete the following survey multiple times if you are familiar with more than one application: https://goo.gl/forms/xBxv4pmv7MH0z5582
 
+Citations
+---------
+
+If you are using VELOC for your research projects, please cite the following paper in your reports and/or publications:
+
+Nicolae, B., Moody, A., Gonsiorowski, E., Mohror, K. and Cappello, F. 2019. VeloC: Towards High Performance Adaptive Asynchronous Checkpointing at Large Scale. IPDPS’19: The 2019 IEEE International Parallel and Distributed Processing Symposium, pp. 911–920, Rio de Janeiro, Brazil, 2019
+(available here: https://doi.org/10.1109/IPDPS.2019.00099)
+
 Software
 --------
 
