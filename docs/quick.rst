@@ -10,10 +10,12 @@ Download and Install
 
 ::
 
-    $git clone -b 'veloc-1.4' --depth 1 https://github.com/ECP-VeloC/veloc.git <source_dir>
+    $git clone -b 'veloc-x.y' --depth 1 https://github.com/ECP-VeloC/veloc.git <source_dir>
     $cd <source_dir>
     $./bootstrap.sh
     $./auto-install.py <install_dir>
+
+Note: replace ``x.y`` with the latest stable version available on github.
 
 Configure
 ---------
