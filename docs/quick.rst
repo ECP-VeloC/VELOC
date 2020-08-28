@@ -40,7 +40,11 @@ Open a terminal and run the heatdis example application using two MPI ranks:
 
 If the run was successful, the scratch and persistent directories will be populated 
 with checkpoint files of the form heatdis-x-y.dat, where is is the rank and y is
-the iteration number. Now, delete one of the checkpoints with the highest version
+the iteration number. Also, a log file should have been created where the active
+backend (the VELOC service running on each node which responsible for checkpoint management)
+displays important information: ``/dev/shm/veloc-backend-<hostname>-<uid>.log``.
+
+Now, delete one of the checkpoints with the highest version
 from both directories, then run the same command again. The application should
 restart from the checkpoint version immediately preceding the highest version and
 continue running to completion. After the second run, the directories should be
