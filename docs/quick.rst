@@ -10,7 +10,7 @@ Download and Install
 
 ::
 
-    $git clone -b 'veloc-1.3' --depth 1 https://github.com/ECP-VeloC/veloc.git <source_dir>
+    $git clone -b 'veloc-1.4' --depth 1 https://github.com/ECP-VeloC/veloc.git <source_dir>
     $cd <source_dir>
     $./bootstrap.sh
     $./auto-install.py <install_dir>
@@ -30,19 +30,13 @@ Open ``test.cfg`` and add the following contents:
 Run VeloC
 ---------
 
-Open a terminal and run the active backend:
+Open a terminal and run the heatdis example application using two MPI ranks:
 
 ::
 
     $export LD_LIBRARY_PATH=<install_dir>/lib
-    $<source_dir>/src/backend/veloc-backend test.cfg
-
-Open a second terminal and run the heatdis example application using two MPI ranks:
-
-::
-
-    $export LD_LIBRARY_PATH=<install_dir>/lib
-    $mpirun -np 2 <source_dir>/test/heatdis_mem 256 test.cfg
+    $export PATH=<install_dir>/bin:$PATH
+    $mpirun -np 2 <source_dir>/build/test/heatdis_mem 256 test.cfg
 
 If the run was successful, the scratch and persistent directories will be populated 
 with checkpoint files of the form heatdis-x-y.dat, where is is the rank and y is
