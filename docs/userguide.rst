@@ -24,13 +24,12 @@ look for the latest stable version x.y, which should appear under the
 
     git clone -b 'veloc-x.y' --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
     
-If you want to experiment with the latest development version, you can directly check out
-the master branch. This is helpful to stay up-to-date with the latest features but will likely
-have issues:
+If you want to experiment with the latest development version, you can directly check out the master branch. 
+This is helpful to stay up-to-date with the latest features. For most practical purposes, the master branch is fairly stable.
 
 ::
 
-    git clone https://github.com/ECP-VeloC/veloc.git
+    git clone --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
 
 Install VeloC
 ~~~~~~~~~~~~~
@@ -41,63 +40,61 @@ process first as follows:
 
 ::
 
-   $bootstrap.sh
+   $./bootstrap.sh
 
 Once the bootstrapping has finished, the ``auto-install.py`` script will build and install VeloC and all it dependencies.
-The script can be edited to modify certain compiler options if needed. Common compiler options needed for some machines
-(e.g. Cray) are included as comments. After editing the script, run it as follows:
+The installation can be fine-tuned with several options, which can be listed by supplying the "--help" switch. Notably, you
+can control the installation directory, communication protocol between the client and the backend, whether to use pre-installed
+libraries, etc. The script can be edited to modify certain compiler options if needed. Common compiler options needed for some 
+machines (e.g. Cray) are included as comments. After editing the script, run it as follows:
 
 ::
 
-   $auto-install.py <destination_path>
+   $./auto-install.py <install_dir>
    
 Note that it may be possible that your Python installation will not detect the libraries installed by the bootstrapping 
-automatically. In this case, locate the installed libraries and tell Python about them as follows:
+automatically. In this case, the ``auto-install.pu`` script will fail. Locate the installed libraries and tell Python about them as follows:
 
 ::
 
     $setenv PYTHONPATH ~/.local/lib/python3.6/site-packages
 
 If the installation process was successful, the VeloC client library (and its dependencies) are installed under
-``<destination_path>/lib``. The ``veloc.h`` header needed by the application developers to call the VeloC API is 
-installed under ``<destination_path>/include``. The active backend needed to run VeloC in asynchronous mode can be found in
-the source code repository: ``src/backend/veloc-backend``.
+``<install_dir>/lib``. The ``veloc.h`` header needed by the application developers to call the VeloC API is 
+installed under ``<install_dir>/include``. The active backend needed to run VeloC in asynchronous mode can be found in
+``<install_dir/bin/veloc-backend``. The examples can be found in ``<source_dir>/src/test``, while the corresponding compiled executables 
+are here: ``<source_dir>/build/test``.
 
 Configure VeloC
 ~~~~~~~~~~~~~~~
 
-VeloC uses a INI-style configuration with the following options:
+VeloC uses a INI-style configuration with the following mandatory fields:
+
+:: 
+  scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
+  persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely)
+  
+In addition, the following optional fields are available:
 
 ::
-
-   scratch = <local_path>
-   persistent = <shared_path>
-   mode = <sync|async>
-   ec_interval = <seconds> (default: 0)
-   persistent_interval = <seconds> (default: 0)
-   max_versions = <int> (default: 0)
-   axl_type = <default|native|[axl specific type]> (default: N/A)
-
-The first three options are mandatory and specify where VeloC can save local checkpoints and redundancy information 
-for collaborative resilience strategies (currently set to XOR encoding). All other options are not 
-mandatory and have a default. Every time the application issues a checkpoint request, the local checkpoints are saved 
-in the scratch path of the node. Erasure coding is active by default and is applied to all checkpoint versions. To specify
-a minimum amount of time that needs to pass between checkpoints protected by erasure coding, ``ec_interval`` can be set to 
-a number of seconds. If ``ec_interval`` is negative, erasure coding is deactivated. Similarly, flushing of the local 
-checkpoints to the parallel file system is active by default and can be controlled using ``persistent_interval``. To
-preserve space, users can specify ``max_versions`` to instruct VeloC to keep only the latest N checkpoint versions. This
-applies to the scratch and persistent level individually. Finally, the user can specify whether to use a built-in POSIX
-file transfer routine to flush the files to a parallel file system or to use the AXL library for optimized flushes that can
-take advantage of additional hardware to accelerate I/O (such as burst buffers).  If the user wants to use the AXL library,
-they must specify ``axl_type``.  If omitted, it will use the built-in POSIX.  Some ``axl_type`` values are:
-
-default:    Let AXL choose the fastest transfer type that is compatible with all VeloC transfers.  This may or may not
-            be the node's native transfer library.
-
-native:     Use the node's native transfer library (like IBM Burst Buffer or Cray DataWarp) for transfers.  These native
-            libraries may or may not support all VeloC transfers.
-
-AXL_XFER_*: Use a specific AXL transfer type (like AXL_XFER_SYNC, AXL_XFER_ASYNC_IBMBB, etc).
+  persistent_interval = <int> (number of seconds between consecutive persistent checkpoints, default: 0 - perform all)
+  ec_interval = <int> (number of seconds between consecutive EC checkpoints, default: 0 - perform all)
+  watchdog_interval = <int> (number of seconds between consecutive check of client processes: default: 0 - don't check)
+  max_versions = <int> (number of previous checkpoints to keep on persistent, default: 0 - keep all)
+  scratch_versions = <int> (number of previous checkpoints to keep on scratch, default: 0 - keep all)
+  failure_domain = <string> (failure domain used for smart distribution of erasure codes, default: <hostname>)
+  axl_type = <string> (AXL read/write strategy to/from the persistent path, default: <empty> - deactivate AXL)
+  chksum = <boolean> (activates checksum calculationa and verification for checkpoints, default: false)
+  meta = <path> (persistent path where VELOC will save metadata information about the checkpoints regarding checksumming)
+  
+Both the persisten and ec interval can be set to -1, which fully deactivates that feature. This is preferred to setting a high number
+(which also works but is less readable and has slightly higher overhead because VeloC will need to do extra checks). If you leave
+scratch_versions to the default value, you must ensure the scratch mount point will run out of space. VELOC will not automatically
+delete checkpoints when space is low. If space is a concern, set scratch_versions accordingly. Similar observations apply for
+the persistent mount point, for which the corresponding option is max_versions. Finally, you can specify whether to use a built-in 
+POSIX file transfer routine to flush the files to a parallel file system or to use the AXL library for optimized flushes that can
+take advantage of additional hardware to accelerate I/O (such as burst buffers). If the use of AXL is desired, you need to specify
+as ``axl_type`` as per the AXL documentation (which is part of VELOC).
 
 .. _ch:velocrun:
 
@@ -105,18 +102,17 @@ Execution
 ---------
 
 VeloC can be run in either synchronous mode (all resilience strategies are embedded in the client library and run directly 
-in the application processes in blocking fashion) or asynchronous mode (the resilience strategies run in the active backend
-in the background). 
+in the application processes in blocking fashion) or asynchronous mode (the resilience strategies run in a separate process
+called the active backend in asynchronous mode in the background). 
 
 To use VeloC in synchronous mode, the application simply needs to be run as any normal MPI job. To run VeloC in 
-asynchronous mode, each node needs to run an active backend instance:
-
-::
-
-   mpirun -np N --map-by ppr:1:node <path>/veloc-backend <config_file>
-   
-After the active backends are up and running, the application can run as a normal MPI job. Each application process will 
-then connect to the local backend present on the node where it is running.
+asynchronous mode, you need to make sure the ``veloc-backend`` executable can either be found in the ``$PATH`` or
+``$VELOC_BIN`` environment variable. This is true for every node running the MPI ranks of your application (thus,
+``veloc-backend`` should be accessible through a shared mount point). By default, ``veloc-backend`` will create 
+the following log file on each node: ``/dev/shm/veloc-backend-<host_name>-<uid>.log``. The log file contains 
+important information (error messages, time to flush to PFS, etc.) that you may want to collect and inspect while/after
+running your application. In this case, you can control where the log files are saved using ``$VELOC_LOG`` environment
+variable (e.g., a shared directory).
 
 Examples
 ~~~~~~~~
@@ -127,7 +123,7 @@ the application as follows (run the active backend first as mentioned above if i
 
 ::
 
-   mpirun -np N test/heatdis_mem <mem_per_process> <config_file>
+   mpirun -np N <source_dir>/build/test/heatdis_mem <mem_per_process> <config_file>
 
 Batch Jobs
 ----------
@@ -140,6 +136,5 @@ correctly, the user needs to write a script as follows:
 
     reserve N+K nodes (to survive a maximum of K total failures over the entire application runtime) 
     do
-        run the active backend if not alive (on the surviving nodes)
         run the application (on the surviving nodes)
     while (failure detected) // e.g, exit code of the application
