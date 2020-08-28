@@ -28,7 +28,7 @@ If you want to experiment with the latest development version, you can directly 
 This is helpful to stay up-to-date with the latest features. For most practical purposes, the master branch is fairly stable.
 
 ::
-
+    
     git clone --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
 
 Install VeloC
@@ -71,21 +71,23 @@ Configure VeloC
 VeloC uses a INI-style configuration with the following mandatory fields:
 
 :: 
+
   scratch = <path> (node-local path where VELOC can save temporary checkpoints that live for the duration of the reservation)
   persistent = <path> (persistent path where VELOC can save durable checkpoints that live indefinitely)
   
 In addition, the following optional fields are available:
 
 ::
-  persistent_interval = <int> (number of seconds between consecutive persistent checkpoints, default: 0 - perform all)
-  ec_interval = <int> (number of seconds between consecutive EC checkpoints, default: 0 - perform all)
-  watchdog_interval = <int> (number of seconds between consecutive check of client processes: default: 0 - don't check)
+
+  persistent_interval = <int> (seconds between consecutive persistent checkpoints, default: 0 - perform all)
+  ec_interval = <int> (seconds between consecutive EC checkpoints, default: 0 - perform all)
+  watchdog_interval = <int> (seconds between consecutive checks of client processes: default: 0 - don't check)
   max_versions = <int> (number of previous checkpoints to keep on persistent, default: 0 - keep all)
   scratch_versions = <int> (number of previous checkpoints to keep on scratch, default: 0 - keep all)
   failure_domain = <string> (failure domain used for smart distribution of erasure codes, default: <hostname>)
   axl_type = <string> (AXL read/write strategy to/from the persistent path, default: <empty> - deactivate AXL)
   chksum = <boolean> (activates checksum calculationa and verification for checkpoints, default: false)
-  meta = <path> (persistent path where VELOC will save metadata information about the checkpoints regarding checksumming)
+  meta = <path> (persistent path where VELOC will save checksumming information)
   
 Both the persisten and ec interval can be set to -1, which fully deactivates that feature. This is preferred to setting a high number
 (which also works but is less readable and has slightly higher overhead because VeloC will need to do extra checks). If you leave
@@ -94,7 +96,9 @@ delete checkpoints when space is low. If space is a concern, set scratch_version
 the persistent mount point, for which the corresponding option is max_versions. Finally, you can specify whether to use a built-in 
 POSIX file transfer routine to flush the files to a parallel file system or to use the AXL library for optimized flushes that can
 take advantage of additional hardware to accelerate I/O (such as burst buffers). If the use of AXL is desired, you need to specify
-as ``axl_type`` as per the AXL documentation (which is part of VELOC).
+as ``axl_type`` as per the AXL documentation (which is part of VELOC). Note that VELOC uses a separate ``meta`` path for checksumming
+information, instead of writing checksumming information directly into the checkpoints. Thus, it is perfectly valid to save checksumming 
+information during checkpointing but then delete or ignore it later on restart (in which case the ``meta`` option must be omitted).
 
 .. _ch:velocrun:
 
