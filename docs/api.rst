@@ -17,6 +17,9 @@ In this mode, the serialization of the memory regions happens automatically.
 With file-based checkpoints, the application has full control over how to serialize
 the critical data structures needed for restart into checkpoint files.
 
+Note: the most up-to-date API specification is found in the VELOC header file:
+``<install_dir>/include/veloc.h``
+
 Return Codes
 ~~~~~~~~~~~~
 
