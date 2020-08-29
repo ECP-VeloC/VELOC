@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <ftw.h>
 
 #include "heatdis.h"
 #include "include/veloc.h"
@@ -132,7 +131,7 @@ int main(int argc, char *argv[]) {
 	if (i % CKPT_FREQ == 0)
 	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
 	if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1)
-            exit(1);
+            MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);

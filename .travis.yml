@@ -1,8 +1,12 @@
+dist: focal
 language: c++
 
-before_install:
-- sudo apt-get update
-- sudo apt-get install -y libmpich-dev mpich zlib1g-dev
+addons:
+  apt:
+    packages:
+    - libopenmpi-dev
+    - openmpi-bin
+    - zlib1g-dev
 
 script:
 - rm -rf $HOME/deploy
@@ -12,5 +16,5 @@ script:
 - cd build && ctest --verbose
 
 branches:
-    only:
-    - master
+  only:
+  - master
