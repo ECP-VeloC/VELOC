@@ -1,6 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
-import sys, os.path, shutil
+import sys, os.path, shutil, subprocess
 import argparse
 import wget, bs4, urllib
 import re
@@ -8,24 +8,24 @@ import tarfile
 
 # CRAY-specific compiler options
 # compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
-compiler_options = ""
+compiler_options = []
 cmake_build_type="Release"
 
 def install_dep(git_link, dep_vers):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
-        os.system("git clone -b '{0}' --depth 1 {1} {2}".format(dep_vers, git_link, args.temp + '/' + name))
-        os.system("cd {0} && cmake -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} {3}\
-                   && make install".format(args.temp + '/' + name, args.prefix, cmake_build_type, compiler_options))
+        tmp_dir = args.temp + '/' + name
+        subprocess.call(["git", "clone", "-b", dep_vers, "--depth", "1", git_link, tmp_dir])
+        cmake_args = ["-DCMAKE_INSTALL_PREFIX=" + args.prefix, "-DCMAKE_BUILD_TYPE=" + cmake_build_type] + compiler_options
+        subprocess.check_call(["cmake"] + cmake_args, cwd=tmp_dir)
+        subprocess.check_call(["cmake", "--build", tmp_dir, '--target', 'install'])
     except Exception as err:
         print("Error installing dependency {0}: {1}!".format(git_link, err))
         sys.exit(4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
-    parser.add_argument('prefix',
-                        help='installation path prefix (typically a home directory)')
     parser.add_argument('--protocol', default='ipc_queue',
                         help='communication protocol between client and active backend (default: ipc_queue). Only for advanced users.')
     parser.add_argument('--with-pdsh', action='store_true',
@@ -38,6 +38,10 @@ if __name__ == "__main__":
                         help='build debug and keep temp directory')
     parser.add_argument('--temp', default='/tmp/veloc',
                         help='temporary directory used during the install (default: /tmp/veloc)')
+    parser.add_argument('prefix',
+                        help='installation path prefix (typically a home directory)')
+    parser.add_argument('extra_cmake_args', nargs='*',
+                        help='additional cmake arguments to pass to configure')
     args = parser.parse_args()
     args.prefix = os.path.abspath(args.prefix)
     if not os.path.isdir(args.prefix):
@@ -95,8 +99,16 @@ if __name__ == "__main__":
     except OSError as err:
         print("Cannot create build directory {0}!".format(veloc_build))
         sys.exit(2)
-    ret = os.WEXITSTATUS(os.system("cd {0} && cmake -DCMAKE_INSTALL_PREFIX={1} -DCMAKE_BUILD_TYPE={2} -DCOMM_QUEUE={3} {4} {5}\
-                                   && make install".format(veloc_build, args.prefix, cmake_build_type, args.protocol, compiler_options, os.getcwd())))
+
+    # Construct the fulls et of CMake arguments
+    cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix, '-DCMAKE_BUILD_TYPE='+cmake_build_type, '-DCOMM_QUEUE='+args.protocol] + compiler_options + args.extra_cmake_args
+
+    # Configure
+    print("CMake arguments: " + " ".join(cmake_args))
+    ret = subprocess.call(['cmake'] + cmake_args + [os.getcwd()], cwd=veloc_build,)
+    # Build and install
+    if ret == 0:
+        ret = subprocess.call(['cmake', '--build', veloc_build, '--target', 'install'])
 
     # Cleanup
     if (not args.debug):

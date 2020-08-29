@@ -1,0 +1,122 @@
+stages:
+  - init
+  - build
+  - test
+  - cleanup
+
+################################################################################
+# Job templates
+################################################################################
+
+.base:
+  variables:
+    GITLAB_SITE: "OLCF GitLab"
+    EXTERNAL_WORKDIR: /gpfs/wolf/proj-shared/csc419/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
+  before_script:
+    - mkdir -pv ${EXTERNAL_WORKDIR}/source
+    - cd ${EXTERNAL_WORKDIR}/source
+
+# Use a work directory on the shared filesystem accessible to compute nodes
+.init-step:
+  extends:
+    - .base
+  stage: init
+  tags: [nobatch]
+  script:
+    - cd ..
+    - rm -rfv source
+    - git clone -b ${CI_COMMIT_BRANCH} ${CI_REPOSITORY_URL} --depth=1 source
+
+.build-step:
+  extends:
+    - .base
+  stage: build
+  tags: [nobatch]
+  script:
+    - pip3 install --user wget bs4
+    - mkdir -p $PWD/../deploy
+    - ./auto-install.py --without-boost $PWD/../deploy
+
+.test-step:
+  extends:
+    - .base
+  stage: test
+  script:
+    - cd build
+    - ctest -VV
+
+.cleanup-step:
+  extends:
+    - .base
+  stage: cleanup
+  tags: [nobatch]
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - rm -rf ${EXTERNAL_WORKDIR}
+
+################################################################################
+# XL + SMPI
+################################################################################
+.ascent-xl-smpi:
+  variables:
+    CI_BUILD_LABEL: ascent-xl-smpi
+  script:
+    - module purge
+    - module load cmake git python/3.7.0 xl/16.1.1-7 spectrum-mpi zlib boost
+    - export CC=xlc CXX=xlc++ FC=xlf
+
+ascent-xl-smpi-init:
+  extends:
+    - .ascent-xl-smpi
+    - .init-step
+
+ascent-xl-smpi-build:
+  extends:
+    - .ascent-xl-smpi
+    - .build-step
+
+ascent-xl-smpi-test:
+  extends:
+    - .ascent-xl-smpi
+    - .test-step
+  tags: [batch]
+  variables:
+    SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+
+ascent-xl-smpi-cleanup:
+  extends:
+    - .ascent-xl-smpi
+
+################################################################################
+# GCC + SMPI
+################################################################################
+.ascent-gcc-smpi:
+  variables:
+    CI_BUILD_LABEL: ascent-gcc-smpi
+  script:
+    - module purge
+    - module load cmake git gcc/8.1.1 spectrum-mpi zlib boost
+    - export CC=gcc CXX=g++ FC=gfortran
+
+ascent-gcc-smpi-init:
+  extends:
+    - .ascent-gcc-smpi
+    - .init-step
+
+ascent-gcc-smpi-build:
+  extends:
+    - .ascent-gcc-smpi
+    - .build-step
+
+ascent-gcc-smpi-test:
+  extends:
+    - .ascent-gcc-smpi
+    - .test-step
+  tags: [batch]
+  variables:
+    SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+
+ascent-gcc-smpi-cleanup:
+  extends:
+    - .ascent-gcc-smpi
+    - .cleanup-step
