@@ -2,16 +2,15 @@ language: c++
 
 before_install:
 - sudo apt-get update
-- sudo apt-get install -y libopenmpi-dev openmpi-bin zlib1g-dev libboost-dev
+- sudo apt-get install -y libopenmpi-dev openmpi-bin zlib1g-dev
 
 script:
 - rm -rf $HOME/deploy
 - ./bootstrap.sh
 - mkdir -p $HOME/deploy
-- ./auto-install.py --without-boost $HOME/deploy
+- ./auto-install.py --protocol socket_queue $HOME/deploy
 - cd build && ctest --verbose
 
 branches:
     only:
     - master
-

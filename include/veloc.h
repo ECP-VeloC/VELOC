@@ -53,7 +53,7 @@ extern "C" {
                      ec_interval = <int> (number of seconds between consecutive EC checkpoints, default: 0 - perform all)
                      watchdog_interval = <int> (number of seconds between consecutive check of client processes: default: 0 - don't check)
                      max_versions = <int> (number of previous checkpoints to keep on persistent, default: 0 - keep all)
-                     scratch_versions = <int> (number of previous checkpoints to keep on scratch, default:0 - keep all)
+                     scratch_versions = <int> (number of previous checkpoints to keep on scratch, default: 0 - keep all)
                      failure_domain = <string> (failure domain used for smart distribution of erasure codes, default: <hostname>)
                      axl_type = <string> (AXL read/write strategy to/from the persistent path, see AXL documentation, default: <empty> - deactivate AXL)
                      chksum = <boolean> (activates checksum calculationa and verification for checkpoints, default: false)
