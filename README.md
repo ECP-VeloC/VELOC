@@ -28,7 +28,7 @@ veloc-users@lists.mcs.anl.gov
 ## Build Status
 The current Travis status of the VeloC master branch is:
 
-[![Build Status](https://api.travis-ci.org/ECP-VeloC/VELOC.png)](https://travis-ci.org/ECP-VeloC/VELOC)
+[![Build Status](https://api.travis-ci.com/ECP-VeloC/VELOC.png)](https://travis-ci.com/ECP-VeloC/VELOC)
 
 ## Release
 
