@@ -12,13 +12,14 @@ mkdir -p /tmp/meta
 
 echo "First run (expected to fail):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
-
-echo "Log of backend after first run:"
-cat /dev/shm/veloc-backend-$HOSTNAME-$UID.log
+rm -rf /tmp/scratch
 
 echo "Second run (expected to succeed):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 EXIT_CODE=$?
-killall veloc-backend
 
+echo "Log of backend:"
+cat /dev/shm/veloc-backend-$HOSTNAME-$UID.log
+
+killall veloc-backend
 exit $EXIT_CODE

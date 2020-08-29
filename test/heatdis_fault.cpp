@@ -131,10 +131,8 @@ int main(int argc, char *argv[]) {
 	i++;
 	if (i % CKPT_FREQ == 0)
 	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
-	if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1) {
-            nftw("/tmp/scratch", [](const char *f, const struct stat *, int, struct FTW *) { return remove(f); }, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
+	if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1)
             exit(1);
-        }
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
