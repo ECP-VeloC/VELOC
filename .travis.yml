@@ -4,8 +4,8 @@ language: c++
 addons:
   apt:
     packages:
-    - libopenmpi-dev
-    - openmpi-bin
+    - libmpich-dev
+    - mpich
     - zlib1g-dev
 
 script:
