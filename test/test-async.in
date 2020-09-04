@@ -17,9 +17,9 @@ rm -rf /tmp/scratch
 echo "Second run (expected to succeed):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 EXIT_CODE=$?
+killall veloc-backend
 
 echo "Log of backend:"
 cat /dev/shm/veloc-backend-$HOSTNAME-$UID.log
 
-killall veloc-backend
 exit $EXIT_CODE
