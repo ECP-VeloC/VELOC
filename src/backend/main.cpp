@@ -14,6 +14,7 @@
 #include "common/debug.hpp"
 
 static const unsigned int DEFAULT_PARALLELISM = 64;
+static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
 
 bool ec_active = false;
 int log_fd = -1;
@@ -46,14 +47,23 @@ int main(int argc, char *argv[]) {
         log_file = std::string(prefix) + "/";
     log_file += "veloc-backend-" + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
 
+    // grab the ready file lock
+    int ready_fd = open(ready_file.c_str(), O_WRONLY | O_CREAT, 0644);
+    if (ready_fd == -1)
+        FATAL("cannot open " << ready_file << ", error = " << strerror(errno));
+    int locked = flock(ready_fd, LOCK_EX);
+    if (locked == -1)
+        FATAL("cannot lock " << ready_file << ", error = " << strerror(errno));
+
     // check if an instance is already running
     int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT, 0644);
     if (log_fd == -1)
         FATAL("cannot open " << log_file << ", error = " << strerror(errno));
-    int locked = flock(log_fd, LOCK_EX | LOCK_NB);
+    locked = flock(log_fd, LOCK_EX | LOCK_NB);
     if (locked == -1) {
         if (errno == EWOULDBLOCK) {
             INFO("backend already running, only one instance is needed");
+            close(ready_fd);
             return 0;
         } else
             FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
@@ -83,6 +93,7 @@ int main(int argc, char *argv[]) {
 	DBG("Active backend rank = " << rank);
     }
 
+    // set up parallelism
     int max_parallelism;
     if (!cfg.get_optional("max_parallelism", max_parallelism))
         max_parallelism = DEFAULT_PARALLELISM;
@@ -93,6 +104,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < nproc; i++)
         CPU_SET(i, &cpu_mask);
 
+    // initialize command queue
     backend_cleanup();
     backend_t<command_t> command_queue;
     module_manager_t modules;
@@ -104,6 +116,10 @@ int main(int argc, char *argv[]) {
     action.sa_handler = exit_handler;
     sigaction(SIGTERM, &action, NULL);
     sigaction(SIGINT, &action, NULL);
+
+    // initialization complete, ready file can be deleted
+    close(ready_fd);
+    remove(ready_file.c_str());
 
     std::queue<std::future<void> > work_queue;
     command_t c;

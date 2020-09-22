@@ -5,16 +5,12 @@
 #include <fstream>
 #include <stdexcept>
 #include <regex>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
 
 //#define __DEBUG
 #include "common/debug.hpp"
-
-static const unsigned int INIT_DURATION = 1000;
 
 static bool validate_name(const char *name) {
     std::regex e("[a-zA-Z0-9_]+");
@@ -29,8 +25,6 @@ static void launch_backend(const char *cfg_file) {
     command += "veloc-backend " + std::string(cfg_file) + " > /dev/null";
     if (system(command.c_str()) != 0)
         FATAL("cannot launch active backend for async mode, error: " << strerror(errno));
-    // wait for the backend
-    std::this_thread::sleep_for(std::chrono::milliseconds(INIT_DURATION));
 }
 
 veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
