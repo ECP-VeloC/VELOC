@@ -15,14 +15,11 @@
 
 static const unsigned int DEFAULT_PARALLELISM = 64;
 static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
-
 bool ec_active = false;
-int log_fd = -1;
 
 void exit_handler(int signum) {
     if (ec_active)
         MPI_Finalize();
-    close(log_fd);
     remove(ready_file.c_str());
     backend_cleanup();
     exit(signum);
@@ -64,21 +61,10 @@ int main(int argc, char *argv[]) {
     if (locked == -1) {
         if (errno == EWOULDBLOCK) {
             INFO("backend already running, only one instance is needed");
-            close(ready_fd);
             return 0;
         } else
             FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
     }
-
-    // deamonize the backend
-    pid_t my_id = fork();
-    if (my_id < 0 || (my_id == 0 && setsid() == -1))
-        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
-    if (my_id > 0) // parent process quits
-        return 0;
-    close(STDIN_FILENO);
-    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
-        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
 
     // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
@@ -118,8 +104,16 @@ int main(int argc, char *argv[]) {
     sigaction(SIGTERM, &action, NULL);
     sigaction(SIGINT, &action, NULL);
 
-    // initialization complete, lock on ready file can be released
+    // initialization complete, deamonize the backend
     close(ready_fd);
+    pid_t my_id = fork();
+    if (my_id < 0 || (my_id == 0 && setsid() == -1))
+        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
+    if (my_id > 0) // parent process quits
+        return 0;
+    close(STDIN_FILENO);
+    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
+        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
 
     std::queue<std::future<void> > work_queue;
     command_t c;
