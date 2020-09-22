@@ -23,6 +23,7 @@ void exit_handler(int signum) {
     if (ec_active)
         MPI_Finalize();
     close(log_fd);
+    remove(ready_file.c_str());
     backend_cleanup();
     exit(signum);
 }
@@ -117,9 +118,8 @@ int main(int argc, char *argv[]) {
     sigaction(SIGTERM, &action, NULL);
     sigaction(SIGINT, &action, NULL);
 
-    // initialization complete, ready file can be deleted
+    // initialization complete, lock on ready file can be released
     close(ready_fd);
-    remove(ready_file.c_str());
 
     std::queue<std::future<void> > work_queue;
     command_t c;
