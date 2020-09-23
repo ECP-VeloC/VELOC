@@ -25,6 +25,10 @@ void exit_handler(int signum) {
     exit(signum);
 }
 
+void child_handler(int signum) {
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2 || argc > 3) {
 	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
@@ -54,7 +58,7 @@ int main(int argc, char *argv[]) {
         FATAL("cannot lock " << ready_file << ", error = " << strerror(errno));
 
     // check if an instance is already running
-    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT, 0644);
+    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (log_fd == -1)
         FATAL("cannot open " << log_file << ", error = " << strerror(errno));
     locked = flock(log_fd, LOCK_EX | LOCK_NB);
@@ -65,6 +69,22 @@ int main(int argc, char *argv[]) {
         } else
             FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
     }
+
+    // initialization complete, deamonize the backend
+    struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    pid_t parent_id = getpid();
+    pid_t child_id = fork();
+    if (child_id < 0 || (child_id == 0 && setsid() == -1))
+        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
+    if (child_id > 0) { // parent waits for signal
+        action.sa_handler = child_handler;
+        sigaction(SIGCHLD, &action, NULL);
+        pause();
+    }
+    close(STDIN_FILENO);
+    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
+        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
 
     // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
@@ -97,23 +117,12 @@ int main(int argc, char *argv[]) {
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
-    // install handler to perform clean up on SIGTERM and SIGINT
-    struct sigaction action;
-    memset(&action, 0, sizeof(struct sigaction));
+    // init complete, signal parent to quit
     action.sa_handler = exit_handler;
     sigaction(SIGTERM, &action, NULL);
     sigaction(SIGINT, &action, NULL);
-
-    // initialization complete, deamonize the backend
     close(ready_fd);
-    pid_t my_id = fork();
-    if (my_id < 0 || (my_id == 0 && setsid() == -1))
-        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
-    if (my_id > 0) // parent process quits
-        return 0;
-    close(STDIN_FILENO);
-    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
-        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
+    kill(parent_id, SIGCHLD);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
