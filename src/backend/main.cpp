@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         FATAL("cannot lock " << ready_file << ", error = " << strerror(errno));
 
     // check if an instance is already running
-    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT, 0644);
     if (log_fd == -1)
         FATAL("cannot open " << log_file << ", error = " << strerror(errno));
     locked = flock(log_fd, LOCK_EX | LOCK_NB);
@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
         } else
             FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
     }
+    ftruncate(log_fd, 0);
 
     // initialization complete, deamonize the backend
     struct sigaction action;
@@ -78,6 +79,7 @@ int main(int argc, char *argv[]) {
     if (child_id < 0 || (child_id == 0 && setsid() == -1))
         FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
     if (child_id > 0) { // parent waits for signal
+        close(log_fd);
         action.sa_handler = child_handler;
         sigaction(SIGCHLD, &action, NULL);
         pause();
