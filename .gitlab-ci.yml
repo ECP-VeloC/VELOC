@@ -1,0 +1,164 @@
+stages:
+  - init
+  - build
+  - test
+  - cleanup
+
+################################################################################
+# Job templates
+################################################################################
+
+.base:
+  variables:
+#    GITLAB_SITE: "OLCF GitLab"
+#    EXTERNAL_WORKDIR: /gpfs/wolf/proj-shared/csc419/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
+    EXTERNAL_WORKDIR: /usr/workspace/kosinov/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
+    CI_REPOSITORY_URL1: ssh://git@czgitlab.llnl.gov:7999/ecp-veloc/VELOC.git
+  before_script:
+    - mkdir -pv ${EXTERNAL_WORKDIR}/source
+    - cd ${EXTERNAL_WORKDIR}/source
+    - module purge
+    - module load cmake git ${COMPILER} python/3.7.2 spectrum-mpi boost
+    - export CC=${CC_VAR} CXX=${CXX_VAR} FC=${FC_VAR}
+
+# Use a work directory on the shared filesystem accessible to compute nodes
+.init-step:
+  extends:
+    - .base
+  stage: init
+#  tags: [nobatch]
+#  tags: lassen
+  tags:
+    - lassen
+    - shell
+  script:
+    - cd ..
+    - rm -rfv source
+    - echo $EXTERNAL_WORKDIR
+    - echo $CI_REPOSITORY_URL1
+#    - git clone -b ${CI_COMMIT_BRANCH} ${CI_REPOSITORY_URL1} --depth=1 source
+#    - git clone -b ${CI_COMMIT_BRANCH} --depth=1  ${CI_REPOSITORY_URL1} source
+    - git clone -b ${CI_COMMIT_BRANCH} --depth=1  ${CI_REPOSITORY_URL1} source
+
+.build-step:
+  extends:
+    - .base
+  stage: build
+#  tags: [nobatch]
+  tags:
+    - lassen
+    - shell
+  script:
+    - pip3 install --user wget bs4
+    - mkdir -p $PWD/../deploy
+    - ./auto-install.py --without-boost $PWD/../deploy
+
+.test-step:
+  extends:
+    - .base
+  stage: test
+  script:
+    - cd build
+    - ctest -VV
+  tags:
+    - lassen
+
+.cleanup-step:
+  extends:
+    - .base
+  stage: cleanup
+#  tags: [nobatch]
+  tags:
+    - lassen
+    - shell
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - rm -rf ${EXTERNAL_WORKDIR}
+
+
+################################################################################
+# XL + SMPI
+################################################################################
+.ascent-xl-smpi:
+  variables:
+    CI_BUILD_LABEL: ascent-xl-smpi
+  tags:
+    - lassen
+
+#ascent-xl-smpi-init:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .init-step
+#  tags:
+#    - lassen
+
+#ascent-xl-smpi-build:
+#  variables:
+#    COMPILER: xl/2020.08.24
+#    CC_VAR: xlc 
+#    CXX_VAR: xlc++ 
+#    FC_VAR: xlf
+#  extends:
+#    - .ascent-xl-smpi
+#    - .build-step
+#  tags:
+#    - lassen
+
+#ascent-xl-smpi-test:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .test-step
+#  tags:
+#    - lassen
+#    - batch
+#  variables:
+#    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+#
+#ascent-xl-smpi-cleanup:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .cleanup-step
+#  tags:
+#    - lassen
+
+################################################################################
+# GCC + SMPI
+################################################################################
+.ascent-gcc-smpi:
+  variables:
+    CI_BUILD_LABEL: ascent-gcc-smpi
+  tags:
+    - lassen
+
+ascent-gcc-smpi-init:
+  extends:
+    - .ascent-gcc-smpi
+    - .init-step
+  tags:
+    - lassen
+
+ascent-gcc-smpi-build:
+  variables:
+    COMPILER: gcc/8.3.1
+    CC_VAR: gcc 
+    CXX_VAR: g++ 
+    FC_VAR: gfortran 
+  extends:
+    - .ascent-gcc-smpi
+    - .build-step
+  tags:
+    - lassen
+ascent-gcc-smpi-test:
+  extends:
+    - .ascent-gcc-smpi
+    - .test-step
+  tags:
+    - lassen
+    - batch
+  variables:
+    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+
+ascent-gcc-smpi-cleanup:
+  extends:
+    - .ascent-gcc-smpi
+    - .cleanup-step
