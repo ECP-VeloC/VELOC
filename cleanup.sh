@@ -1,7 +1,6 @@
 #!/bin/bash
 
 make clean
-
 find . -name CMakeFiles -exec rm -rf {} \; &>/dev/null
 find . -name MakeFiles -exec rm -rf {} \; &>/dev/null
 find . -name cmake_install -exec rm -rf {} \; &>/dev/null
