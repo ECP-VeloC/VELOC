@@ -11,7 +11,7 @@ stages:
 .base:
   variables:
     GITLAB_SITE: "OLCF GitLab"
-    EXTERNAL_WORKDIR: /gpfs/wolf/proj-shared/csc419/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
+    EXTERNAL_WORKDIR: /gpfs/wolf/proj-shared/csc337/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
 #    EXTERNAL_WORKDIR: /usr/workspace/kosinov/veloc/ci/${CI_PIPELINE_ID}_${CI_BUILD_LABEL}
 #    CI_REPOSITORY_URL1: ssh://git@czgitlab.llnl.gov:7999/ecp-veloc/VELOC.git
   before_script:
@@ -115,7 +115,7 @@ stages:
 #    - lassen
 #    - batch
 #  variables:
-#    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+#    LSF_SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
 #
 #ascent-xl-smpi-cleanup:
 #  extends:
@@ -159,8 +159,8 @@ ascent-gcc-smpi-test:
 #    - lassen
     - batch
   variables:
-#    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
-    SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+#    LSF_SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
+    SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
 
 ascent-gcc-smpi-cleanup:
   extends:
