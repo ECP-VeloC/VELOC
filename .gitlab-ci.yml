@@ -142,7 +142,8 @@ ascent-gcc-smpi-init:
 
 ascent-gcc-smpi-build:
   variables:
-    COMPILER: gcc/8.3.1
+#    COMPILER: gcc/8.3.1
+    COMPILER: gcc/8.1.1
     CC_VAR: gcc 
     CXX_VAR: g++ 
     FC_VAR: gfortran 
