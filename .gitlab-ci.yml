@@ -51,7 +51,8 @@ stages:
   script:
     - pip3 install --user wget bs4
     - module load cmake/3.18
-    - module load gcc/8.3
+    - module load gcc/8.1.1
+#    - module load gcc/8.3
     - module load boost
     - mkdir -p $PWD/../deploy
 #    - ./auto-install.py --without-boost $PWD/../deploy
