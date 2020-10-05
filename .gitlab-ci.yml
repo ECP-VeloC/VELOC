@@ -63,6 +63,7 @@ stages:
     - .base
   stage: test
   script:
+    - module load gcc/8.1.1
     - cd build
     - ctest -VV
 #  tags:
