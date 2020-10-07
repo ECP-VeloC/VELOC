@@ -13,11 +13,13 @@ rm -rf /tmp/scratch /tmp/persistent /tmp/meta
 mkdir -p /tmp/meta
 
 echo "First run (expected to fail):"
-mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
+jsrun -r 2 $TEST_DIR/heatdis_fault 256 $CFG
+#mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 rm -rf /tmp/scratch
 
 echo "Second run (expected to succeed):"
-mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
+jsrun -r 2 $TEST_DIR/heatdis_fault 256 $CFG
+#mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 EXIT_CODE=$?
 killall veloc-backend
 
