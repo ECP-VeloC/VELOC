@@ -50,10 +50,7 @@ stages:
 #    - shell
   script:
     - pip3 install --user wget bs4
-    - module load cmake/3.18
-#    - module load gcc/8.1.1
-#    - module load gcc/8.3
-#    - module load boost
+#    - module load cmake/3.18
     - mkdir -p $PWD/../deploy
 #    - ./auto-install.py --without-boost $PWD/../deploy
     - ./auto-install.py --protocol socket_queue $PWD/../deploy
@@ -64,7 +61,6 @@ stages:
   stage: test
   script:
     - echo $LD_LIBRARY_PATH
-#    - module load gcc/8.1.1
     - cd build
     - ctest -VV
   tags: [batch]
