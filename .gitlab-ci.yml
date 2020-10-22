@@ -18,7 +18,6 @@ stages:
     - mkdir -pv ${EXTERNAL_WORKDIR}/source
     - cd ${EXTERNAL_WORKDIR}/source
     - module purge
-#    - module load gcc/8.1.1 cmake git python/3.7.0 spectrum-mpi boost
     - module load ${COMPILER} cmake git python/3.7.0 spectrum-mpi boost
     - export CC=${CC_VAR} CXX=${CXX_VAR} FC=${FC_VAR}
 
@@ -28,16 +27,11 @@ stages:
     - .base
   stage: init
   tags: [nobatch]
-#  tags:
-#    - lassen
-#    - shell
   script:
     - cd ..
     - rm -rfv source
     - echo $EXTERNAL_WORKDIR
     - echo $CI_REPOSITORY_URL
-#    - git clone -b ${CI_COMMIT_BRANCH} ${CI_REPOSITORY_URL1} --depth=1 source
-#    - git clone -b ${CI_COMMIT_BRANCH} --depth=1  ${CI_REPOSITORY_URL1} source
     - git clone -b ${CI_COMMIT_BRANCH} --depth=1  ${CI_REPOSITORY_URL} source
 
 .build-step:
@@ -45,12 +39,8 @@ stages:
     - .base
   stage: build
   tags: [nobatch]
-#  tags:
-#    - lassen
-#    - shell
   script:
     - pip3 install --user wget bs4
-#    - module load cmake/3.18
     - mkdir -p $PWD/../deploy
 #    - ./auto-install.py --without-boost $PWD/../deploy
     - ./auto-install.py --protocol socket_queue $PWD/../deploy
@@ -64,17 +54,12 @@ stages:
     - cd build
     - ctest -VV
   tags: [batch]
-#  tags:
-#    - lassen
 
 .cleanup-step:
   extends:
     - .base
   stage: cleanup
   tags: [nobatch]
-#  tags:
-#    - lassen
-#    - shell
   script:
     - cd ${CI_PROJECT_DIR}
     - rm -rf ${EXTERNAL_WORKDIR}
@@ -86,44 +71,36 @@ stages:
 .ascent-xl-smpi:
   variables:
     CI_BUILD_LABEL: ascent-xl-smpi
-  tags:
-    - lassen
+    COMPILER: xl/2020.08.24
 
-#ascent-xl-smpi-init:
-#  extends:
-#    - .ascent-xl-smpi
-#    - .init-step
-#  tags:
-#    - lassen
+ascent-xl-smpi-init:
+  extends:
+    - .ascent-xl-smpi
+    - .init-step
 
-#ascent-xl-smpi-build:
-#  variables:
+ascent-xl-smpi-build:
+  variables:
 #    COMPILER: xl/2020.08.24
-#    CC_VAR: xlc 
-#    CXX_VAR: xlc++ 
-#    FC_VAR: xlf
-#  extends:
-#    - .ascent-xl-smpi
-#    - .build-step
-#  tags:
-#    - lassen
+    CC_VAR: xlc 
+    CXX_VAR: xlc++ 
+    FC_VAR: xlf
+  extends:
+    - .ascent-xl-smpi
+    - .build-step
 
-#ascent-xl-smpi-test:
-#  extends:
-#    - .ascent-xl-smpi
-#    - .test-step
-#  tags:
-#    - lassen
-#    - batch
-#  variables:
-#    LSF_SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
-#
-#ascent-xl-smpi-cleanup:
-#  extends:
-#    - .ascent-xl-smpi
-#    - .cleanup-step
-#  tags:
-#    - lassen
+ascent-xl-smpi-test:
+  extends:
+    - .ascent-xl-smpi
+    - .test-step
+  tags:
+    - batch
+  variables:
+    SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
+
+ascent-xl-smpi-cleanup:
+  extends:
+    - .ascent-xl-smpi
+    - .cleanup-step
 
 ################################################################################
 # GCC + SMPI
@@ -132,8 +109,6 @@ stages:
   variables:
     CI_BUILD_LABEL: ascent-gcc-smpi
     COMPILER: gcc/8.1.1
-#  tags:
-#    - lassen
 
 ascent-gcc-smpi-init:
   extends:
@@ -148,14 +123,12 @@ ascent-gcc-smpi-build:
   extends:
     - .ascent-gcc-smpi
     - .build-step
-#  tags:
-#    - lassen
+
 ascent-gcc-smpi-test:
   extends:
     - .ascent-gcc-smpi
     - .test-step
   tags:
-#    - lassen
     - batch
   variables:
 #    LSF_SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
