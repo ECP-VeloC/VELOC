@@ -131,6 +131,7 @@ stages:
 .ascent-gcc-smpi:
   variables:
     CI_BUILD_LABEL: ascent-gcc-smpi
+    COMPILER: gcc/8.1.1
 #  tags:
 #    - lassen
 
@@ -138,8 +139,6 @@ ascent-gcc-smpi-init:
   extends:
     - .ascent-gcc-smpi
     - .init-step
-  variables:
-    COMPILER: gcc/8.1.1
 
 ascent-gcc-smpi-build:
   variables:
