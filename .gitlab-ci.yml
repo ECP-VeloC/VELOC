@@ -18,8 +18,8 @@ stages:
     - mkdir -pv ${EXTERNAL_WORKDIR}/source
     - cd ${EXTERNAL_WORKDIR}/source
     - module purge
-    - module load gcc/8.1.1 cmake git python/3.7.0 spectrum-mpi boost
-#    - module load ${COMPILER} cmake git python/3.7.0 spectrum-mpi boost
+#    - module load gcc/8.1.1 cmake git python/3.7.0 spectrum-mpi boost
+    - module load ${COMPILER} cmake git python/3.7.0 spectrum-mpi boost
     - export CC=${CC_VAR} CXX=${CXX_VAR} FC=${FC_VAR}
 
 # Use a work directory on the shared filesystem accessible to compute nodes
