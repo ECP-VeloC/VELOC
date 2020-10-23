@@ -47,10 +47,10 @@ if __name__ == "__main__":
     if not os.path.isdir(args.prefix):
         print("Installation prefix {0} is not a valid directory!".format(args.prefix))
         sys.exit(1)
-    os.rmdir(args.temp)
     if os.path.isdir(args.temp):
-        print("Installation temporary directory {0} already exists, please remove and/or specify a different one!".format(args.temp))
-        sys.exit(2)
+      os.rmdir(args.temp)
+#        print("Installation temporary directory {0} already exists, please remove and/or specify a different one!".format(args.temp))
+#        sys.exit(2)
     try:
          os.mkdir(args.temp)
     except OSError as err:
