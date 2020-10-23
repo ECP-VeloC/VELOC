@@ -15,7 +15,7 @@
 
 static const unsigned int DEFAULT_PARALLELISM = 64;
 static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
-bool ec_active = false;
+bool ec_active = true;
 
 void exit_handler(int signum) {
     if (ec_active)
