@@ -47,15 +47,16 @@ if __name__ == "__main__":
     if not os.path.isdir(args.prefix):
         print("Installation prefix {0} is not a valid directory!".format(args.prefix))
         sys.exit(1)
-    if not os.path.isdir(args.temp):
+    if os.path.isdir(args.temp):
         print("directory {0} wasn't empty".format(args.temp))
+        quit()
 #        print("Installation temporary directory {0} already exists, please remove and/or specify a different one!".format(args.temp))
 #        sys.exit(2)
-        try:
-           os.mkdir(args.temp)
-        except OSError as err:
-          print("Cannot create temporary directory {0}!".format(args.temp))
-          sys.exit(3)
+    try:
+       os.mkdir(args.temp)
+    except OSError as err:
+       print("Cannot create temporary directory {0}!".format(args.temp))
+       sys.exit(3)
 
     print("Installing VeloC in {0}...".format(args.prefix))
     if (args.debug):
