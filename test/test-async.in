@@ -6,6 +6,7 @@ TEST_DIR=@CMAKE_CURRENT_BINARY_DIR@
 CFG=@CMAKE_CURRENT_SOURCE_DIR@/heatdis.cfg
 
 export LD_LIBRARY_PATH=$LIB_DIR:$LD_LIBRARY_PATH
+export LD_PRELOAD=
 echo "from inside test-async.in"
 echo $LD_LIBRARY_PATH
 export VELOC_BIN=$BIN_DIR
