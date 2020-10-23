@@ -71,7 +71,7 @@ stages:
 .ascent-xl-smpi:
   variables:
     CI_BUILD_LABEL: ascent-xl-smpi
-    COMPILER: xl/2020.08.24
+    COMPILER: xl/16.1.1-7
 
 ascent-xl-smpi-init:
   extends:
