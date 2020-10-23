@@ -42,7 +42,7 @@ stages:
   script:
     - pip3 install --user wget bs4
     - mkdir -p $PWD/../deploy
-#    - rm -rf /tmp/veloc
+    - rm -rf /tmp/veloc
 #    - ./auto-install.py --without-boost $PWD/../deploy
     - ./auto-install.py --protocol socket_queue $PWD/../deploy
 
