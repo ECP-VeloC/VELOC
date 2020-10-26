@@ -39,12 +39,14 @@ stages:
     - .base
   stage: build
   tags: [nobatch]
+  variables:
+    TMP_DIR: /tmp/veloc_${CC_VAR}
   script:
     - pip3 install --user wget bs4
     - mkdir -p $PWD/../deploy
     - rm -rf /tmp/veloc
 #    - ./auto-install.py --without-boost $PWD/../deploy
-    - ./auto-install.py --protocol socket_queue $PWD/../deploy
+    - ./auto-install.py --protocol socket_queue --temp ${TMP_DIR}  $PWD/../deploy
 
 .test-step:
   extends:
