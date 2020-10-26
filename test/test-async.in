@@ -13,6 +13,9 @@ export VELOC_BIN=$BIN_DIR
 rm -rf /tmp/scratch /tmp/persistent /tmp/meta
 mkdir -p /tmp/meta
 
+echo "inside of test-async.sh"
+cat test-async.sh
+
 echo "First run (expected to fail):"
 jsrun -r 2 $TEST_DIR/heatdis_fault 256 $CFG
 #mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
