@@ -22,7 +22,7 @@ static void launch_backend(const char *cfg_file) {
     std::string command;
     if (path != NULL)
         command = std::string(path) + "/";
-    command += "veloc-backend " + std::string(cfg_file) + " > /dev/null";
+    command += "veloc-backend " + std::string(cfg_file) + " --disable-ec > /dev/null";
     if (system(command.c_str()) != 0)
         FATAL("cannot launch active backend for async mode, error: " << strerror(errno));
 }

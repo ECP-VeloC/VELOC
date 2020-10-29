@@ -138,8 +138,7 @@ int main(int argc, char *argv[]) {
 
     free(h);
     free(g);
-    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-    VELOC_Finalize(1);
+    VELOC_Finalize(1); // wait for checkpoints to finish
     MPI_Finalize();
     return 0;
 }

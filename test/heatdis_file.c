@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 
     free(h);
     free(g);
-    VELOC_Finalize(0); // do not clean up
+    VELOC_Finalize(1); // wait for checkpoints to finish
     MPI_Finalize();
     return 0;
 }
