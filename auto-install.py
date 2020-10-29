@@ -8,7 +8,7 @@ import tarfile
 
 # CRAY-specific compiler options
 # compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
-compiler_options = [-std=c++11]
+compiler_options = "-std=c++11"
 cmake_build_type="Release"
 
 def install_dep(git_link, dep_vers):
