@@ -17,12 +17,12 @@ echo "inside of test-async.sh"
 cat test-async.sh
 
 echo "First run (expected to fail):"
-jsrun -std=c++11 -r 2 $TEST_DIR/heatdis_fault 256 $CFG
+jsrun -r 2 $TEST_DIR/heatdis_fault 256 $CFG
 #mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 rm -rf /tmp/scratch
 
 echo "Second run (expected to succeed):"
-jsrun -std=c++11 -r 2 $TEST_DIR/heatdis_fault 256 $CFG
+jsrun -r 2 $TEST_DIR/heatdis_fault 256 $CFG
 #mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 EXIT_CODE=$?
 killall veloc-backend
