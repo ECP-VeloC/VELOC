@@ -8,7 +8,7 @@ CFG=@CMAKE_CURRENT_SOURCE_DIR@/heatdis.cfg
 export LD_LIBRARY_PATH=$LIB_DIR:$LD_LIBRARY_PATH
 export VELOC_BIN=$BIN_DIR
 rm -rf /tmp/scratch /tmp/persistent /tmp/meta
-mkdir -p /tmp/meta
+mkdir -p /tmp/scratch /tmp/persistent /tmp/meta
 
 echo "First run (expected to fail):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG

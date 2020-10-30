@@ -17,6 +17,7 @@ extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
 	veloc_client = new veloc_client_t(comm, cfg_file);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
 	return VELOC_FAILURE;
     }
 }
@@ -26,6 +27,7 @@ extern "C" int VELOC_Init_single(unsigned int id, const char *cfg_file) {
 	veloc_client = new veloc_client_t(id, cfg_file);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
 	return VELOC_FAILURE;
     }
 }
