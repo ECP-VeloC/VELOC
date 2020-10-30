@@ -76,34 +76,33 @@ stages:
     CI_BUILD_LABEL: ascent-xl-smpi
     COMPILER: xl/16.1.1-7
 
-ascent-xl-smpi-init:
-  extends:
-    - .ascent-xl-smpi
-    - .init-step
-
-ascent-xl-smpi-build:
-  variables:
-#    COMPILER: xl/2020.08.24
-    CC_VAR: xlc 
-    CXX_VAR: xlc++ 
-    FC_VAR: xlf
-  extends:
-    - .ascent-xl-smpi
-    - .build-step
-
-ascent-xl-smpi-test:
-  extends:
-    - .ascent-xl-smpi
-    - .test-step
-  tags:
-    - batch
-  variables:
-    SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
-
-ascent-xl-smpi-cleanup:
-  extends:
-    - .ascent-xl-smpi
-    - .cleanup-step
+#ascent-xl-smpi-init:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .init-step
+#
+#ascent-xl-smpi-build:
+#  variables:
+#    CC_VAR: xlc 
+#    CXX_VAR: xlc++ 
+#    FC_VAR: xlf
+#  extends:
+#    - .ascent-xl-smpi
+#    - .build-step
+#
+#ascent-xl-smpi-test:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .test-step
+#  tags:
+#    - batch
+#  variables:
+#    SCHEDULER_PARAMETERS: "-P CSC337 -W 1:00 -nnodes 2"
+#
+#ascent-xl-smpi-cleanup:
+#  extends:
+#    - .ascent-xl-smpi
+#    - .cleanup-step
 
 ################################################################################
 # GCC + SMPI
