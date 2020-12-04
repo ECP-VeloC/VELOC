@@ -7,7 +7,7 @@
 #include "modules/client_watchdog.hpp"
 #include "modules/client_aggregator.hpp"
 #include "modules/ec_module.hpp"
-#include "modules/transfer_module.hpp"
+#include "modules/daos_module.hpp"
 #include "modules/chksum_module.hpp"
 #include "modules/versioning_module.hpp"
 
@@ -20,7 +20,7 @@ class module_manager_t {
     typedef std::function<int (const command_t &)> method_t;
     std::vector<method_t> sig;
     client_watchdog_t *watchdog = NULL;
-    transfer_module_t *transfer = NULL;
+    daos_module_t *transfer = NULL;
     client_aggregator_t *ec_agg = NULL;
     ec_module_t *redset = NULL;
     chksum_module_t *chksum = NULL;

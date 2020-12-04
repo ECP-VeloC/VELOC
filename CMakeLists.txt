@@ -42,6 +42,10 @@ find_package(OpenSSL REQUIRED)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
+# DAOS
+find_package(DAOS REQUIRED)
+include_directories(${DAOS_INCLUDE_DIRS})
+
 # internal dependencies
 find_package(AXL REQUIRED)
 include_directories(${AXL_INCLUDE_DIRS})

@@ -5,7 +5,7 @@ add_library (veloc-modules SHARED
   ${PROJECT_SOURCE_DIR}/src/common/config.cpp
   ${PROJECT_SOURCE_DIR}/src/common/file_util.cpp
 )
-target_link_libraries(veloc-modules ${MPI_CXX_LIBRARIES} ${ER_LIBRARIES} ${AXL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(veloc-modules ${MPI_CXX_LIBRARIES} ${ER_LIBRARIES} ${AXL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${DAOS_LIBRARIES})
 
 # Install libraries
 install (TARGETS veloc-modules
