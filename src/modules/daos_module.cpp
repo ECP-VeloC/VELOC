@@ -1,10 +1,12 @@
 #include "daos_module.hpp"
 #include <unistd.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static bool daos_transfer_file(const command_t &c) {
+bool daos_module_t::daos_transfer_file(const command_t &c) {
     daos_obj_id_t oid;
     daos_handle_t oh;
 
@@ -17,16 +19,20 @@ static bool daos_transfer_file(const command_t &c) {
         ERROR("cannot open DAOS object id (" << oid.lo << ", " << oid.hi << "); error = " << ret);
         return false;
     }
-    int fi = open(c.filename(cfg.get("scratch")).c_str(), O_RDONLY);
+    std::string source = c.filename(cfg.get("scratch"));
+    int fi = open(source.c_str(), O_RDONLY);
     if (fi == -1) {
-	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
-	return false;
+        ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
+        return false;
     }
-    size_t size = lseek(fd, 0, SEEK_END);
-    unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_READ, MAP_PRIVATE, fi, 0);
+    size_t size = lseek(fi, 0, SEEK_END);
+    //unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_READ, MAP_PRIVATE | MAP_HUGETLB, fi, 0);
+    unsigned char *buff = new unsigned char[size];
+    read(fi, buff, size);
     close(fi);
     ret = daos_kv_put(oh, DAOS_TX_NONE, 0, c.stem().c_str(), size, buff, NULL);
-    munmap(buff, size);
+    delete []buff;
+    //munmap(buff, size);
     daos_kv_close(oh, NULL);
     if (ret == 0) {
         TIMER_STOP(io_timer, "transferred " << source << " to DAOS object id (" << oid.lo << ", " << oid.hi << ")");
@@ -41,17 +47,19 @@ daos_module_t::daos_module_t(const config_t &c) : cfg(c) {
     std::string uuid_name;
     uuid_t pool_id, cont_id;
 
-    if (!cfg.get_optional("daos_pool_uuid", &uuid_name)) {
+    if (!cfg.get_optional("daos_pool_uuid", uuid_name)) {
         interval = -1;
+        INFO("daos_pool_uuid missing, flush to DAOS deactivated");
         return;
     }
-    INFO("requested to use DAOS, pool_uuid = " << uuid_name);
+
     if (uuid_parse(uuid_name.c_str(), pool_id) != 0)
         FATAL("cannot parse daos_pool_uuid (config file), please check format");
     uuid_name = cfg.get("daos_cont_uuid");
     if (uuid_parse(uuid_name.c_str(), cont_id) != 0)
         FATAL("cannot parse daos_cont_uuid (config file), please check format");
 
+    INFO("requested to use DAOS, pool_uuid = " << uuid_name);
     if (daos_init() != 0)
         FATAL("cannot initialize DAOS");
     if (daos_pool_connect(pool_id, NULL, NULL, DAOS_PC_RW, &poh, NULL, NULL) != 0)
@@ -61,8 +69,8 @@ daos_module_t::daos_module_t(const config_t &c) : cfg(c) {
     if (daos_cont_open(poh, cont_id, DAOS_COO_RW, &coh, NULL, NULL) != 0)
         FATAL("cannot open container: " << uuid_name);
     if (!cfg.get_optional("daos_interval", interval)) {
-	INFO("daos_interval not specified, every checkpoint will be persisted");
-	interval = 0;
+        INFO("daos_interval not specified, every checkpoint will be persisted");
+        interval = 0;
     }
 }
 
@@ -72,23 +80,23 @@ daos_module_t::~daos_module_t() {
     daos_fini();
 }
 
-int transfer_module_t::process_command(const command_t &c) {
+int daos_module_t::process_command(const command_t &c) {
     if (interval < 0)
         return VELOC_IGNORED;
 
     switch (c.command) {
     case command_t::INIT:
-	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
-	return VELOC_SUCCESS;
+        last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
+        return VELOC_SUCCESS;
 
     case command_t::CHECKPOINT:
-	if (interval > 0) {
-	    auto t = std::chrono::system_clock::now();
-	    if (t < last_timestamp[c.unique_id])
-		return VELOC_SUCCESS;
-	    else
-		last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
-	}
+        if (interval > 0) {
+            auto t = std::chrono::system_clock::now();
+            if (t < last_timestamp[c.unique_id])
+                return VELOC_SUCCESS;
+            else
+                last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
+        }
         return daos_transfer_file(c) ? VELOC_SUCCESS : VELOC_FAILURE;
 
     case command_t::RESTART:
@@ -96,6 +104,6 @@ int transfer_module_t::process_command(const command_t &c) {
         return VELOC_IGNORED;
 
     default:
-	return VELOC_IGNORED;
+        return VELOC_IGNORED;
     }
 }

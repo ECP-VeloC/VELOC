@@ -47,14 +47,8 @@ find_package(DAOS REQUIRED)
 include_directories(${DAOS_INCLUDE_DIRS})
 
 # internal dependencies
-find_package(AXL REQUIRED)
-include_directories(${AXL_INCLUDE_DIRS})
-
 find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
-
-# PDSH
-find_package(PDSH)
 
 # -----------------------------------------------------------------------------------
 add_subdirectory(scripts)
