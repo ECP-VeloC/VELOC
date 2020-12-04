@@ -13,7 +13,7 @@
 #include "common/debug.hpp"
 
 static bool validate_name(const char *name) {
-    std::regex e("[a-zA-Z0-9_]+");
+    std::regex e("[a-zA-Z0-9_\\.]+");
     return std::regex_match(name, e);
 }
 

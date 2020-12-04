@@ -116,7 +116,7 @@ extern "C" int VELOC_Restart(const char *name, int version) {
 extern "C" int VELOC_Checkpoint(const char *name, int version) {
     int ret = VELOC_Checkpoint_wait();
     if (ret == VELOC_SUCCESS)
-	VELOC_Checkpoint_begin(name, version);
+	ret = VELOC_Checkpoint_begin(name, version);
     if (ret == VELOC_SUCCESS)
 	ret = VELOC_Checkpoint_mem();
     if (ret == VELOC_SUCCESS)

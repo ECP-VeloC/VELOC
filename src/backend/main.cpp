@@ -22,11 +22,7 @@ void exit_handler(int signum) {
         MPI_Finalize();
     remove(ready_file.c_str());
     backend_cleanup();
-    exit(signum);
-}
-
-void child_handler(int signum) {
-    exit(0);
+    _exit(signum);
 }
 
 int main(int argc, char *argv[]) {
@@ -72,17 +68,13 @@ int main(int argc, char *argv[]) {
     ftruncate(log_fd, 0);
 
     // initialization complete, deamonize the backend
-    struct sigaction action;
-    memset(&action, 0, sizeof(struct sigaction));
     pid_t parent_id = getpid();
     pid_t child_id = fork();
     if (child_id < 0 || (child_id == 0 && setsid() == -1))
         FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
-    if (child_id > 0) { // parent waits for signal
-        close(log_fd);
-        action.sa_handler = child_handler;
-        sigaction(SIGCHLD, &action, NULL);
-        pause();
+    if (child_id > 0) { // parent waits for continue signal
+        kill(parent_id, SIGSTOP);
+        return 0;
     }
     close(STDIN_FILENO);
     if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
@@ -119,12 +111,14 @@ int main(int argc, char *argv[]) {
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 
-    // init complete, signal parent to quit
+    // init complete, set exit handler and signal parent to continue
+    struct sigaction action;
     action.sa_handler = exit_handler;
+    sigemptyset(&action.sa_mask);
     sigaction(SIGTERM, &action, NULL);
     sigaction(SIGINT, &action, NULL);
     close(ready_fd);
-    kill(parent_id, SIGCHLD);
+    kill(parent_id, SIGCONT);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
