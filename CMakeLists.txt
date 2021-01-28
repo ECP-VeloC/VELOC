@@ -61,4 +61,6 @@ add_subdirectory (src)
 
 # -----------------------------------------------------------------------------------
 enable_testing()
+INCLUDE(VELOC_ADD_TEST)
+INCLUDE(VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES)
 add_subdirectory (test)
