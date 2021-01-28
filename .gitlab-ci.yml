@@ -147,8 +147,8 @@ ascent-gcc-smpi-build:
     CC_VAR: gcc 
     CXX_VAR: g++ 
     FC_VAR: gfortran 
-    PERSISTENT: "/g/g19/kosinov/persistent"
-    SCRATCH: "/dev/shm/scratch"
+#    PERSISTENT: "/g/g19/kosinov/persistent"
+#    SCRATCH: "/dev/shm/scratch"
 
   extends:
     - .ascent-gcc-smpi
@@ -163,7 +163,7 @@ ascent-gcc-smpi-test:
     - lassen
     - batch
   variables:
-    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 2"
+    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 4"
 
 ascent-gcc-smpi-cleanup:
   extends:
