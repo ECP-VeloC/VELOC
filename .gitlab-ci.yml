@@ -147,6 +147,9 @@ ascent-gcc-smpi-build:
     CC_VAR: gcc 
     CXX_VAR: g++ 
     FC_VAR: gfortran 
+    PERSISTENT: "/g/g19/kosinov/persistent"
+    SCRATCH: "/dev/shm/scratch"
+
   extends:
     - .ascent-gcc-smpi
     - .build-step
