@@ -17,24 +17,24 @@ target_link_libraries (heatdis_file m veloc-client)
 target_link_libraries (heatdis_fault m veloc-client)
 
 configure_file(test-async.in test-async.sh @ONLY)
-add_test(async test-async.sh)
+#add_test(async test-async.sh)
 
 
-ADD_EXECUTABLE(veloc_chkpt_mem_test veloc_chkpt_mem_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST(veloc_chkpt_mem_test 256 "")
+#ADD_EXECUTABLE(veloc_chkpt_mem_test veloc_chkpt_mem_test.c)
+#TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
+#VELOC_ADD_TEST(veloc_chkpt_mem_test 256 "")
 
 ADD_EXECUTABLE(veloc_chkpt_file_test veloc_chkpt_file_test.c)
 TARGET_LINK_LIBRARIES(veloc_chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
 VELOC_ADD_TEST(veloc_chkpt_file_test 256 "")
 
-ADD_EXECUTABLE(veloc_chkpt_mem_test_xor veloc_chkpt_mem_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test_xor ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_mem_test_xor 256 "")
+#ADD_EXECUTABLE(veloc_chkpt_mem_test_xor veloc_chkpt_mem_test.c)
+#TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test_xor ${MPI_C_LIBRARIES} veloc-client)
+#VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_mem_test_xor 256 "")
 
-ADD_EXECUTABLE(veloc_chkpt_file_test_xor veloc_chkpt_file_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_file_test_xor ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_file_test_xor 256 "")
+#ADD_EXECUTABLE(veloc_chkpt_file_test_xor veloc_chkpt_file_test.c)
+#TARGET_LINK_LIBRARIES(veloc_chkpt_file_test_xor ${MPI_C_LIBRARIES} veloc-client)
+#VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_file_test_xor 256 "")
 
 ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
