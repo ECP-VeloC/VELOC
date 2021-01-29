@@ -92,7 +92,7 @@ int transfer_module_t::process_command(const command_t &c) {
 
     std::string local = c.filename(cfg.get("scratch")),
 	remote = c.filename(cfg.get("persistent"));
-printf("in transfer module, SCRATCH=%s\n",local).c_str();
+printf("in transfer module, SCRATCH=%s\n",local.c_str());
 printf("in transfer module, PERSISTENCE=%s\n",remote.c_str());
     switch (c.command) {
     case command_t::INIT:
