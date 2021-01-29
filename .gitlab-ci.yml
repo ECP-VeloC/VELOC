@@ -163,7 +163,7 @@ ascent-gcc-smpi-test:
     - lassen
     - batch
   variables:
-    LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 4"
+    LLNL_LSF_SCHEDULER_PARAMETERS: "-P CSC419 -W 1:00 -nnodes 4"
 
 ascent-gcc-smpi-cleanup:
   extends:
