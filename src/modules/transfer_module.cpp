@@ -112,8 +112,10 @@ printf("HERE1\n");
 	DBG("transfer file " << local << " to " << remote);
 printf("HERE2\n");
 	if (c.original[0] == 0)
+{
 printf("HERE3\n");
 	    return transfer_file(local, remote);
+}
 	else {
 printf("HERE\n");
 	    // at this point, we in file-based mode with custom file names
