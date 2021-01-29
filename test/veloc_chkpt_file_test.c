@@ -268,11 +268,11 @@ printf("CONFIG FILE = %s\n", argv[2]);
       printf("Checkpoint had been initiated. Should have been found\n");
   char com20[50];
 printf("persistent DIR rank =%d\n",rank);
-  sprintf(com20, "ls -l /g/g19/kosinov/persistent", veloc_file);
+  sprintf(com20, "ls -l /g/g19/kosinov/persistent");
   system(com20);
   char com21[50];
 printf("persistent DIR rank =%d\n",rank);
-  sprintf(com21, "ls -l /dev/shm/scratch", veloc_file);
+  sprintf(com21, "ls -l /dev/shm/scratch");
   system(com21);
       return(1);
     }
