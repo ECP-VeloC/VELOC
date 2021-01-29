@@ -117,16 +117,23 @@ printf("HERE3\n");
 	    return transfer_file(local, remote);
 }
 	else {
-printf("HERE\n");
+printf("HERE4\n");
 	    // at this point, we in file-based mode with custom file names
 	    if (transfer_file(local, c.original) == VELOC_FAILURE)
+{
+printf("HERE5\n");
 		return VELOC_FAILURE;
+}
 	    unlink(remote.c_str());
 	    if (symlink(c.original, remote.c_str()) != 0) {
+printf("HERE6\n");
 		ERROR("cannot create symlink " << remote.c_str() << " pointing at " << c.original << ", error: " << std::strerror(errno));
 		return VELOC_FAILURE;
 	    } else
+{
+printf("HERE7\n");
 		return VELOC_SUCCESS;
+}
 	}
 
     case command_t::RESTART:
