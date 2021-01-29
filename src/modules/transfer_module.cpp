@@ -118,12 +118,10 @@ printf("HERE3\n");
 }
 	else {
 printf("HERE4\n");
+printf("c.original = %s\n",c.original);
 	    // at this point, we in file-based mode with custom file names
 	    if (transfer_file(local, c.original) == VELOC_FAILURE)
-{
-printf("HERE5\n");
 		return VELOC_FAILURE;
-}
 	    unlink(remote.c_str());
 	    if (symlink(c.original, remote.c_str()) != 0) {
 printf("HERE6\n");
