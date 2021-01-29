@@ -92,7 +92,8 @@ int transfer_module_t::process_command(const command_t &c) {
 
     std::string local = c.filename(cfg.get("scratch")),
 	remote = c.filename(cfg.get("persistent"));
-
+printf("in transfer module, SCRATCH=%s\n",local);
+printf("in transfer module, PERSISTENCE=%s\n",remote);
     switch (c.command) {
     case command_t::INIT:
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
