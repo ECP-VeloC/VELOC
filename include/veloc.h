@@ -1,7 +1,7 @@
 #ifndef __VELOC_H
 #define __VELOC_H
 
-#include "veloc_defs.h"
+#include "veloc/defs.h"
 
 #include <string.h>
 #include <mpi.h>

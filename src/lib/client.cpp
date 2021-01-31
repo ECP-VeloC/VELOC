@@ -59,15 +59,6 @@ client_impl_t::~client_impl_t() {
     DBG("VELOC finalized");
 }
 
-bool client_impl_t::mem_protect(int id, void *ptr, size_t count, size_t base_size) {
-    mem_regions[id] = std::make_pair(ptr, base_size * count);
-    return true;
-}
-
-bool client_impl_t::mem_unprotect(int id) {
-    return mem_regions.erase(id) > 0;
-}
-
 bool client_impl_t::checkpoint_wait() {
     if (cfg.is_sync())
 	return true;
@@ -130,13 +121,26 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
     try {
 	f.open(current_ckpt.filename(cfg.get("scratch")), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	size_t regions_size = ckpt_regions.size();
+        size_t header_size = sizeof(size_t) + regions_size * (sizeof(int) + sizeof(size_t));
+        // write data and determine serialized sizes
+        f.seekp(header_size);
+        for (auto &e : ckpt_regions) {
+            region_t &info = e.second;
+            if (info.ptr != NULL)
+                f.write((char *)info.ptr, info.size);
+            else {
+                size_t start = f.tellp();
+                info.s(f);
+                info.size = (size_t)f.tellp() - start;
+            }
+        }
+        // write header
+        f.seekp(0);
 	f.write((char *)&regions_size, sizeof(size_t));
 	for (auto &e : ckpt_regions) {
 	    f.write((char *)&(e.first), sizeof(int));
-	    f.write((char *)&(e.second.second), sizeof(size_t));
+	    f.write((char *)&(e.second.size), sizeof(size_t));
 	}
-        for (auto &e : ckpt_regions)
-	    f.write((char *)e.second.first, e.second.second);
     } catch (std::ofstream::failure &f) {
 	ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
 	return false;
@@ -273,17 +277,26 @@ bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
 		f.seekg(e.second, std::ifstream::cur);
 		continue;
 	    }
-	    if (mem_regions.find(e.first) == mem_regions.end()) {
+            auto it = mem_regions.find(e.first);
+            if (it == mem_regions.end()) {
 		ERROR("no protected memory region defined for id " << e.first);
 		return false;
 	    }
-	    if (mem_regions[e.first].second < e.second) {
-		ERROR("protected memory region " << e.first << " is too small ("
-		      << mem_regions[e.first].second << ") to hold required size ("
-		      << e.second << ")");
-		return false;
-	    }
-	    f.read((char *)mem_regions[e.first].first, e.second);
+            region_t &info = it->second;
+            if (info.ptr != NULL) { // direct read of raw data
+                if (info.size < e.second) {
+                    ERROR("protected memory region " << e.first << " is too small ("
+                          << info.size << ") to hold required size ("
+                          << e.second << ")");
+                    return false;
+                }
+                f.read((char *)info.ptr, e.second);
+            } else { // deserialize
+                if (!info.d(f)) {
+                    ERROR("protected data structure " << e.first << " could not be deserialized");
+                    return false;
+                }
+            }
 	}
     } catch (std::ifstream::failure &e) {
 	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());

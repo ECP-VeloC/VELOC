@@ -17,10 +17,6 @@ class client_impl_t : public veloc::client_t {
     bool collective, ec_active;
     int rank;
 
-    typedef std::pair <void *, size_t> region_t;
-    typedef std::map<int, region_t> regions_t;
-
-    regions_t mem_regions;
     command_t current_ckpt;
     bool checkpoint_in_progress = false;
 
@@ -37,8 +33,6 @@ public:
     client_impl_t(unsigned int id, const std::string &cfg_file);
     client_impl_t(MPI_Comm comm, const std::string &cfg_file);
 
-    virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size);
-    virtual bool mem_unprotect(int id);
     virtual std::string route_file(const std::string &original);
 
     virtual bool checkpoint(const std::string &name, int version);
