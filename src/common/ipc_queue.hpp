@@ -40,7 +40,7 @@ template<typename T> struct client_queue_t {
     client_queue_t(const T_allocator &alloc) : pending(alloc), progress(alloc) { }
 };
 
-template<typename T> class client_t {
+template<typename T> class comm_client_t {
     typedef client_queue_t<T> container_t;
     managed_shared_memory segment;
     named_mutex     pending_mutex;
@@ -48,7 +48,7 @@ template<typename T> class client_t {
     container_t *data = NULL;
 
   public:
-    client_t(int id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
+    comm_client_t(int id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
                        pending_mutex(open_or_create, "veloc_pending_mutex"),
                        pending_cond(open_or_create, "veloc_pending_cond") {
 	scoped_lock<named_mutex> cond_lock(pending_mutex);
@@ -74,7 +74,7 @@ template<typename T> class client_t {
     }
 };
 
-template<typename T> class backend_t {
+template<typename T> class comm_backend_t {
     typedef client_queue_t<T> container_t;
     typedef typename container_t::list_t::iterator list_iterator_t;
     managed_shared_memory segment;
@@ -103,7 +103,7 @@ template<typename T> class backend_t {
     }
 
   public:
-    backend_t() : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
+    comm_backend_t() : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
                  pending_mutex(open_or_create, "veloc_pending_mutex"),
                  pending_cond(open_or_create, "veloc_pending_cond") { }
     completion_t dequeue_any(T &e) {
@@ -118,7 +118,7 @@ template<typename T> class backend_t {
 	first_found->pending.pop_front();
 	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return std::bind(&backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
+	return std::bind(&comm_backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
     }
 };
 

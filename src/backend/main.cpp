@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     // initialize command queue
     backend_cleanup();
-    backend_t<command_t> command_queue;
+    comm_backend_t<command_t> command_queue;
     module_manager_t modules;
     modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
 

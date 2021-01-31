@@ -1,7 +1,6 @@
-#include "include/veloc.h"
 #include "client.hpp"
 
-static veloc_client_t *veloc_client = NULL;
+static veloc::client_t *veloc_client = NULL;
 
 #define __DEBUG
 #include "common/debug.hpp"
@@ -12,9 +11,11 @@ void __attribute__ ((constructor)) veloc_constructor() {
 void __attribute__ ((destructor)) veloc_destructor() {
 }
 
+// C interface
+
 extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
     try {
-	veloc_client = new veloc_client_t(comm, cfg_file);
+	veloc_client = veloc::get_client(comm, cfg_file);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
@@ -24,7 +25,7 @@ extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
 
 extern "C" int VELOC_Init_single(unsigned int id, const char *cfg_file) {
     try {
-	veloc_client = new veloc_client_t(id, cfg_file);
+	veloc_client = veloc::get_client(id, cfg_file);
 	return VELOC_SUCCESS;
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
@@ -47,8 +48,7 @@ extern "C" int VELOC_Checkpoint_begin(const char *name, int version) {
 }
 
 extern "C" int VELOC_Checkpoint_mem() {
-    std::set<int> id_set = {};
-    return CLIENT_CALL(veloc_client->checkpoint_mem(VELOC_CKPT_ALL, id_set));
+    return CLIENT_CALL(veloc_client->checkpoint_mem(VELOC_CKPT_ALL, {}));
 }
 
 extern "C" int VELOC_Checkpoint_selective(int mode, int *ids, int no_ids) {
@@ -81,12 +81,11 @@ extern "C" int VELOC_Route_file(const char *original, char *routed) {
 }
 
 extern "C" int VELOC_Restart_begin(const char *name, int version) {
-    return CLIENT_CALL(veloc_client->restart_begin(name, version));
+    return CLIENT_CALL(veloc_client->restart_begin(std::string(name), version));
 }
 
 extern "C" int VELOC_Recover_mem() {
-    std::set<int> id_set = {};
-    return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, id_set));
+    return CLIENT_CALL(veloc_client->recover_mem(VELOC_RECOVER_ALL, {}));
 }
 
 extern "C" int VELOC_Recover_selective(int mode, int *ids, int no_ids) {
@@ -105,23 +104,11 @@ extern "C" int VELOC_Restart_end(int success) {
 }
 
 extern "C" int VELOC_Restart(const char *name, int version) {
-    int ret = VELOC_Restart_begin(name, version);
-    if (ret == VELOC_SUCCESS)
-	ret = VELOC_Recover_mem();
-    if (ret == VELOC_SUCCESS)
-	ret = VELOC_Restart_end(1);
-    return ret;
+    return CLIENT_CALL(veloc_client->restart(name, version));
 }
 
 extern "C" int VELOC_Checkpoint(const char *name, int version) {
-    int ret = VELOC_Checkpoint_wait();
-    if (ret == VELOC_SUCCESS)
-	ret = VELOC_Checkpoint_begin(name, version);
-    if (ret == VELOC_SUCCESS)
-	ret = VELOC_Checkpoint_mem();
-    if (ret == VELOC_SUCCESS)
-	ret = VELOC_Checkpoint_end(1);
-    return ret;
+    return CLIENT_CALL(veloc_client->checkpoint(name, version));
 }
 
 extern "C" int VELOC_Finalize(int drain) {
@@ -135,4 +122,21 @@ extern "C" int VELOC_Finalize(int drain) {
 	ERROR("Attempting to finalize VELOC before it was initialized");
 	return VELOC_FAILURE;
     }
+}
+
+// C++ interface
+
+veloc::client_t *veloc::get_client(MPI_Comm comm, const std::string &cfg_file) {
+    if (veloc_client == NULL)
+        veloc_client = new client_impl_t(comm, cfg_file);
+    return veloc_client;
+}
+
+veloc::client_t *veloc::get_client(unsigned int id, const std::string &cfg_file) {
+    if (veloc_client == NULL)
+        veloc_client = new client_impl_t(id, cfg_file);
+    return veloc_client;
+}
+
+veloc::client_t::~client_t() {
 }

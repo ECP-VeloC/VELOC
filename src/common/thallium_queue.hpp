@@ -39,14 +39,14 @@ template<typename T> struct client_queue_t {
     list_t pending, progress;
 };
 
-template<typename T> class client_t {
+template<typename T> class comm_client_t {
     int id;
     tl::engine engine;
     tl::remote_procedure enqueue_rpc, poll_rpc;
     tl::endpoint server;
 
 public:
-    client_t(int _id) : id(_id),
+    comm_client_t(int _id) : id(_id),
                         engine("sm", THALLIUM_CLIENT_MODE),
                         enqueue_rpc(engine.define("enqueue").disable_response()),
                         poll_rpc(engine.define("poll")) {
@@ -75,7 +75,7 @@ public:
     }
 };
 
-template<typename T> class backend_t {
+template<typename T> class comm_backend_t {
     typedef client_queue_t<T> container_t;
     typedef typename container_t::list_t::iterator list_iterator_t;
     std::unordered_map<int, container_t> client_map;
@@ -132,8 +132,8 @@ template<typename T> class backend_t {
     }
 
   public:
-    backend_t() {
-        std::thread t(&backend_t<T>::start_engine, this);
+    comm_backend_t() {
+        std::thread t(&comm_backend_t<T>::start_engine, this);
         t.detach();
     }
     completion_t dequeue_any(T &e) {
@@ -147,7 +147,7 @@ template<typename T> class backend_t {
 	first_found->pending.pop_front();
 	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return std::bind(&backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
+	return std::bind(&comm_backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
     }
 };
 

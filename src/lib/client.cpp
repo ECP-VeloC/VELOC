@@ -1,5 +1,4 @@
 #include "client.hpp"
-#include "include/veloc.h"
 #include "common/file_util.hpp"
 
 #include <fstream>
@@ -12,35 +11,35 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static bool validate_name(const char *name) {
+static bool validate_name(const std::string &name) {
     std::regex e("[a-zA-Z0-9_\\.]+");
     return std::regex_match(name, e);
 }
 
-static void launch_backend(const char *cfg_file) {
+static void launch_backend(const std::string &cfg_file) {
     char *path = getenv("VELOC_BIN");
     std::string command;
     if (path != NULL)
         command = std::string(path) + "/";
-    command += "veloc-backend " + std::string(cfg_file) + " --disable-ec > /dev/null";
+    command += "veloc-backend " + cfg_file + " --disable-ec > /dev/null";
     if (system(command.c_str()) != 0)
         FATAL("cannot launch active backend for async mode, error: " << strerror(errno));
 }
 
-veloc_client_t::veloc_client_t(unsigned int id, const char *cfg_file) :
+client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
     cfg(cfg_file), collective(false), rank(id) {
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
     } else {
         launch_backend(cfg_file);
-	queue = new client_t<command_t>(rank);
+	queue = new comm_client_t<command_t>(rank);
     }
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
 }
 
-veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
+client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
     cfg(cfg_file), comm(c), collective(true) {
     MPI_Comm_rank(comm, &rank);
     if (cfg.is_sync()) {
@@ -48,28 +47,28 @@ veloc_client_t::veloc_client_t(MPI_Comm c, const char *cfg_file) :
 	modules->add_default_modules(cfg, comm, true);
     } else {
         launch_backend(cfg_file);
-	queue = new client_t<command_t>(rank);
+	queue = new comm_client_t<command_t>(rank);
     }
     ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
     DBG("VELOC initialized");
 }
 
-veloc_client_t::~veloc_client_t() {
+client_impl_t::~client_impl_t() {
     delete queue;
     delete modules;
     DBG("VELOC finalized");
 }
 
-bool veloc_client_t::mem_protect(int id, void *ptr, size_t count, size_t base_size) {
+bool client_impl_t::mem_protect(int id, void *ptr, size_t count, size_t base_size) {
     mem_regions[id] = std::make_pair(ptr, base_size * count);
     return true;
 }
 
-bool veloc_client_t::mem_unprotect(int id) {
+bool client_impl_t::mem_unprotect(int id) {
     return mem_regions.erase(id) > 0;
 }
 
-bool veloc_client_t::checkpoint_wait() {
+bool client_impl_t::checkpoint_wait() {
     if (cfg.is_sync())
 	return true;
     if (checkpoint_in_progress) {
@@ -79,7 +78,14 @@ bool veloc_client_t::checkpoint_wait() {
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
-bool veloc_client_t::checkpoint_begin(const char *name, int version) {
+bool client_impl_t::checkpoint(const std::string &name, int version) {
+    return checkpoint_wait()
+        && checkpoint_begin(name, version)
+        && checkpoint_mem(VELOC_CKPT_ALL, {})
+        && checkpoint_end(true);
+}
+
+bool client_impl_t::checkpoint_begin(const std::string &name, int version) {
     if (checkpoint_in_progress) {
 	ERROR("nested checkpoints not yet supported");
 	return false;
@@ -90,12 +96,12 @@ bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     }
 
     DBG("called checkpoint_begin");
-    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name);
+    current_ckpt = command_t(rank, command_t::CHECKPOINT, version, name.c_str());
     checkpoint_in_progress = true;
     return true;
 }
 
-bool veloc_client_t::checkpoint_mem(int mode, std::set<int> &ids) {
+bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
     if (!checkpoint_in_progress) {
 	ERROR("must call checkpoint_begin() first");
 	return false;
@@ -138,7 +144,7 @@ bool veloc_client_t::checkpoint_mem(int mode, std::set<int> &ids) {
     return true;
 }
 
-bool veloc_client_t::checkpoint_end(bool /*success*/) {
+bool client_impl_t::checkpoint_end(bool /*success*/) {
     checkpoint_in_progress = false;
     if (cfg.is_sync())
 	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
@@ -148,7 +154,7 @@ bool veloc_client_t::checkpoint_end(bool /*success*/) {
     }
 }
 
-int veloc_client_t::run_blocking(const command_t &cmd) {
+int client_impl_t::run_blocking(const command_t &cmd) {
     if (cfg.is_sync())
 	return modules->notify_command(cmd);
     else {
@@ -157,12 +163,12 @@ int veloc_client_t::run_blocking(const command_t &cmd) {
     }
 }
 
-int veloc_client_t::restart_test(const char *name, int needed_version) {
+int client_impl_t::restart_test(const std::string &name, int needed_version) {
     if (!validate_name(name) || needed_version < 0) {
 	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
 	return VELOC_FAILURE;
     }
-    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name));
+    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name.c_str()));
     DBG(name << ": latest version = " << version);
     if (collective) {
 	int min_version;
@@ -172,16 +178,22 @@ int veloc_client_t::restart_test(const char *name, int needed_version) {
 	return version;
 }
 
-std::string veloc_client_t::route_file(const char *original) {
+std::string client_impl_t::route_file(const std::string &original) {
     char abs_path[PATH_MAX + 1];
     if (original[0] != '/' && getcwd(abs_path, PATH_MAX) != NULL)
-	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + std::string(original));
+	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + original);
     else
-	current_ckpt.assign_path(current_ckpt.original, std::string(original));
+	current_ckpt.assign_path(current_ckpt.original, original);
     return current_ckpt.filename(cfg.get("scratch"));
 }
 
-bool veloc_client_t::restart_begin(const char *name, int version) {
+bool client_impl_t::restart(const std::string &name, int version) {
+    return restart_begin(name, version)
+        && recover_mem(VELOC_CKPT_ALL, {})
+        && restart_end(true);
+}
+
+bool client_impl_t::restart_begin(const std::string &name, int version) {
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
@@ -192,7 +204,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
     }
 
     int result, end_result;
-    current_ckpt = command_t(rank, command_t::RESTART, version, name);
+    current_ckpt = command_t(rank, command_t::RESTART, version, name.c_str());
     result = run_blocking(current_ckpt);
     if (collective)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
@@ -205,7 +217,7 @@ bool veloc_client_t::restart_begin(const char *name, int version) {
 	return false;
 }
 
-bool veloc_client_t::read_header() {
+bool client_impl_t::read_header() {
     region_info.clear();
     try {
 	std::ifstream f;
@@ -235,7 +247,7 @@ bool veloc_client_t::read_header() {
     return true;
 }
 
-size_t veloc_client_t::recover_size(int id) {
+size_t client_impl_t::recover_size(int id) {
     if (header_size == 0)
         read_header();
     auto it = region_info.find(id);
@@ -245,7 +257,7 @@ size_t veloc_client_t::recover_size(int id) {
 	return it->second;
 }
 
-bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
+bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
     if (header_size == 0 && !read_header()) {
 	ERROR("cannot recover in memory mode if header unavailable or corrupted");
 	return false;
@@ -280,6 +292,6 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
     return true;
 }
 
-bool veloc_client_t::restart_end(bool /*success*/) {
+bool client_impl_t::restart_end(bool /*success*/) {
     return true;
 }

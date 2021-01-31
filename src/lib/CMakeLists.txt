@@ -15,5 +15,7 @@ install (TARGETS veloc-client
 
 install (FILES
   ${PROJECT_SOURCE_DIR}/include/veloc.h
+  ${PROJECT_SOURCE_DIR}/include/veloc.hpp
+  ${PROJECT_SOURCE_DIR}/include/veloc_defs.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

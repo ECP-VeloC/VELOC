@@ -42,11 +42,11 @@ static inline void fatal_comm() {
     FATAL("cannot interact with unix socket: " << CHANNEL << "; error = " << std::strerror(errno));
 }
 
-template<typename T> class client_t {
+template<typename T> class comm_client_t {
     int id, fd;
 
 public:
-    client_t(int _id) : id(_id) {
+    comm_client_t(int _id) : id(_id) {
         sockaddr_un addr;
         if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
             fatal_comm();
@@ -74,7 +74,7 @@ public:
     }
 };
 
-template<typename T> class backend_t {
+template<typename T> class comm_backend_t {
     typedef client_queue_t container_t;
     typedef typename container_t::list_t::iterator list_iterator_t;
     std::unordered_map<int, container_t> client_map;
@@ -169,7 +169,7 @@ template<typename T> class backend_t {
     }
 
   public:
-    backend_t() {
+    comm_backend_t() {
         sockaddr_un addr;
         if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
             fatal_comm();
@@ -180,7 +180,7 @@ template<typename T> class backend_t {
             fatal_comm();
         if (listen(fd, MAX_CLIENTS) == -1)
             fatal_comm();
-        std::thread t(&backend_t<T>::handle_connections, this);
+        std::thread t(&comm_backend_t<T>::handle_connections, this);
         t.detach();
     }
 
@@ -195,7 +195,7 @@ template<typename T> class backend_t {
 	first_found->pending.pop_front();
 	first_found->progress.push_back(e);
 	DBG("dequeued element " << e);
-	return std::bind(&backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
+	return std::bind(&comm_backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
     }
 };
 
