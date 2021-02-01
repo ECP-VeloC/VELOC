@@ -92,17 +92,17 @@ int transfer_module_t::process_command(const command_t &c) {
 
     std::string local = c.filename(cfg.get("scratch")),
 	remote = c.filename(cfg.get("persistent"));
-printf("in transfer module, SCRATCH=%s\n",local.c_str());
-printf("in transfer module, PERSISTENT=%s\n",remote.c_str());
+//printf("in transfer module, SCRATCH=%s\n",local.c_str());
+//printf("in transfer module, PERSISTENT=%s\n",remote.c_str());
     switch (c.command) {
     case command_t::INIT:
 	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
 	return VELOC_SUCCESS;
 
     case command_t::CHECKPOINT:
-printf("HERE\n");
+//printf("HERE\n");
 	if (interval > 0) {
-printf("HERE1\n");
+//printf("HERE1\n");
 	    auto t = std::chrono::system_clock::now();
 	    if (t < last_timestamp[c.unique_id])
 		return VELOC_SUCCESS;
@@ -110,26 +110,26 @@ printf("HERE1\n");
 		last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
 	}
 	DBG("transfer file " << local << " to " << remote);
-printf("HERE2\n");
+//printf("HERE2\n");
 	if (c.original[0] == 0)
-{
-printf("HERE3\n");
+//{
+//printf("HERE3\n");
 	    return transfer_file(local, remote);
-}
+//}
 	else {
-printf("HERE4\n");
-printf("c.original = %s\n",c.original);
+//printf("HERE4\n");
+//printf("c.original = %s\n",c.original);
 	    // at this point, we in file-based mode with custom file names
 	    if (transfer_file(local, c.original) == VELOC_FAILURE)
 		return VELOC_FAILURE;
 	    unlink(remote.c_str());
 	    if (symlink(c.original, remote.c_str()) != 0) {
-printf("HERE6\n");
+//printf("HERE6\n");
 		ERROR("cannot create symlink " << remote.c_str() << " pointing at " << c.original << ", error: " << std::strerror(errno));
 		return VELOC_FAILURE;
 	    } else
 {
-printf("HERE7\n");
+//printf("HERE7\n");
 		return VELOC_SUCCESS;
 }
 	}
