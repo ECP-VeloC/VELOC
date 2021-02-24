@@ -123,7 +123,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
         if (ret == ER_SUCCESS)
             return VELOC_SUCCESS;
         else {
-            ERROR("ER rebuild failed for checkpoint: " << name);
+            INFO("ER rebuild failed for checkpoint: " << name);
             return VELOC_IGNORED;
         }
     } else

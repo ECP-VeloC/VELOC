@@ -175,9 +175,9 @@ int client_impl_t::restart_test(const std::string &name, int needed_version) {
     int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name.c_str()));
     DBG(name << ": latest version = " << version);
     if (collective) {
-	int min_version;
-	MPI_Allreduce(&version, &min_version, 1, MPI_INT, MPI_MIN, comm);
-	return min_version;
+	int max_version;
+        MPI_Allreduce(&version, &max_version, 1, MPI_INT, MPI_MAX, comm);
+	return max_version;
     } else
 	return version;
 }
