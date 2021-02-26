@@ -23,7 +23,7 @@ bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f)
     std::regex e(cname + "-([0-9]+|ec)-([0-9]+).*");
     dirent *dentry;
     while ((dentry = readdir(dir)) != NULL) {
-        if (dentry->d_type == DT_REG) {
+        if (dentry->d_type == DT_REG || dentry->d_type == DT_LNK) {
             std::smatch sm;
             std::string dname(dentry->d_name);
             std::regex_match(dname, sm, e);
