@@ -17,6 +17,10 @@ static const unsigned int DEFAULT_PARALLELISM = 64;
 static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
 bool ec_active = true;
 
+void user_handler(int signum) {
+    _exit(0);
+}
+
 void exit_handler(int signum) {
     if (ec_active)
         MPI_Finalize();
@@ -73,8 +77,11 @@ int main(int argc, char *argv[]) {
     if (child_id < 0 || (child_id == 0 && setsid() == -1))
         FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
     if (child_id > 0) { // parent waits for continue signal
-        kill(parent_id, SIGSTOP);
-        return 0;
+        struct sigaction action;
+        action.sa_handler = user_handler;
+        sigemptyset(&action.sa_mask);
+        sigaction(SIGUSR1, &action, NULL);
+        pause();
     }
     close(STDIN_FILENO);
     if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
@@ -116,9 +123,8 @@ int main(int argc, char *argv[]) {
     action.sa_handler = exit_handler;
     sigemptyset(&action.sa_mask);
     sigaction(SIGTERM, &action, NULL);
-    sigaction(SIGINT, &action, NULL);
     close(ready_fd);
-    kill(parent_id, SIGCONT);
+    kill(parent_id, SIGUSR1);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
