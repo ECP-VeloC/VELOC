@@ -18,7 +18,6 @@ static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_
 bool ec_active = true;
 
 void user_handler(int signum) {
-    _exit(0);
 }
 
 void exit_handler(int signum) {
@@ -82,6 +81,7 @@ int main(int argc, char *argv[]) {
         sigemptyset(&action.sa_mask);
         sigaction(SIGUSR1, &action, NULL);
         pause();
+        return 0;
     }
     close(STDIN_FILENO);
     if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
@@ -123,8 +123,9 @@ int main(int argc, char *argv[]) {
     action.sa_handler = exit_handler;
     sigemptyset(&action.sa_mask);
     sigaction(SIGTERM, &action, NULL);
-    close(ready_fd);
     kill(parent_id, SIGUSR1);
+    flock(ready_fd, LOCK_UN);
+    close(ready_fd);
 
     std::queue<std::future<void> > work_queue;
     command_t c;
