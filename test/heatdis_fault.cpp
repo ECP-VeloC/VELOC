@@ -80,7 +80,13 @@ int main(int argc, char *argv[]) {
 	exit(1);
     }
 
-    MPI_Init(&argc, &argv);	
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    if (provided != MPI_THREAD_MULTIPLE) {
+	printf("MPI Init failed to provide MPI_THREAD_MULTIPLE");
+	exit (2);
+    }
+    
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

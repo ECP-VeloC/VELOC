@@ -13,7 +13,7 @@
 
 class client_impl_t : public veloc::client_t {
     config_t cfg;
-    MPI_Comm comm;
+    MPI_Comm comm, backends;
     bool collective, ec_active;
     int rank;
 
@@ -28,6 +28,7 @@ class client_impl_t : public veloc::client_t {
 
     int run_blocking(const command_t &cmd);
     bool read_header();
+    void launch_threaded(MPI_Comm comm, const std::string &cfg_file);
 
 public:
     client_impl_t(unsigned int id, const std::string &cfg_file);
