@@ -55,8 +55,8 @@ void client_impl_t::launch_threaded(MPI_Comm comm, const std::string &cfg_file) 
                     // lower worker thread priority and set its affinity to whole CPUSET
                     sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
                     nice(10);
-		    f(modules.notify_command(c));
-		}));
+                    f(modules.notify_command(c));
+                }));
                 if (work_queue.size() > (unsigned int)max_parallelism) {
                     work_queue.front().wait();
                     work_queue.pop();
@@ -65,7 +65,7 @@ void client_impl_t::launch_threaded(MPI_Comm comm, const std::string &cfg_file) 
         }).detach();
         std::mutex thread_lock;
         std::unique_lock<std::mutex> lock(thread_lock);
-        while (!thread_init)
+        while (!init_finished)
             thread_cond.wait(lock);
     }
     MPI_Barrier(local);
