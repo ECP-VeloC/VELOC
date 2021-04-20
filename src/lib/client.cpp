@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "common/file_util.hpp"
+#include "backend/work_queue.hpp"
 
 #include <fstream>
 #include <stdexcept>
@@ -14,61 +15,9 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static bool validate_name(const std::string &name) {
+static inline bool validate_name(const std::string &name) {
     std::regex e("[a-zA-Z0-9_\\.]+");
     return std::regex_match(name, e);
-}
-
-void client_impl_t::launch_threaded(MPI_Comm comm, const std::string &cfg_file) {
-    MPI_Comm local;
-    int local_rank;
-
-    MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
-    MPI_Comm_rank(local, &local_rank);
-    MPI_Comm_split(comm, local_rank == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
-    if (local_rank == 0) {
-        std::condition_variable thread_cond;
-        bool init_finished = false;
-        std::thread([&, this]() {
-            int max_parallelism;
-            if (!cfg.get_optional("max_parallelism", max_parallelism))
-                max_parallelism = std::thread::hardware_concurrency();
-
-            cpu_set_t cpu_mask;
-            CPU_ZERO(&cpu_mask);
-            long nproc = sysconf(_SC_NPROCESSORS_ONLN);
-            for (int i = 0; i < nproc; i++)
-                CPU_SET(i, &cpu_mask);
-
-            backend_cleanup();
-            comm_backend_t<command_t> command_queue;
-            module_manager_t modules;
-            modules.add_default_modules(cfg, backends, true);
-            init_finished = true;
-            thread_cond.notify_all();
-
-            std::queue<std::future<void> > work_queue;
-            command_t c;
-            while (true) {
-                auto f = command_queue.dequeue_any(c);
-                work_queue.push(std::async(std::launch::async, [=, &modules] {
-                    // lower worker thread priority and set its affinity to whole CPUSET
-                    sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
-                    nice(10);
-                    f(modules.notify_command(c));
-                }));
-                if (work_queue.size() > (unsigned int)max_parallelism) {
-                    work_queue.front().wait();
-                    work_queue.pop();
-                }
-            }
-        }).detach();
-        std::mutex thread_lock;
-        std::unique_lock<std::mutex> lock(thread_lock);
-        while (!init_finished)
-            thread_cond.wait(lock);
-    }
-    MPI_Barrier(local);
 }
 
 static void launch_backend(const std::string &cfg_file) {
@@ -82,7 +31,7 @@ static void launch_backend(const std::string &cfg_file) {
 }
 
 client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
-    cfg(cfg_file), collective(false), rank(id) {
+    cfg(cfg_file, false), collective(false), rank(id) {
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
 	modules->add_default_modules(cfg);
@@ -95,7 +44,7 @@ client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
 }
 
 client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
-    cfg(cfg_file), comm(c), collective(true) {
+    cfg(cfg_file, false), comm(c), collective(true) {
     MPI_Comm_rank(comm, &rank);
     if (cfg.is_sync()) {
 	modules = new module_manager_t();
@@ -106,7 +55,13 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
             MPI_Query_thread(&provided);
             if (provided != MPI_THREAD_MULTIPLE)
                 FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread");
-            launch_threaded(c, cfg_file);
+            MPI_Comm local;
+            MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
+            MPI_Comm_rank(local, &provided);
+            MPI_Comm_split(comm, provided == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
+            if (provided == 0)
+                start_main_loop(cfg, backends, true);
+            MPI_Barrier(local);
         } else
             launch_backend(cfg_file);
 	queue = new comm_client_t<command_t>(rank);

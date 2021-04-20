@@ -1,6 +1,7 @@
 add_library (veloc-client SHARED
   veloc.cpp
   client.cpp
+  ${PROJECT_SOURCE_DIR}/src/backend/work_queue.cpp
 )
 
 # Link the executable to the necessary libraries.

@@ -11,7 +11,7 @@
 #include <mpi.h>
 
 class ec_module_t {
-    config_t cfg;
+    const config_t &cfg;
     MPI_Comm comm, comm_domain;
     std::string fdomain;
     int scheme_id, interval;

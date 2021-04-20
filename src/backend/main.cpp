@@ -1,11 +1,5 @@
-#include "common/config.hpp"
-#include "common/command.hpp"
-#include "common/comm_queue.hpp"
-#include "modules/module_manager.hpp"
+#include "work_queue.hpp"
 
-#include <queue>
-#include <future>
-#include <sched.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/file.h>
@@ -13,7 +7,6 @@
 #define __DEBUG
 #include "common/debug.hpp"
 
-static const unsigned int DEFAULT_PARALLELISM = 64;
 static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
 bool ec_active = true;
 
@@ -34,44 +27,31 @@ int main(int argc, char *argv[]) {
 	return -1;
     }
 
-    config_t cfg(argv[1]);
-    if (cfg.is_sync())
-	FATAL("configuration requests sync mode, backend is not needed");
-
-    char host_name[HOST_NAME_MAX] = "";
-    gethostname(host_name, HOST_NAME_MAX);
-    char *prefix = getenv("VELOC_LOG");
-    std::string log_file;
-    if (prefix == NULL)
-        log_file = "/dev/shm/";
-    else
-        log_file = std::string(prefix) + "/";
-    log_file += "veloc-backend-" + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
-
-    // grab the ready file lock
-    int ready_fd = open(ready_file.c_str(), O_WRONLY | O_CREAT, 0644);
+    // check if there is another instance running
+    int ready_fd = open(ready_file.c_str(), O_RDWR | O_CREAT, 0644);
     if (ready_fd == -1)
         FATAL("cannot open " << ready_file << ", error = " << strerror(errno));
     int locked = flock(ready_fd, LOCK_EX);
     if (locked == -1)
         FATAL("cannot lock " << ready_file << ", error = " << strerror(errno));
-
-    // check if an instance is already running
-    int log_fd = open(log_file.c_str(), O_WRONLY | O_CREAT, 0644);
-    if (log_fd == -1)
-        FATAL("cannot open " << log_file << ", error = " << strerror(errno));
-    locked = flock(log_fd, LOCK_EX | LOCK_NB);
-    if (locked == -1) {
-        if (errno == EWOULDBLOCK) {
-            INFO("backend already running, only one instance is needed");
+    size_t fsize = lseek(ready_fd, 0, SEEK_END);
+    pid_t parent_id;
+    if (fsize > 0) {
+        if (pread(ready_fd, &parent_id, sizeof(pid_t), 0) != sizeof(pid_t))
+            FATAL("cannot read PID from " << ready_file << ", please delete it and try again");
+        if (kill(parent_id, 0) == 0) {
+            INFO("backend already running, PID=" << parent_id);
             return 0;
-        } else
-            FATAL("cannot acquire lock on: " << log_file << ", error = " << strerror(errno));
+        }
     }
-    ftruncate(log_fd, 0);
+
+    // first instance, continue initialization
+    parent_id = getpid();
+    config_t cfg(argv[1], true);
+    if (cfg.is_sync())
+	FATAL("configuration requests sync mode, backend is not needed");
 
     // initialization complete, deamonize the backend
-    pid_t parent_id = getpid();
     pid_t child_id = fork();
     if (child_id < 0 || (child_id == 0 && setsid() == -1))
         FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
@@ -84,8 +64,8 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     close(STDIN_FILENO);
-    if (dup2(log_fd, STDOUT_FILENO) < 0 || dup2(log_fd, STDERR_FILENO) < 0)
-        FATAL("cannot redirect stdout and stderr to: " << log_file << ", error = " << strerror(errno));
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
 
     // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
@@ -101,22 +81,7 @@ int main(int argc, char *argv[]) {
 	DBG("Active backend rank = " << rank);
     }
 
-    // set up parallelism
-    int max_parallelism;
-    if (!cfg.get_optional("max_parallelism", max_parallelism))
-        max_parallelism = DEFAULT_PARALLELISM;
-    INFO("Max number of client requests processed in parallel: " << max_parallelism);
-    cpu_set_t cpu_mask;
-    CPU_ZERO(&cpu_mask);
-    long nproc = sysconf(_SC_NPROCESSORS_ONLN);
-    for (int i = 0; i < nproc; i++)
-        CPU_SET(i, &cpu_mask);
-
-    // initialize command queue
-    backend_cleanup();
-    comm_backend_t<command_t> command_queue;
-    module_manager_t modules;
-    modules.add_default_modules(cfg, MPI_COMM_WORLD, ec_active);
+    start_main_loop(cfg, MPI_COMM_WORLD, ec_active);
 
     // init complete, set exit handler and signal parent to continue
     struct sigaction action;
@@ -124,24 +89,12 @@ int main(int argc, char *argv[]) {
     sigemptyset(&action.sa_mask);
     sigaction(SIGTERM, &action, NULL);
     kill(parent_id, SIGUSR1);
+    child_id = getpid();
+    if (write(ready_fd, &child_id, sizeof(pid_t)) != sizeof(pid_t))
+        FATAL("cannot write PID to " << ready_file << ", error: " << strerror(errno));
     flock(ready_fd, LOCK_UN);
     close(ready_fd);
-
-    std::queue<std::future<void> > work_queue;
-    command_t c;
-    while (true) {
-	auto f = command_queue.dequeue_any(c);
-	work_queue.push(std::async(std::launch::async, [=, &modules] {
-                    // lower worker thread priority and set its affinity to whole CPUSET
-                    sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
-                    nice(10);
-		    f(modules.notify_command(c));
-		}));
-	if (work_queue.size() > (unsigned int)max_parallelism) {
-	    work_queue.front().wait();
-	    work_queue.pop();
-	}
-    }
+    pause();
 
     return 0;
 }

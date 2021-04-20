@@ -1,11 +1,10 @@
 #ifndef __DEBUG_CONFIG
 #define __DEBUG_CONFIG
 
-#include <stdexcept>
-#include <sstream>
 #include <iostream>
 #include <chrono>
 
+extern std::ostream *logger;
 static auto beginning = std::chrono::steady_clock::now();
 
 #ifdef __BENCHMARK
@@ -14,32 +13,31 @@ static auto beginning = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();\
 	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count(); \
         auto t = std::chrono::duration_cast<std::chrono::seconds>(now - beginning).count();\
-	std::cout << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
+	(*logger) << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl; \
     }
 #else
 #define TIMER_START(timer)
 #define TIMER_STOP(timer, message)
 #endif
 
-#define MESSAGE(out, level, message) \
-    out << "[" << level << " " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - beginning).count() << "] ["\
+#define MESSAGE(level, message) \
+    (*logger) << "[" << level << " " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - beginning).count() << "] [" \
         << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl
 
 #define FATAL(message) {\
-    std::ostringstream out;\
-    MESSAGE(out, "FATAL", message);\
-    throw std::runtime_error(out.str());\
+    MESSAGE("FATAL", message);\
+    exit(-1);\
 }
 
 #ifdef __INFO
 #define __ERROR
-#define INFO(message) MESSAGE(std::cout, "INFO", message)
+#define INFO(message) MESSAGE("INFO", message)
 #else
 #define INFO(message)
 #endif
 
 #ifdef __ERROR
-#define ERROR(message) MESSAGE(std::cerr, "ERROR", message)
+#define ERROR(message) MESSAGE("ERROR", message)
 #else
 #define ERROR(message)
 #endif
@@ -47,9 +45,8 @@ static auto beginning = std::chrono::steady_clock::now();
 #ifdef __ASSERT
 #define ASSERT(expression) {\
 	if (!(expression)) {\
-	    std::ostringstream out;\
-	    MESSAGE(out, "ASSERT", "failed on expression: " << #expression);\
-	    throw std::runtime_error(out.str());\
+	    MESSAGE("ASSERT", "failed on expression: " << #expression);\
+	    exit(-2);\
 	}\
     }
 #else
@@ -61,7 +58,7 @@ static auto beginning = std::chrono::steady_clock::now();
 #undef DBG
 #undef DBG_COND
 #ifdef __DEBUG
-#define DBG(message) MESSAGE(std::cout, "DEBUG", message)
+#define DBG(message) MESSAGE("DEBUG", message)
 #define DBG_COND(cond, message) if (cond) DBG(message)
 #undef __DEBUG
 #else

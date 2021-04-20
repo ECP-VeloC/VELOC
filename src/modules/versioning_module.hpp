@@ -13,7 +13,7 @@ class versioning_module_t {
     typedef std::map<int, std::set<int> > checkpoint_history_t;
     std::map<std::string, checkpoint_history_t> persistent_history, scratch_history;
     int max_versions, scratch_versions;
-    const config_t cfg;
+    const config_t &cfg;
 
 public:
     versioning_module_t(const config_t &c);

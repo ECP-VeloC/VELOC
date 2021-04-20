@@ -9,7 +9,10 @@ class config_t {
     INIReader reader;
     bool sync_mode;
 public:
-    config_t(const std::string &cfg_file);
+    config_t(const std::string &cfg_file, bool is_backend);
+    config_t(const config_t &other) = delete;
+    ~config_t();
+
     std::string get(const std::string &param) const;
     bool get_optional(const std::string &param, std::string &value) const {
 	value = reader.Get("", param, "");
