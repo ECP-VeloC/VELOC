@@ -51,34 +51,33 @@ int main(int argc, char *argv[]) {
     if (cfg.is_sync())
 	FATAL("configuration requests sync mode, backend is not needed");
 
-    // initialization complete, deamonize the backend
-    pid_t child_id = fork();
-    if (child_id < 0 || (child_id == 0 && setsid() == -1))
-        FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
-    if (child_id > 0) { // parent waits for continue signal
-        struct sigaction action;
-        action.sa_handler = user_handler;
-        sigemptyset(&action.sa_mask);
-        sigaction(SIGUSR1, &action, NULL);
-        pause();
-        return 0;
-    }
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-
     // disable EC on request
     if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
 	INFO("EC module disabled by commmand line switch");
 	ec_active = false;
     }
 
-    // initialize MPI
+    // initialize MPI or fork into deamon mode if EC disabled
     if (ec_active) {
 	int rank;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	DBG("Active backend rank = " << rank);
+    } else {
+        pid_t child_id = fork();
+        if (child_id < 0 || (child_id == 0 && setsid() == -1))
+            FATAL("cannot fork to enter daemon mode, error = " << strerror(errno));
+        if (child_id > 0) { // parent waits for continue signal
+            struct sigaction action;
+            action.sa_handler = user_handler;
+            sigemptyset(&action.sa_mask);
+            sigaction(SIGUSR1, &action, NULL);
+            pause();
+            return 0;
+        }
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
     }
 
     start_main_loop(cfg, MPI_COMM_WORLD, ec_active);
@@ -88,9 +87,10 @@ int main(int argc, char *argv[]) {
     action.sa_handler = exit_handler;
     sigemptyset(&action.sa_mask);
     sigaction(SIGTERM, &action, NULL);
-    kill(parent_id, SIGUSR1);
-    child_id = getpid();
-    if (write(ready_fd, &child_id, sizeof(pid_t)) != sizeof(pid_t))
+    if (!ec_active)
+        kill(parent_id, SIGUSR1);
+    parent_id = getpid();
+    if (write(ready_fd, &parent_id, sizeof(pid_t)) != sizeof(pid_t))
         FATAL("cannot write PID to " << ready_file << ", error: " << strerror(errno));
     flock(ready_fd, LOCK_UN);
     close(ready_fd);
