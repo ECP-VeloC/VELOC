@@ -2,6 +2,7 @@
 #define __SOCKET_QUEUE_HPP
 
 #include "status.hpp"
+#include "command.hpp"
 
 #include <unordered_map>
 #include <functional>
