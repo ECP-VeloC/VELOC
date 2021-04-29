@@ -11,6 +11,7 @@ static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_
 bool ec_active = true;
 
 void user_handler(int signum) {
+    _exit(0);
 }
 
 void exit_handler(int signum) {
@@ -73,7 +74,6 @@ int main(int argc, char *argv[]) {
             sigemptyset(&action.sa_mask);
             sigaction(SIGUSR1, &action, NULL);
             pause();
-            return 0;
         }
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
