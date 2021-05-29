@@ -55,7 +55,6 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
             MPI_Query_thread(&provided);
             if (provided != MPI_THREAD_MULTIPLE)
                 FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread");
-            MPI_Comm local;
             MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
             MPI_Comm_rank(local, &provided);
             MPI_Comm_split(comm, provided == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
@@ -71,6 +70,8 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
 }
 
 client_impl_t::~client_impl_t() {
+    if (collective && cfg.get_optional("threaded", false))
+        MPI_Barrier(local);
     delete queue;
     delete modules;
     DBG("VELOC finalized");

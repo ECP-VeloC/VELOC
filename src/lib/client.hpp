@@ -13,7 +13,7 @@
 
 class client_impl_t : public veloc::client_t {
     config_t cfg;
-    MPI_Comm comm, backends;
+    MPI_Comm comm, local, backends;
     bool collective, ec_active;
     int rank;
 
