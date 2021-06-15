@@ -3,8 +3,7 @@ FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc_lsf.cfg DESTINATION ${CMAKE_CURRENT_
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_cleanup.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_node_file_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_scratch_and_persistent_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_serial.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_parallel.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_list_dev_shm.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 
 # Comment as needed to reduce build time
 add_executable (heatdis_original heatdis_original.c)
@@ -20,28 +19,13 @@ target_link_libraries (heatdis_file m veloc-client)
 target_link_libraries (heatdis_fault m veloc-client)
 #target_link_libraries (serial_test veloc-client)
 
-#configure_file(test-async.in test-async.sh @ONLY)
+configure_file(test-async.in test-async.sh @ONLY)
 #add_test(async test-async.sh)
 
-#add_test(NAME start_backend COMMAND jsrun -r 1 ${CMAKE_INSTALL_FULL_BINDIR}/veloc-backend veloc_lsf.cfg & )
-
-
-
-ADD_EXECUTABLE(veloc_chkpt_mem_test veloc_chkpt_mem_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST(veloc_chkpt_mem_test 256 "")
-
-ADD_EXECUTABLE(veloc_chkpt_file_test veloc_chkpt_file_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST(veloc_chkpt_file_test 256 "")
 
 ADD_EXECUTABLE(veloc_chkpt_mem_test_xor veloc_chkpt_mem_test.c)
 TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test_xor ${MPI_C_LIBRARIES} veloc-client)
 VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_mem_test_xor 256 "")
-
-ADD_EXECUTABLE(veloc_chkpt_file_test_xor veloc_chkpt_file_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_file_test_xor ${MPI_C_LIBRARIES} veloc-client)
-VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES(veloc_chkpt_file_test_xor 256 "")
 
 ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
