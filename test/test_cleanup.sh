@@ -10,4 +10,7 @@
 #rm -rf $PERSISTENT/*
 
 rm -rf /g/g19/kosinov/persistent/*
-rm -rf /dev/shm/scratch/*
+#rm -rf /dev/shm/scratch/*
+rm -rf /dev/shm/*
+mkdir /dev/shm/scratch
+
