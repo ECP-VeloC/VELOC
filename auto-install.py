@@ -125,6 +125,8 @@ if __name__ == "__main__":
             print("Cannot cleanup temporary directory {0}!".format(args.temp))
             sys.exit(4)
 
+    os.system(os.path.dirname(__file__) + "/test/build_exec.sh " + os.path.dirname(__file__))
+
     if ret == 0:
         print("Installation successful!")
     else:
