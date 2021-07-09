@@ -8,7 +8,7 @@ FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_parallel.sh DESTINATION ${CM
 
 add_test(serial_veloc_chkpt_mem_test_start "jsrun" "-n" "1" "../veloc_chkpt_mem_test" "256" "veloc_lsf.cfg" "0")
 set_property(TEST serial_veloc_chkpt_mem_test_start APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST serial_veloc_chkpt_mem_test_start APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+set_property(TEST serial_veloc_chkpt_mem_test_start APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
 
  
 add_test("serial_veloc_chkpt_mem_test_restart" "jsrun" "-n" "1" "../veloc_chkpt_mem_test" "256" "veloc_lsf.cfg" "1")
