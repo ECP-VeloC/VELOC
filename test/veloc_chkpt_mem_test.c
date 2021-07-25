@@ -38,6 +38,7 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
+printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 printf("in test/veloc_chkpt_mem_test.c 1");
 //  char com0[50];
 printf("persistent DIR \n");
