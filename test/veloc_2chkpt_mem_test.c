@@ -160,8 +160,8 @@ printf("scratch DIR rank =%d\n",rank);
   }
 
 //  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-VELOC_Checkpoint_wait();
-  VELOC_Finalize(0);
+//VELOC_Checkpoint_wait();
+  VELOC_Finalize(1);
   MPI_Finalize();
   return 0;
 }
