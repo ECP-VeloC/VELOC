@@ -8,6 +8,25 @@ FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_parallel.sh DESTINATION ${CM
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_multilevel_corruption.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_second_chkpoint_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 
+
+#Bogdan's initial test:
+add_executable (heatdis_original heatdis_original.c)
+add_executable (heatdis_mem heatdis_mem.c)
+add_executable (heatdis_file heatdis_file.c)
+add_executable (heatdis_fault heatdis_fault.cpp)
+#add_executable (serial_test serial_test.cpp)
+
+# Link the executable to the necessary libraries.
+target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
+target_link_libraries (heatdis_mem m veloc-client)
+target_link_libraries (heatdis_file m veloc-client)
+target_link_libraries (heatdis_fault m veloc-client)
+#target_link_libraries (serial_test veloc-client)
+
+configure_file(test-async.in test-async.sh @ONLY)
+add_test(async test-async.sh)
+
+#Greg's tests
 add_test(serial_veloc_chkpt_mem_test_start "jsrun" "-n" "1" "../veloc_chkpt_mem_test" "256" "veloc_lsf.cfg" "0")
 set_property(TEST serial_veloc_chkpt_mem_test_start APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
 set_property(TEST serial_veloc_chkpt_mem_test_start APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
