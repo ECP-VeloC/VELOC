@@ -7,14 +7,6 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 set(CMAKE_CXX_STANDARD 14)
 
-# Linux rpath settings
-SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-
 ##### Configuration setting
 set(VELOC_RESOURCE_MANAGER "LSF" CACHE STRING "Resource Manager for CLI (SLURM LSF ALPS NONE)")
 set_property(CACHE VELOC_RESOURCE_MANAGER PROPERTY STRINGS SLURM LSF ALPS NONE)
@@ -51,17 +43,11 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
 # internal dependencies
-find_package(KVTREE REQUIRED)
-include_directories(${KVTREE_INCLUDE_DIRS})
-
 find_package(AXL REQUIRED)
 include_directories(${AXL_INCLUDE_DIRS})
 
 find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
-
-find_package(RANKSTR REQUIRED)
-include_directories(${RANKSTR_INCLUDE_DIRS})
 
 # PDSH
 find_package(PDSH)
@@ -75,6 +61,4 @@ add_subdirectory (src)
 
 # -----------------------------------------------------------------------------------
 enable_testing()
-INCLUDE(VELOC_ADD_TEST)
-INCLUDE(VELOC_ADD_TEST_RESTART_FROM_OTHER_NODES)
 add_subdirectory (test)
