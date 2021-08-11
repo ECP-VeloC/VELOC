@@ -24,8 +24,9 @@ look for the latest stable version x.y, which should appear under the
 
     git clone -b 'veloc-x.y' --single-branch --depth 1 https://github.com/ECP-VeloC/veloc.git
     
-If you want to experiment with the latest development version, you can directly check out the master branch. 
-This is helpful to stay up-to-date with the latest features. For most practical purposes, the master branch is fairly stable.
+If you want to experiment with the latest development version, you can directly check out the main branch.
+This is helpful to stay up-to-date with the latest features. The main branch is extensively tested and
+can be considered stable for most practical purposes.
 
 ::
     
