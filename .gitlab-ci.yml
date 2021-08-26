@@ -10,10 +10,14 @@ slurm-job:
     - cp test/CMakeLists_slurm.txt test/CMakeLists.txt
     - cp test/test_cleanup_slurm.sh test/test_cleanup.sh
     - cp test/test_simulate_multilevel_corruption_slurm.sh test/test_simulate_multilevel_corruption.sh
+    - if [ -d ../deploy ]
+    - then
+    - rm -R ../deploy
     - mkdir ../deploy
+    - ml cmake/3.18
+    - ml gcc/8.1
+    - ml boost/1.72.0
     - ./auto-install.py --without-boost $PWD/../deploy
-    - ml intel/19.1.2
-    - ml boost/1.73.0
     - cd build
     - ctest -VV
 lsf-job:
@@ -29,8 +33,11 @@ lsf-job:
     - cp test/test_cleanup_lsf.sh test/test_cleanup.sh
     - cp test/test_simulate_multilevel_corruption_lsf.sh test/test_simulate_multilevel_corruption.sh
     - ml cmake/3.18
-    - ml gcc/8.3
-    - ml boost
+    - ml gcc/8.1
+    - ml boost/1.72.0
+    - if [ -d ../deploy ]
+    - then
+    - rm -R ../deploy
     - mkdir ../deploy
     - ./auto-install.py --without-boost $PWD/../deploy
     - cd build
