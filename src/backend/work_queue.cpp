@@ -40,7 +40,7 @@ void start_main_loop(const config_t &cfg, MPI_Comm comm, bool ec_active) {
                 nice(10);
                 f(modules.notify_command(c));
             }));
-            if (work_queue.size() > (unsigned int)max_parallelism) {
+            if (work_queue.size() >= (unsigned int)max_parallelism) {
                 work_queue.front().wait();
                 work_queue.pop();
             }

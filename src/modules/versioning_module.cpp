@@ -30,7 +30,6 @@ int versioning_module_t::process_command(const command_t &c) {
     std::unique_lock<std::mutex> lock(history_lock);
     auto &ph = persistent_history[c.name][c.unique_id];
     auto &sh = scratch_history[c.name][c.unique_id];
-    lock.unlock();
     std::set<int, std::greater<int> > versions;
 
     switch (c.command) {
