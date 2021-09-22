@@ -7,8 +7,9 @@ import re
 import tarfile
 
 # CRAY-specific compiler options
-# compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
-compiler_options = []
+#compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
+compiler_options = ["-DCMAKE_C_COMPILER=cc", "-DCMAKE_C_FLAGS=-dynamic", "-DCMAKE_CXX_COMPILER=CC", "-DCMAKE_CXX_FLAGS=-dynamic"]
+#compiler_options = []
 cmake_build_type="Release"
 
 def install_dep(git_link, dep_vers):
