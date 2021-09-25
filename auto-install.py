@@ -7,17 +7,17 @@ import re
 import tarfile
 
 # CRAY-specific compiler options
-# compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
+# compiler_options = ["-DCMAKE_C_COMPILER=cc", "-DCMAKE_C_FLAGS=-dynamic", "-DCMAKE_CXX_COMPILER=CC", "-DCMAKE_CXX_FLAGS=-dynamic"]
 compiler_options = []
 cmake_build_type="Release"
 
-def install_dep(git_link, dep_vers):
+def install_dep(git_link, dep_vers, pkg_options=[]):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
         tmp_dir = args.temp + '/' + name
         subprocess.call(["git", "clone", "-b", dep_vers, "--depth", "1", git_link, tmp_dir])
-        cmake_args = ["-DCMAKE_INSTALL_PREFIX=" + args.prefix, "-DCMAKE_BUILD_TYPE=" + cmake_build_type] + compiler_options
+        cmake_args = ["-DCMAKE_INSTALL_PREFIX=" + args.prefix, "-DCMAKE_BUILD_TYPE=" + cmake_build_type] + compiler_options + pkg_options
         subprocess.check_call(["cmake"] + cmake_args, cwd=tmp_dir)
         subprocess.check_call(["cmake", "--build", tmp_dir, '--target', 'install'])
     except Exception as err:
@@ -90,9 +90,9 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.without_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.3')
+        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.1.1')
         install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.3')
         install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
         install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
         install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')

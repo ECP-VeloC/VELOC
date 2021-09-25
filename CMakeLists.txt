@@ -49,12 +49,6 @@ include_directories(${AXL_INCLUDE_DIRS})
 find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
 
-# PDSH
-find_package(PDSH)
-
-# -----------------------------------------------------------------------------------
-add_subdirectory(scripts)
-
 # -----------------------------------------------------------------------------------
 include_directories(${VELOC_SOURCE_DIR})
 add_subdirectory (src)
