@@ -207,6 +207,18 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
+// 3 lines below cannot be executed because of error trying to include  C++ file above
+//config_t cfg(argv[2]);
+//printf("persistent dir is %s\n", sfg.get("persistent");
+//printf("scratch dir is %s\n", sfg.get("scratch");
+  char com20[50];
+printf("persistent DIR rank =%d\n",rank);
+  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
+  system(com20);
+  char com21[50];
+printf("scratch DIR rank =%d\n",rank);
+  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
+  system(com21);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -232,12 +244,10 @@ printf("CONFIG FILE = %s\n", argv[2]);
   sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
-int already_initiated = atoi(argv[3]);
-printf("had already initiated = %d\n",already_initiated);
-int v;
-if(already_initiated != 0){ 
-  v = VELOC_Restart_test("veloc_test", 0);
+  int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
+  int already_initiated = atoi(argv[3]);
+  printf("had already initiated = %d\n",already_initiated);
 //v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
@@ -245,7 +255,10 @@ if(already_initiated != 0){
       printf("VELOC_Restart_begin FAILED\n");
       return 1;
     }
-    char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+    char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+   // sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
+   // sprintf(original,"/g/g19/kosinov/persistent/");
+   // strcat(original,fname);
     sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
     printf("ORIGINAL=%s\n", original);
     if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
@@ -272,19 +285,35 @@ if(already_initiated != 0){
     }
     return 0;
   } 
+/*  if (rank == 0) {
+      printf("No checkpoint to restart from\n");
+  }*/
   else{
+    if(already_initiated != 0){ 
+      printf("Checkpoint had been initiated. Should have been found\n");
+//  char com20[50];
+//printf("persistent DIR rank =%d\n",rank);
+//  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
+//  system(com20);
+//  char com21[50];
+//printf("scratch DIR rank =%d\n",rank);
+//  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
+//  system(com21);
+      return(1);
+    }
     if (rank == 0) {
       printf("No checkpoint to restart from\n");
     }
   }
-}
-else{
-//write first checkpoint
+
   if(VELOC_Checkpoint_begin("veloc_test", v+1) != VELOC_SUCCESS){
     printf("VELOC_Checkpoint_begin FAILED\n");
     return 1;
   }
-  char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+  char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+  //  sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
+  //  sprintf(original,"/g/g19/kosinov/persistent/");
+  //  strcat(original,fname);
   sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
   printf("ORIGINAL=%s\n", original);
   if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
@@ -316,53 +345,28 @@ else{
     printf("VELOC_Checkpoint_end FAILED\n");
     return 1;
   }
-  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-
-//write second checkpoint
-  if(VELOC_Checkpoint_begin("veloc_test", v+2) != VELOC_SUCCESS){
-    printf("VELOC_Checkpoint_begin FAILED\n");
-    return 1;
-  }
-  char original1[VELOC_MAX_NAME], veloc_file1[VELOC_MAX_NAME];
-  sprintf(original1, "veloc_test-file-ckpt_%d_%d.dat", v+2, rank);
-  printf("ORIGINAL=%s\n", original1);
-  if(VELOC_Route_file(original1, veloc_file1) != VELOC_SUCCESS){
-    printf("VELOC_Route_file FAILED\n");
-    return 1;
-  }
-  printf("vvveloc_file1 is %s\n",veloc_file1);
-  int valid1 = 1;
-  init_buffer(buf, filesize, rank, timestep);
-  timestep++;
-  printf("trying to open file %s\n", veloc_file1);
-  char com12[50];
-  sprintf(com12, "ls -l %s", veloc_file1);
-  system(com12);
-  int fd1 = open(veloc_file1, O_CREAT | O_TRUNC | O_WRONLY, 0644);
-  if (fd1 < 0) {
-    perror("errror with open");
-    exit(1);
-  }
-  printf("printing file permissionsi\n");
-  char com11[50];
-  sprintf(com11, "ls -l %s", veloc_file1);
-  system(com11);
-  printf("FD=%d, timestamp=%d, filesize=%d\n", fd1,timestep,filesize);
-  if(!write_checkpoint(fd1, timestep, buf, filesize)){
-    valid1 = 0;
-  }
-  if(VELOC_Checkpoint_end(valid1) != VELOC_SUCCESS){
-    printf("VELOC_Checkpoint_end FAILED\n");
-    return 1;
-  }
 
   if(buf != NULL) {
     free(buf);
     buf = NULL;
   }
-  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-//VELOC_Checkpoint_wait();
-}
+//  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
+//  VELOC_Checkpoint_wait();
+// if the test  is initial rather than restart, simulate multi-level corruption
+  if(already_initiated != 0){
+    char sysCom[50];
+    char *scratch = getenv("SCRATCH");
+    assert(scratch != NULL);
+    if (rank == 0) {
+       sprintf(sysCom, "rm -rf %s/*", scratch);
+       system(sysCom);
+    }
+    if (rank == 2) {
+       sprintf(sysCom, "rm -rf %s/*er*", scratch);
+       system(sysCom);
+    }
+  }
+
   VELOC_Finalize(1);
   MPI_Finalize();
   return 0;
