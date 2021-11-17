@@ -22,11 +22,15 @@ using namespace boost::interprocess;
 typedef std::function<void (int)> completion_t;
 
 static const size_t IPC_MAX_SIZE = 1 << 20;
+static const std::string UID = std::to_string(getuid());
+static const std::string IPC_BUFFER = "veloc-ipc-buffer" + UID;
+static const std::string IPC_MUTEX = "veloc-ipc-mutex-" + UID;
+static const std::string IPC_COND = "veloc-ipc-cond-" + UID;
 
 inline void backend_cleanup() {
-    shared_memory_object::remove("veloc_shm");
-    named_mutex::remove("veloc_pending_mutex");
-    named_condition::remove("veloc_pending_cond");
+    shared_memory_object::remove(IPC_BUFFER.c_str());
+    named_mutex::remove(IPC_MUTEX.c_str());
+    named_condition::remove(IPC_COND.c_str());
 }
 
 template<typename T> struct client_queue_t {
@@ -48,9 +52,9 @@ template<typename T> class comm_client_t {
     container_t *data = NULL;
 
   public:
-    comm_client_t(int id) : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
-                       pending_mutex(open_or_create, "veloc_pending_mutex"),
-                       pending_cond(open_or_create, "veloc_pending_cond") {
+    comm_client_t(int id) : segment(open_or_create, IPC_BUFFER.c_str(), IPC_MAX_SIZE),
+                            pending_mutex(open_or_create, IPC_MUTEX.c_str()),
+                            pending_cond(open_or_create, IPC_COND.c_str()) {
 	scoped_lock<named_mutex> cond_lock(pending_mutex);
         data = segment.find_or_construct<container_t>(std::to_string(id).c_str())(segment.get_allocator<typename container_t::T_allocator>());
     }
@@ -103,9 +107,9 @@ template<typename T> class comm_backend_t {
     }
 
   public:
-    comm_backend_t() : segment(open_or_create, "veloc_shm" , IPC_MAX_SIZE),
-                 pending_mutex(open_or_create, "veloc_pending_mutex"),
-                 pending_cond(open_or_create, "veloc_pending_cond") { }
+    comm_backend_t() : segment(open_or_create, IPC_BUFFER.c_str(), IPC_MAX_SIZE),
+                       pending_mutex(open_or_create, IPC_MUTEX.c_str()),
+                       pending_cond(open_or_create, IPC_COND.c_str()) { }
     completion_t dequeue_any(T &e) {
 	// wait until at least one pending queue has at least one element
 	container_t *first_found;
