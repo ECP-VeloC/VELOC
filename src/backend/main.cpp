@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     if (!ec_active)
         kill(parent_id, SIGUSR1);
     parent_id = getpid();
-    if (write(ready_fd, &parent_id, sizeof(pid_t)) != sizeof(pid_t))
+    if (pwrite(ready_fd, &parent_id, sizeof(pid_t), 0) != sizeof(pid_t))
         FATAL("cannot write PID to " << ready_file << ", error: " << strerror(errno));
     flock(ready_fd, LOCK_UN);
     close(ready_fd);
