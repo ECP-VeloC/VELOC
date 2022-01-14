@@ -13,8 +13,7 @@
 
 class client_impl_t : public veloc::client_t {
     config_t cfg;
-    MPI_Comm comm, local, backends;
-    bool collective, ec_active;
+    MPI_Comm comm = MPI_COMM_NULL, local = MPI_COMM_NULL, backends;
     int rank;
 
     command_t current_ckpt;
@@ -22,13 +21,10 @@ class client_impl_t : public veloc::client_t {
 
     std::map<int, size_t> region_info;
     size_t header_size = 0;
-
     comm_client_t<command_t> *queue = NULL;
-    module_manager_t *modules = NULL;
 
     int run_blocking(const command_t &cmd);
     bool read_header();
-    void launch_threaded(MPI_Comm comm, const std::string &cfg_file);
 
 public:
     client_impl_t(unsigned int id, const std::string &cfg_file);

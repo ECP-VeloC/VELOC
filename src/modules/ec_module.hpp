@@ -12,7 +12,7 @@
 
 class ec_module_t {
     const config_t &cfg;
-    MPI_Comm comm, comm_domain;
+    MPI_Comm comm;
     std::string fdomain;
     int scheme_id, interval;
     std::chrono::system_clock::time_point last_timestamp;

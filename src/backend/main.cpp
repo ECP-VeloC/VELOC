@@ -58,12 +58,10 @@ int main(int argc, char *argv[]) {
 	ec_active = false;
     }
 
-    // initialize MPI or fork into deamon mode if EC disabled
+    // start main loop: initialize MPI or fork into deamon mode if EC disabled
     if (ec_active) {
-	int rank;
 	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	DBG("Active backend rank = " << rank);
+        start_main_loop(cfg, MPI_COMM_WORLD);
     } else {
         pid_t child_id = fork();
         if (child_id < 0 || (child_id == 0 && setsid() == -1))
@@ -78,9 +76,8 @@ int main(int argc, char *argv[]) {
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
         close(STDERR_FILENO);
+        start_main_loop(cfg, MPI_COMM_NULL);
     }
-
-    start_main_loop(cfg, MPI_COMM_WORLD, ec_active);
 
     // init complete, set exit handler and signal parent to continue
     struct sigaction action;

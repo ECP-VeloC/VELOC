@@ -31,55 +31,48 @@ static void launch_backend(const std::string &cfg_file) {
 }
 
 client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
-    cfg(cfg_file, false), collective(false), rank(id) {
-    if (cfg.is_sync()) {
-	modules = new module_manager_t();
-	modules->add_default_modules(cfg);
-    } else {
-        launch_backend(cfg_file);
-	queue = new comm_client_t<command_t>(rank);
-    }
-    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
+    cfg(cfg_file, false), rank(id) {
+    launch_backend(cfg_file);
+    queue = new comm_client_t<command_t>(rank);
+    run_blocking(command_t(rank, command_t::INIT, 0, ""));
     DBG("VELOC initialized");
 }
 
 client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
-    cfg(cfg_file, false), comm(c), collective(true) {
-    MPI_Comm_rank(comm, &rank);
-    if (cfg.is_sync()) {
-	modules = new module_manager_t();
-	modules->add_default_modules(cfg, comm, true);
-    } else {
-        if (cfg.get_optional("threaded", false)) {
-            int provided;
-            MPI_Query_thread(&provided);
-            if (provided != MPI_THREAD_MULTIPLE)
-                FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread");
-            MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
-            MPI_Comm_rank(local, &provided);
-            MPI_Comm_split(comm, provided == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
-            if (provided == 0)
-                start_main_loop(cfg, backends, true);
-            MPI_Barrier(local);
-        } else
-            launch_backend(cfg_file);
-	queue = new comm_client_t<command_t>(rank);
+    cfg(cfg_file, false), comm(c) {
+    int provided;
+    bool threaded = cfg.get_optional("threaded", false);
+    if (threaded) {
+        MPI_Query_thread(&provided);
+        if (provided != MPI_THREAD_MULTIPLE)
+            FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread with the MPI_THREAD_MULTIPLE flag");
     }
-    ec_active = run_blocking(command_t(rank, command_t::INIT, 0, "")) > 0;
+    if (cfg.is_sync() || threaded) {
+        MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
+        MPI_Comm_rank(local, &provided);
+        MPI_Comm_split(comm, provided == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
+        if (provided == 0)
+            start_main_loop(cfg, backends);
+        MPI_Barrier(local);
+    } else
+        launch_backend(cfg_file);
+    MPI_Comm_rank(comm, &rank);
+    queue = new comm_client_t<command_t>(rank);
+    run_blocking(command_t(rank, command_t::INIT, 0, ""));
     DBG("VELOC initialized");
 }
 
 client_impl_t::~client_impl_t() {
-    if (collective && cfg.get_optional("threaded", false))
+    if (local != MPI_COMM_NULL) {
         MPI_Barrier(local);
+        MPI_Comm_free(&local);
+        MPI_Comm_free(&backends);
+    }
     delete queue;
-    delete modules;
     DBG("VELOC finalized");
 }
 
 bool client_impl_t::checkpoint_wait() {
-    if (cfg.is_sync())
-	return true;
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
 	return false;
@@ -168,21 +161,13 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
 
 bool client_impl_t::checkpoint_end(bool /*success*/) {
     checkpoint_in_progress = false;
-    if (cfg.is_sync())
-	return modules->notify_command(current_ckpt) == VELOC_SUCCESS;
-    else {
-	queue->enqueue(current_ckpt);
-	return true;
-    }
+    queue->enqueue(current_ckpt);
+    return cfg.is_sync() ? queue->wait_completion() : true;
 }
 
 int client_impl_t::run_blocking(const command_t &cmd) {
-    if (cfg.is_sync())
-	return modules->notify_command(cmd);
-    else {
-	queue->enqueue(cmd);
-	return queue->wait_completion();
-    }
+    queue->enqueue(cmd);
+    return queue->wait_completion();
 }
 
 int client_impl_t::restart_test(const std::string &name, int needed_version) {
@@ -192,7 +177,7 @@ int client_impl_t::restart_test(const std::string &name, int needed_version) {
     }
     int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name.c_str()));
     DBG(name << ": latest version = " << version);
-    if (collective) {
+    if (comm != MPI_COMM_NULL) {
 	int max_version;
         MPI_Allreduce(&version, &max_version, 1, MPI_INT, MPI_MAX, comm);
 	return max_version;
@@ -228,7 +213,7 @@ bool client_impl_t::restart_begin(const std::string &name, int version) {
     int result, end_result;
     current_ckpt = command_t(rank, command_t::RESTART, version, name.c_str());
     result = run_blocking(current_ckpt);
-    if (collective)
+    if (comm != MPI_COMM_NULL)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
     else
 	end_result = result;

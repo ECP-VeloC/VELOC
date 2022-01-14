@@ -9,7 +9,7 @@
 #include <mutex>
 #include <thread>
 
-void start_main_loop(const config_t &cfg, MPI_Comm comm, bool ec_active) {
+void start_main_loop(const config_t &cfg, MPI_Comm comm) {
     std::condition_variable thread_cond;
     bool init_finished = false;
     std::thread([&]() {
@@ -26,7 +26,7 @@ void start_main_loop(const config_t &cfg, MPI_Comm comm, bool ec_active) {
         backend_cleanup();
         comm_backend_t<command_t> command_queue;
         module_manager_t modules;
-        modules.add_default_modules(cfg, comm, ec_active);
+        modules.add_default(cfg, comm);
         init_finished = true;
         thread_cond.notify_all();
 

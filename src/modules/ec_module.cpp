@@ -2,7 +2,6 @@
 #include "common/status.hpp"
 
 #include "er.h"
-#include "rankstr_mpi.h"
 #include "common/file_util.hpp"
 
 #include <unistd.h>
@@ -12,38 +11,37 @@
 
 
 ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
-    if(ER_Init(cfg.get_cfg_file().c_str()) != ER_SUCCESS)
-	throw std::runtime_error("Failed to initialize ER from config file: " + cfg.get_cfg_file());
-    char host_name[HOST_NAME_MAX] = "";
-    gethostname(host_name, HOST_NAME_MAX);
-    if(!cfg.get_optional("failure_domain", fdomain))
-	fdomain.assign(host_name);
-
-    int rank, ranks;
+    int ranks;
     MPI_Comm_size(comm, &ranks);
-    MPI_Comm_rank(comm, &rank);
-
-    scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, 1);
-    if (scheme_id < 0)
-	FATAL("Failed to create scheme using failure domain: " << fdomain);
-    rankstr_mpi_comm_split(comm, host_name, 0, 0, 1, &comm_domain);
-
+    if (ranks < 2) {
+        INFO("Running on a single host, EC deactivated");
+        interval = -1;
+        return;
+    }
     if (!cfg.get_optional("ec_interval", interval)) {
-	INFO("EC interval not specified, every checkpoint will be protected using EC");
+        INFO("EC interval not specified, every checkpoint will be protected using EC");
 	interval = 0;
     }
-    int domain_ranks;
-    MPI_Comm_size(comm_domain, &domain_ranks);
-    if (domain_ranks == ranks) {
-	INFO("Running on a single host, EC deactivated");
-	interval = -1;
+
+    if (ER_Init(cfg.get_cfg_file().c_str()) != ER_SUCCESS)
+	FATAL("Failed to initialize ER from config file: " << cfg.get_cfg_file());
+    if (!cfg.get_optional("failure_domain", fdomain)) {
+        char host_name[HOST_NAME_MAX] = "";
+        gethostname(host_name, HOST_NAME_MAX);
+	fdomain.assign(host_name);
+    }
+    scheme_id = ER_Create_Scheme(comm, fdomain.c_str(), ranks, 1);
+    if (scheme_id < 0) {
+        ER_Finalize();
+        FATAL("Failed to create scheme using failure domain: " << fdomain);
     }
 }
 
 ec_module_t::~ec_module_t() {
-    ER_Free_Scheme(scheme_id);
-    ER_Finalize();
-    MPI_Comm_free(&comm_domain);
+    if (interval >= 0) {
+        ER_Free_Scheme(scheme_id);
+        ER_Finalize();
+    }
 }
 
 int ec_module_t::process_command(const command_t &c) {
@@ -53,8 +51,7 @@ int ec_module_t::process_command(const command_t &c) {
     switch (c.command) {
     case command_t::INIT:
 	last_timestamp = std::chrono::system_clock::now() + std::chrono::seconds(interval);
-	return 1; // ec_active flag for client
-
+	return VELOC_SUCCESS;
     default:
 	return VELOC_IGNORED;
     }
@@ -79,7 +76,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	    else
 		return VELOC_SUCCESS;
 	}
-	int set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
+	int set_id = ER_Create(comm, comm, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint: " << name);
 	    return VELOC_FAILURE;
@@ -112,7 +109,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
         }
 
         DBG("attempting ER rebuild for checkpoint: " << name);
-	int set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
+	int set_id = ER_Create(comm, comm, name.c_str(), ER_DIRECTION_REBUILD, 0);
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint: " << name);
 	    return VELOC_FAILURE;

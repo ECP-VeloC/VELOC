@@ -18,7 +18,7 @@
 
 class module_manager_t {
     typedef std::function<int (const command_t &)> method_t;
-    std::vector<method_t> sig;
+    std::vector<method_t> modules;
     client_watchdog_t *watchdog = NULL;
     transfer_module_t *transfer = NULL;
     client_aggregator_t *ec_agg = NULL;
@@ -29,10 +29,9 @@ class module_manager_t {
 public:
     module_manager_t();
     ~module_manager_t();
-    void add_default_modules(const config_t &cfg);
-    void add_default_modules(const config_t &cfg, MPI_Comm comm, bool ec_active);
+    void add_default(const config_t &cfg, MPI_Comm comm = MPI_COMM_NULL);
     void add_module(const method_t &m) {
-	sig.push_back(m);
+	modules.push_back(m);
     }
     int notify_command(const command_t &c);
 };
