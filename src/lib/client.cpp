@@ -66,8 +66,9 @@ client_impl_t::~client_impl_t() {
     if (local != MPI_COMM_NULL) {
         MPI_Barrier(local);
         MPI_Comm_free(&local);
-        MPI_Comm_free(&backends);
     }
+    if (backends != MPI_COMM_NULL)
+        MPI_Comm_free(&backends);
     delete queue;
     DBG("VELOC finalized");
 }
@@ -162,7 +163,7 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
 bool client_impl_t::checkpoint_end(bool /*success*/) {
     checkpoint_in_progress = false;
     queue->enqueue(current_ckpt);
-    return cfg.is_sync() ? queue->wait_completion() : true;
+    return cfg.is_sync() ? queue->wait_completion() == VELOC_SUCCESS : true;
 }
 
 int client_impl_t::run_blocking(const command_t &cmd) {
