@@ -208,7 +208,7 @@ bool client_impl_t::restart_begin(const std::string &name, int version) {
     }
     if (!validate_name(name) || version < 0) {
 	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
-	return VELOC_FAILURE;
+	return false;
     }
 
     int result, end_result;

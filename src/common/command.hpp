@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <limits.h>
 
+#define __DEBUG
+#include "debug.hpp"
+
 class command_t {
 public:
     static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3, STATUS = 4;
@@ -19,7 +22,7 @@ public:
     }
     void assign_path(char *dest, const std::string &src) {
 	if (src.length() > PATH_MAX)
-	    throw std::runtime_error("checkpoint name '" + src + "' is longer than admissible size " + std::to_string(PATH_MAX));
+	    FATAL("checkpoint name '" + src + "' is longer than admissible size " + std::to_string(PATH_MAX));
 	std::strcpy(dest, src.c_str());
     }
     std::string stem() const {

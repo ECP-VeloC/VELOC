@@ -6,7 +6,7 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static void get_version_set(const std::string &p, const char *cname, int id, std::set<int> &result) {
+static void scratch_version_set(const std::string &p, const char *cname, int id, std::set<int> &result) {
     parse_dir(p, cname,
               [&](const std::string &f, const std::string &sid, const std::string &sv) {
                   if (sid == "ec" || std::stoi(sid) == id)
@@ -35,9 +35,10 @@ int versioning_module_t::process_command(const command_t &c) {
     switch (c.command) {
     case command_t::TEST:
         ph.clear();
-        get_version_set(cfg.get("persistent"), c.name, c.unique_id, ph);
+        if (cfg.storage())
+            cfg.storage()->get_versions(c, ph);
         sh.clear();
-        get_version_set(cfg.get("scratch"), c.name, c.unique_id, sh);
+        scratch_version_set(cfg.get("scratch"), c.name, c.unique_id, sh);
         std::set_union(ph.begin(), ph.end(), sh.begin(), sh.end(),
                        std::inserter(versions, versions.begin()));
 
@@ -52,11 +53,13 @@ int versioning_module_t::process_command(const command_t &c) {
 
     case command_t::CHECKPOINT:
         // delete old versions on persistent mount point
-        if (max_versions > 0) {
+        if (cfg.storage() && max_versions > 0) {
             ph.insert(c.version);
             auto it = ph.begin();
             while (it != ph.end() && ph.size() > (unsigned int)max_versions) {
-                remove(c.filename(cfg.get("persistent"), *it).c_str());
+                command_t old = c;
+                old.version = *it;
+                cfg.storage()->remove(old);
                 it = ph.erase(it);
             }
         }
@@ -76,7 +79,7 @@ int versioning_module_t::process_command(const command_t &c) {
         return VELOC_SUCCESS;
 
     case command_t::RESTART:
-        if (access(c.filename(cfg.get("persistent")).c_str(), R_OK) == 0)
+        if (cfg.storage() && cfg.storage()->exists(c))
             ph.insert(c.version);
         if (access(c.filename(cfg.get("scratch")).c_str(), R_OK) == 0)
             sh.insert(c.version);
