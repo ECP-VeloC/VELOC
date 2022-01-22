@@ -7,7 +7,12 @@
 #include <limits.h>
 
 #include "storage/posix_module.hpp"
+#ifdef WITH_AXL
 #include "storage/axl_module.hpp"
+#endif
+#ifdef WITH_DAOS
+#include "storage/daos_module.hpp"
+#endif
 
 #define __DEBUG
 #include "debug.hpp"
@@ -31,11 +36,22 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
     if (!check_dir(scratch = get("scratch")))
 	FATAL("scratch directory " << scratch << " inaccessible!");
 
-    // configure AXL or POSIX
-    if (get_optional("persistent", persistent)) {
+    // configure persistent storage
+    if (get_optional("daos_pool", persistent) && get_optional("daos_cont", val)) {
+#ifdef WITH_DAOS
+        INFO("using DAOS to interact with persistent storage, pool/container: " << persistent << "/" << val);
+        sm = new daos_module_t(scratch, persistent, val);
+#else
+        FATAL("DAOS requested but not available at compile time, please link with DAOS");
+#endif
+    } else if (get_optional("persistent", persistent)) {
         if (get_optional("axl_type", val)) {
+#ifdef WITH_AXL
             INFO("using AXL to interact with persistent storage, AXL type: " << val);
             sm = new axl_module_t(scratch, persistent, val);
+#else
+            FATAL("AXL requested but not available at compile time, please link with AXL");
+#endif
         } else {
             INFO("using POSIX to interact with persistent storage, path: " << persistent);
             sm = new posix_module_t(scratch, persistent);

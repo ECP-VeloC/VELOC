@@ -1,5 +1,5 @@
 #include "file_util.hpp"
-#include "common/status.hpp"
+#include "command.hpp"
 
 #include <sys/sendfile.h>
 #include <sys/types.h>
@@ -10,7 +10,6 @@
 
 #include <cerrno>
 #include <cstring>
-#include <regex>
 
 #define __DEBUG
 #include "debug.hpp"
@@ -20,15 +19,14 @@ bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f)
     dir = opendir(p.c_str());
     if (dir == NULL)
 	return false;
-    std::regex e(cname + "-([0-9]+|ec)-([0-9]+).*");
+    std::regex e = command_t::regex(cname);
     dirent *dentry;
     while ((dentry = readdir(dir)) != NULL) {
         if (dentry->d_type == DT_REG || dentry->d_type == DT_LNK) {
-            std::smatch sm;
             std::string dname(dentry->d_name);
-            std::regex_match(dname, sm, e);
-            if (sm.size() == 3)
-                f(p + "/" + dentry->d_name, sm[1], sm[2]);
+            int rank, version;
+            if (command_t::match(dname, e, rank, version))
+                f(p + "/" + dentry->d_name, rank, version);
         }
     }
     closedir(dir);

@@ -1,53 +1,31 @@
 #ifndef __COMMAND_HPP
 #define __COMMAND_HPP
 
-#include <iostream>
-#include <cstring>
-#include <stdexcept>
 #include <limits.h>
-
-#define __DEBUG
-#include "debug.hpp"
+#include <iostream>
+#include <string.h>
+#include <regex>
 
 class command_t {
 public:
     static const int INIT = 0, CHECKPOINT = 1, RESTART = 2, TEST = 3, STATUS = 4;
+    static const size_t CKPT_NAME_MAX = 128;
 
     int unique_id, command, version;
-    char name[PATH_MAX] = {}, original[PATH_MAX] = {};
+    char name[CKPT_NAME_MAX] = {}, original[PATH_MAX] = {};
 
-    command_t() { }
-    command_t(int r, int c, int v, const std::string &s) : unique_id(r), command(c), version(v) {
-	assign_path(name, s.c_str());
-    }
-    void assign_path(char *dest, const std::string &src) {
-	if (src.length() > PATH_MAX)
-	    FATAL("checkpoint name '" + src + "' is longer than admissible size " + std::to_string(PATH_MAX));
-	std::strcpy(dest, src.c_str());
-    }
-    std::string stem() const {
-	return std::string(name) + "-" + std::to_string(unique_id) +
-	    "-" + std::to_string(version) + ".dat";
-    }
-    std::string filename(const std::string &prefix) const {
-	return prefix + "/" + stem();
-    }
-    std::string filename(const std::string &prefix, int new_version) const {
-	return prefix + "/" + name +
-	    "-" + std::to_string(unique_id) + "-" +
-	    std::to_string(new_version) + ".dat";
-    }
-    friend std::ostream &operator<<(std::ostream &output, const command_t &c) {
-	output << "(Rank = '" << c.unique_id << "', Command = '" << c.command
-	       << "', Version = '" << c.version << "', File = '" << c.stem() << "')";
-	return output;
-    }
-    template<typename A> void save(A& ar) {
-        ar.write(this);
-    }
-    template<typename A> void load(A& ar) {
-        ar.read(this);
-    }
+    static std::regex regex(const std::string &cname);
+    static bool match(const std::string &str, const std::regex &ex, int &id, int &version);
+
+    command_t();
+    command_t(int r, int c, int v, const std::string &src);
+    void assign_path(const std::string &src);
+    std::string stem() const;
+    std::string filename(const std::string &prefix) const;
+    std::string filename(const std::string &prefix, int new_version) const;
+    friend std::ostream &operator<<(std::ostream &output, const command_t &c);
+    template<typename A> void save(A& ar);
+    template<typename A> void load(A& ar);
 };
 
 #endif // __COMMAND_HPP

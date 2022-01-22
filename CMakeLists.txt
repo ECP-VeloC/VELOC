@@ -42,12 +42,23 @@ find_package(OpenSSL REQUIRED)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
-# internal dependencies
-find_package(AXL REQUIRED)
-include_directories(${AXL_INCLUDE_DIRS})
-
+# ER
 find_package(ER REQUIRED)
 include_directories(${ER_INCLUDE_DIRS})
+
+# AXL
+find_package(AXL)
+if(AXL_FOUND)
+  include_directories(${AXL_INCLUDE_DIRS})
+  add_definitions(-DWITH_AXL)
+endif()
+
+# DAOS
+find_package(DAOS)
+if(DAOS_FOUND)
+  include_directories(${DAOS_INCLUDE_DIRS})
+  add_definitions(-DWITH_DAOS)
+endif()
 
 # -----------------------------------------------------------------------------------
 include_directories(${VELOC_SOURCE_DIR})

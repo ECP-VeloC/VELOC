@@ -13,9 +13,9 @@ posix_module_t::posix_module_t(const std::string &s, const std::string &p) : scr
 
 void posix_module_t::get_versions(const command_t &cmd, std::set<int> &result) {
     parse_dir(persistent, cmd.name,
-              [&](const std::string &f, const std::string &sid, const std::string &sv) {
-                  if (std::stoi(sid) == cmd.unique_id)
-                      result.insert(std::stoi(sv));
+              [&](const std::string &f, int id, int v) {
+                  if (id == cmd.unique_id)
+                      result.insert(v);
               });
 }
 

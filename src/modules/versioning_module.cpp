@@ -6,11 +6,11 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-static void scratch_version_set(const std::string &p, const char *cname, int id, std::set<int> &result) {
+static void scratch_version_set(const std::string &p, const char *cname, int req_id, std::set<int> &result) {
     parse_dir(p, cname,
-              [&](const std::string &f, const std::string &sid, const std::string &sv) {
-                  if (sid == "ec" || std::stoi(sid) == id)
-                      result.insert(std::stoi(sv));
+              [&](const std::string &f, int id, int v) {
+                  if (id == -1 || id == req_id)
+                      result.insert(v);
               });
 }
 
@@ -69,8 +69,8 @@ int versioning_module_t::process_command(const command_t &c) {
             auto it = sh.begin();
             while (it != sh.end() && sh.size() > (unsigned int)scratch_versions) {
                 parse_dir(cfg.get("scratch"), c.name,
-                          [&](const std::string &f, const std::string &, const std::string &sv) {
-                              if (std::stoi(sv) == *it)
+                          [&](const std::string &f, int, int v) {
+                              if (v == *it)
                                   remove(f.c_str());
                           });
                 it = sh.erase(it);

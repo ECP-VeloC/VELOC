@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 
-typedef std::function<void (const std::string &, const std::string &, const std::string &)> dir_callback_t;
+typedef std::function<void (const std::string &, int, int)> dir_callback_t;
 
 ssize_t file_size(const std::string &source);
 bool write_file(const std::string &source, unsigned char *buffer, ssize_t size);

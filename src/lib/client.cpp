@@ -189,9 +189,9 @@ int client_impl_t::restart_test(const std::string &name, int needed_version) {
 std::string client_impl_t::route_file(const std::string &original) {
     char abs_path[PATH_MAX + 1];
     if (original[0] != '/' && getcwd(abs_path, PATH_MAX) != NULL)
-	current_ckpt.assign_path(current_ckpt.original, std::string(abs_path) + "/" + original);
+	current_ckpt.assign_path(std::string(abs_path) + "/" + original);
     else
-	current_ckpt.assign_path(current_ckpt.original, original);
+	current_ckpt.assign_path(original);
     return current_ckpt.filename(cfg.get("scratch"));
 }
 
