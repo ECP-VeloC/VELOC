@@ -1,7 +1,7 @@
 #!/bin/bash
 #rm -rf $SCRATCH/*
 #rm -rf $PERSISTENT/*
-rm -rf ~/persistent/*
-rm -rf /dev/shm/scratch/*
+rm -rf /home/ac.gkosinovsky/tmp/persistent/*
+rm -rf /dev/shm/greg_scratch/*
 
 

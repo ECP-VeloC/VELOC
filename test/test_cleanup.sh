@@ -1,4 +1,4 @@
 #!/bin/bash
-rm -rf /ccs/home/kosinov/persistent/*
-rm -rf /dev/shm/scratch/*
+rm -rf /home/ac.gkosinovsky/tmp/persistent/*
+rm -rf /dev/shm/greg_scratch/*
 
