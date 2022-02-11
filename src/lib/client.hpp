@@ -13,7 +13,7 @@
 
 class client_impl_t : public veloc::client_t {
     config_t cfg;
-    MPI_Comm comm = MPI_COMM_NULL, local = MPI_COMM_NULL, backends;
+    MPI_Comm comm, local = MPI_COMM_NULL, backends = MPI_COMM_NULL;
     int rank;
 
     command_t current_ckpt;
