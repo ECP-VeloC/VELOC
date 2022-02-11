@@ -11,7 +11,7 @@ import tarfile
 compiler_options = []
 cmake_build_type="Release"
 
-def install_dep(git_link, dep_vers, pkg_options=[]):
+def install_dep(git_link, dep_vers, pkg_options = ["-DENABLE_TESTS=OFF"]):
     name = os.path.basename(git_link).split('.')[0]
     print("Installing {0}...".format(name))
     try:
@@ -28,8 +28,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
     parser.add_argument('--protocol', default='ipc_queue',
                         help='communication protocol between client and active backend (default: ipc_queue). Only for advanced users.')
-    parser.add_argument('--with-pdsh', action='store_true',
-                        help='add PDSH to installation (optional)')
     parser.add_argument('--without-boost', action='store_true',
                         help='use existing Boost libraries for ipc_queue protocol (assume pre-installed)')
     parser.add_argument('--without-deps', action='store_true',
@@ -78,24 +76,14 @@ if __name__ == "__main__":
             print("Error installing Boost: {0}! Try to install it manually and use --without-boost. Alternatively, use --protocol=socket_queue".format(err))
             sys.exit(3)
 
-    # PDSH
-    if (args.with_pdsh):
-        print("Installing PDSH...")
-        pdsh_tarball = wget.download('https://github.com/chaos/pdsh/releases/download/pdsh-2.33/pdsh-2.33.tar.gz', out=args.temp)
-        f = tarfile.open(pdsh_tarball, mode='r:gz')
-        f.extractall(path=args.temp)
-        f.close()
-        os.system("cd {0} && ./configure --prefix={1} --with-mrsh --with-rsh --with-ssh \
-                       && make install".format(args.temp + '/pdsh-2.33', args.prefix))
-
     # Other depenencies
     if (not args.without_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.1.1')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
-        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
+        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.2.0')
+        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.5.0')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.1.0')
+        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.1.0')
+        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.1.0')
+        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.1.0')
 
     # VeloC
     veloc_build = './build'

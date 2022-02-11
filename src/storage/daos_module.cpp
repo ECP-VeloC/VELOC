@@ -36,13 +36,13 @@ void daos_module_t::get_versions(const command_t &cmd, std::set<int> &result) {
     char buf[DAOS_BUFF_SIZE];
     daos_key_desc_t kds[DAOS_BATCH_SIZE];
     daos_anchor_t anchor = {0};
-    d_sg_list_t	sgl;
+    d_sg_list_t sgl;
     d_iov_t sg_iov;
 
     d_iov_set(&sg_iov, buf, DAOS_BUFF_SIZE);
     sgl.sg_nr = 1;
     sgl.sg_nr_out = 0;
-    sgl.sg_iovs	= &sg_iov;
+    sgl.sg_iovs = &sg_iov;
 
     std::regex e = command_t::regex(cmd.name);
     while (!daos_anchor_is_eof(&anchor)) {
@@ -55,6 +55,7 @@ void daos_module_t::get_versions(const command_t &cmd, std::set<int> &result) {
         for (uint32_t i = 0; i < nr; ptr += kds[i].kd_key_len, i++) {
             std::string key(ptr, kds[i].kd_key_len);
             int id, v;
+            DBG("found key: " << key);
             // no need to match id, each id has its own KV store
             if (command_t::match(key, e, id, v))
                 result.insert(v);
@@ -116,13 +117,13 @@ bool daos_module_t::restore(const command_t &cmd) {
         return false;
     }
     std::string dest = cmd.filename(scratch);
-    int fo = open(dest.c_str(), O_WRONLY);
+    int fo = open(dest.c_str(), O_CREAT | O_RDWR);
     if (fo == -1) {
         ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
         daos_kv_close(oh, NULL);
         return false;
     }
-    unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_WRITE, MAP_PRIVATE, fo, 0);
+    unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fo, 0);
     if (buff == MAP_FAILED) {
         close(fo);
         daos_kv_close(oh, NULL);

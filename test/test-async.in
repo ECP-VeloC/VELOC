@@ -10,6 +10,7 @@ export VELOC_BIN=$BIN_DIR
 rm -rf /tmp/scratch /tmp/persistent /tmp/meta
 mkdir -p /tmp/scratch /tmp/persistent /tmp/meta
 
+$VELOC_BIN/veloc-backend $CFG --disable-ec
 echo "First run (expected to fail):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
 rm -rf /tmp/scratch

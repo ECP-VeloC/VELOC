@@ -11,8 +11,7 @@ static const std::map<std::string, axl_xfer_t> axl_type_strs = {
     {"native", AXL_XFER_NATIVE},
     {"AXL_XFER_SYNC", AXL_XFER_SYNC},
     {"AXL_XFER_ASYNC_DW", AXL_XFER_ASYNC_DW},
-    {"AXL_XFER_ASYNC_BBAPI", AXL_XFER_ASYNC_BBAPI},
-    {"AXL_XFER_ASYNC_CPPR", AXL_XFER_ASYNC_CPPR},
+    {"AXL_XFER_ASYNC_BBAPI", AXL_XFER_ASYNC_BBAPI}
 };
 
 axl_module_t::axl_module_t(const std::string &s, const std::string &p, const std::string &axl_type_str) : posix_module_t(s, p) {
@@ -20,13 +19,13 @@ axl_module_t::axl_module_t(const std::string &s, const std::string &p, const std
     if (e == axl_type_strs.end())
         FATAL("AXL has no transfer type called \"" << axl_type_str <<"\", please consult the documentation");
     axl_type = e->second;
-    int ret = AXL_Init(NULL);
+    int ret = AXL_Init();
     if (ret)
         FATAL("AXL initialization failed, error code: " << ret);
 }
 
 bool axl_module_t::axl_transfer_file(const std::string &source, const std::string &dest) {
-    int id = AXL_Create(axl_type, source.c_str()), result = id;
+    int id = AXL_Create(axl_type, source.c_str(), NULL), result = id;
     if (result < 0)
         goto err;
     if ((result = AXL_Add(id, (char *)source.c_str(), (char *)dest.c_str())))
