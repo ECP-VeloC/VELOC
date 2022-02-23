@@ -3,17 +3,21 @@
 LIB_DIR=@CMAKE_INSTALL_FULL_LIBDIR@
 BIN_DIR=@CMAKE_INSTALL_FULL_BINDIR@
 TEST_DIR=@CMAKE_CURRENT_BINARY_DIR@
-CFG=@CMAKE_CURRENT_SOURCE_DIR@/heatdis.cfg
+CFG=$TEST_DIR/heatdis.cfg
+
+SCRATCH=@CMAKE_TEST_SCRATCH@
+PERSISTENT=@CMAKE_TEST_PERSISTENT@
+META=@CMAKE_TEST_META@
 
 export LD_LIBRARY_PATH=$LIB_DIR:$LD_LIBRARY_PATH
 export VELOC_BIN=$BIN_DIR
-rm -rf /tmp/scratch /tmp/persistent /tmp/meta
-mkdir -p /tmp/scratch /tmp/persistent /tmp/meta
+rm -rf $SCRATCH $PERSISTENT $META
+mkdir -p $SCRATCH $PERSISTENT $META
 
 $VELOC_BIN/veloc-backend $CFG --disable-ec
 echo "First run (expected to fail):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG
-rm -rf /tmp/scratch
+rm -rf $SCRATCH
 
 echo "Second run (expected to succeed):"
 mpirun -np 2 $TEST_DIR/heatdis_fault 256 $CFG

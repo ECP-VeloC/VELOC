@@ -1,0 +1,7 @@
+scratch = @CMAKE_TEST_SCRATCH@
+persistent = @CMAKE_TEST_PERSISTENT@
+meta = @CMAKE_TEST_META@
+max_versions = 2
+scratch_versions = 1
+mode = async
+chksum = true

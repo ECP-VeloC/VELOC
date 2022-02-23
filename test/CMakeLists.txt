@@ -12,5 +12,12 @@ target_link_libraries (heatdis_file m veloc-client)
 target_link_libraries (heatdis_fault m veloc-client)
 #target_link_libraries (serial_test veloc-client)
 
+# Configure test paths
+set(CMAKE_TEST_SCRATCH /tmp/scratch CACHE PATH "Scratch path for CMake test")
+set(CMAKE_TEST_PERSISTENT /tmp/persistent CACHE PATH "Persistent path for CMake test")
+set(CMAKE_TEST_META /tmp/meta CACHE PATH "Metadata path for CMake test")
 configure_file(test-async.in test-async.sh @ONLY)
+configure_file(heatdis.in heatdis.cfg @ONLY)
+
+# Add test
 add_test(async test-async.sh)
