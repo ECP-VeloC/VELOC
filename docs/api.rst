@@ -248,7 +248,7 @@ This function ends the checkpoint phase. It must be called collectively by all p
 same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
 to write the local checkpoint. In synchronous mode, ending the checkpoint phase will perform all resilience strategies
 employed by VeloC in blocking fashion. The return value indicates whether these strategies succeeded or not. In 
-asynchornous mode, ending the checkpoint phase will trigger all resilience strategies in the background, while 
+asynchronous mode, ending the checkpoint phase will trigger all resilience strategies in the background, while 
 returning control to the application immediately. This operation is always succesful.
 
 Wait for Checkpoint Completion
