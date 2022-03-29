@@ -14,7 +14,12 @@ int main (int argc, char* argv[])
   int rank, ranks;
   int chkpt_version;
 //  size_t filesize = 512*1024;
-  long filesize = 5120*1024*1024;
+  //long filesize = 5120*1024*1024;
+  int core_mem_size_GB = atoi(argv[3]);
+  int proc_per_core = atoi(argv[4]);
+  //we want to allocate about 1/2 of total node memory between all processes on the node
+  //actually, 1/2 is leading to "out of memory" errors. cap at 1/10
+  long filesize = (long)(core_mem_size_GB*1E9/sizeof(char)/proc_per_core/10);
 
 //  MPI_Init(&argc, &argv);
   int provided;
