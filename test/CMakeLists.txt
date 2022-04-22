@@ -1,0 +1,75 @@
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc.cfg DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_cleanup.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_node_file_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_scratch_and_persistent_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_serial.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/start_backend_parallel.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+#FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_multilevel_corruption.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_second_chkpoint_loss.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+
+
+#Bogdan's initial test:
+add_executable (heatdis_original heatdis_original.c)
+add_executable (heatdis_mem heatdis_mem.c)
+add_executable (heatdis_file heatdis_file.c)
+add_executable (heatdis_fault heatdis_fault.cpp)
+#add_executable (serial_test serial_test.cpp)
+
+# Link the executable to the necessary libraries.
+target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
+target_link_libraries (heatdis_mem m veloc-client)
+target_link_libraries (heatdis_file m veloc-client)
+target_link_libraries (heatdis_fault m veloc-client)
+#target_link_libraries (serial_test veloc-client)
+
+#configure_file(test-async.in test-async.sh @ONLY)
+#add_test(async test-async.sh)
+
+#Greg's tests
+add_test("veloc_performance_mem_test" "jsrun" "-r" "1" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "1")
+set_property(TEST veloc_performance_mem_test APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test)
+
+add_test("veloc_performance_mem_test2" "jsrun" "-r" "2" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "2")
+set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY DEPENDS veloc_performance_mem_test_cleanup)
+set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test2_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test2_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test)
+
+add_test("veloc_performance_mem_test4" "jsrun" "-r" "4" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "4")
+set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY DEPENDS veloc_performance_mem_test2_cleanup)
+set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test4_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test4_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test2)
+
+add_test("veloc_performance_mem_test8" "jsrun" "-r" "8" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "8")
+set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY DEPENDS veloc_performance_mem_test4_cleanup)
+set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test8_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test8_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test4)
+
+add_test("veloc_performance_mem_test16" "jsrun" "-r" "16" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "16")
+set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY DEPENDS veloc_performance_mem_test8_cleanup)
+set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test16_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test16_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test8)
+
+add_test("veloc_performance_mem_test32" "jsrun" "-r" "32" "../veloc_performance_mem_test" "256" "veloc.cfg" "256" "32")
+set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY DEPENDS veloc_performance_mem_test16_cleanup)
+set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("veloc_performance_mem_test32_cleanup" "jsrun" "-r" "1" "./test_cleanup.sh")
+set_property(TEST veloc_performance_mem_test32_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test16)
+
