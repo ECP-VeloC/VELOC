@@ -3,26 +3,31 @@
 
 #include <iostream>
 #include <chrono>
+#include <mutex>
 
 extern std::ostream *logger;
 static auto beginning = std::chrono::steady_clock::now();
+static std::mutex log_mutex;
 
 #ifdef __BENCHMARK
 #define TIMER_START(timer) auto timer = std::chrono::steady_clock::now();
 #define TIMER_STOP(timer, message) {\
         auto now = std::chrono::steady_clock::now();\
-	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count(); \
+	auto d = std::chrono::duration_cast<std::chrono::microseconds>(now - timer).count();\
         auto t = std::chrono::duration_cast<std::chrono::seconds>(now - beginning).count();\
-	(*logger) << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl; \
+        std::unique_lock<std::mutex> lock(log_mutex);\
+	(*logger) << "[BENCHMARK " << t << "] [" << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] [time elapsed: " << d << " us] " << message << std::endl;\
     }
 #else
 #define TIMER_START(timer)
 #define TIMER_STOP(timer, message)
 #endif
 
-#define MESSAGE(level, message) \
+#define MESSAGE(level, message) {\
+    std::unique_lock<std::mutex> lock(log_mutex);\
     (*logger) << "[" << level << " " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - beginning).count() << "] [" \
-        << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl
+    << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "] " << message << std::endl;\
+}
 
 #define FATAL(message) {\
     MESSAGE("FATAL", message);\

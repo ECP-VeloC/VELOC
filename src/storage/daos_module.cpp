@@ -89,9 +89,9 @@ bool daos_module_t::flush(const command_t &cmd) {
         ERROR("cannot mmap source " << source << "; error = " << std::strerror(errno));
         return false;
     }
+    close(fi);
     rc = daos_kv_put(oh, DAOS_TX_NONE, 0, cmd.stem().c_str(), size, buff, NULL);
     munmap(buff, size);
-    close(fi);
     daos_kv_close(oh, NULL);
     if (rc) {
         ERROR("daos_kv_put failed for " << source << "; error code = " << rc);
@@ -117,10 +117,16 @@ bool daos_module_t::restore(const command_t &cmd) {
         return false;
     }
     std::string dest = cmd.filename(scratch);
-    int fo = open(dest.c_str(), O_CREAT | O_RDWR);
+    int fo = open(dest.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fo == -1) {
         ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
         daos_kv_close(oh, NULL);
+        return false;
+    }
+    if (posix_fallocate(fo, 0, size)) {
+        close(fo);
+        daos_kv_close(oh, NULL);
+        ERROR("cannot preallocate " << dest << "; error = " << std::strerror(errno));
         return false;
     }
     unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fo, 0);
@@ -130,9 +136,9 @@ bool daos_module_t::restore(const command_t &cmd) {
         ERROR("cannot mmap destination " << dest << "; error = " << std::strerror(errno));
         return false;
     }
+    close(fo);
     rc = daos_kv_get(oh, DAOS_TX_NONE, 0, cmd.stem().c_str(), &size, buff, NULL);
     munmap(buff, size);
-    close(fo);
     daos_kv_close(oh, NULL);
     if (rc) {
         ERROR("daos_kv_get failed for " << dest << "; error code = " << rc);

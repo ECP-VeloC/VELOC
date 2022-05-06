@@ -24,8 +24,7 @@ int transfer_module_t::process_command(const command_t &c) {
     if (interval < 0)
         return VELOC_IGNORED;
 
-    std::string local = c.filename(cfg.get("scratch")),
-	remote = c.filename(cfg.get("persistent"));
+    std::string local = c.filename(cfg.get("scratch")), remote = c.stem();
 
     switch (c.command) {
     case command_t::INIT:
@@ -40,7 +39,7 @@ int transfer_module_t::process_command(const command_t &c) {
 	    else
 		last_timestamp[c.unique_id] = t + std::chrono::seconds(interval);
 	}
-	DBG("transfer file " << local << " to " << remote);
+	DBG("transfer local file " << local << " to " << remote);
         return cfg.storage()->flush(c) ? VELOC_SUCCESS : VELOC_FAILURE;
 
     case command_t::RESTART:
@@ -48,10 +47,10 @@ int transfer_module_t::process_command(const command_t &c) {
         if (access(local.c_str(), R_OK) == 0)
 	    return VELOC_SUCCESS;
 	if (!cfg.storage()->exists(c)) {
-	    ERROR("request to transfer file " << remote << " to " << local << " failed: source does not exist");
+	    ERROR("request to transfer remote file " << remote << " to " << local << " failed: source does not exist");
 	    return VELOC_IGNORED;
 	}
-        DBG("transfer file " << remote << " to " << local);
+        DBG("transfer remote file " << remote << " to " << local);
 	return cfg.storage()->restore(c) ? VELOC_SUCCESS : VELOC_IGNORED;
 
     default:
