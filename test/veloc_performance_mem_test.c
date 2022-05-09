@@ -26,14 +26,12 @@ int main (int argc, char* argv[])
   //we want to allocate about 1/2 of total node memory between all processes on the node
   //actually, 1/2 is leading to "out of memory" errors. cap at 1/10
   long filesize = (long)(core_mem_size_GB*1E9/sizeof(char)/proc_per_core/10);
-  int file_csv;
-  //file_csv = open(path , O_APPEND , 0);
-  file_csv = open(path , O_RDWR , 0);
-  if(file_csv == -1)
-  {
-      printf("The file cannot be opened %s\n", path);
+  FILE *file_csv_f;
+  file_csv_f=fopen(path, "a");
+  if(file_csv_f==NULL) {
+    perror("Error opening file.");
   }
-   
+
 //  MPI_Init(&argc, &argv);
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
@@ -81,13 +79,8 @@ int main (int argc, char* argv[])
   if (rank == 0) {
     char buffer[50];
     sprintf(buffer, ",%d,%8.6f,%8.6f\n", proc_per_core, ckpt_local_sum/ranks, ckpt_finish_max);
-    lseek(file_csv, 0, SEEK_END);
-    write(file_csv, buffer, 50);
-    close(file_csv);
-   char cmd[100];
-   sprintf(cmd,"chmod 777 %s", path);
-   printf("cmd=%s\n",cmd);
-   system(cmd);
+    fprintf(file_csv_f, buffer);
+    fclose(file_csv_f);
 printf("buffer=%s\n",buffer);
     printf("computed Checkpoint times are: local Avg %8.6f s\tGlobal Max %8.6f  s\n", ckpt_local_sum/ranks, ckpt_finish_max);
   }
