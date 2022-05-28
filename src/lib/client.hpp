@@ -14,10 +14,10 @@
 class client_impl_t : public veloc::client_t {
     config_t cfg;
     MPI_Comm comm, local = MPI_COMM_NULL, backends = MPI_COMM_NULL;
-    int rank;
+    int rank, no_ranks;
 
     command_t current_ckpt;
-    bool checkpoint_in_progress = false;
+    bool checkpoint_in_progress = false, aggregated = false;
 
     std::map<int, size_t> region_info;
     size_t header_size = 0;

@@ -8,7 +8,7 @@
 
 posix_module_t::posix_module_t(const std::string &s, const std::string &p) : scratch(s), persistent(p) {
     if (!check_dir(persistent))
-	FATAL("persistent directory " << persistent << " inaccessible!");
+        FATAL("persistent directory " << persistent << " inaccessible!");
 }
 
 void posix_module_t::get_versions(const command_t &cmd, std::set<int> &result) {

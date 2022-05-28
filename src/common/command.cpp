@@ -24,7 +24,7 @@ std::string command_t::stem() const {
 }
 
 std::regex command_t::regex(const std::string &cname) {
-    return std::regex(cname + "-([0-9]+|ec)-([0-9]+).*");
+    return std::regex(cname + "-([0-9]+|ec|agg)-([0-9]+).*");
 }
 
 bool command_t::match(const std::string &str, const std::regex &ex, int &id, int &version) {
@@ -32,20 +32,22 @@ bool command_t::match(const std::string &str, const std::regex &ex, int &id, int
     std::regex_match(str, sm, ex);
     if (sm.size() != 3)
         return false;
-    id = (sm[1] == "ec") ? -1 : std::stoi(sm[1]);
+    if (sm[1] == "ec")
+        id = ID_EC;
+    else if (sm[1] == "agg")
+        id = ID_AGG;
+    else
+        id = std::stoi(sm[1]);
     version = std::stoi(sm[2]);
     return true;
 }
-
 
 std::string command_t::filename(const std::string &prefix) const {
     return prefix + "/" + stem();
 }
 
-std::string command_t::filename(const std::string &prefix, int new_version) const {
-    return prefix + "/" + name +
-        "-" + std::to_string(unique_id) + "-" +
-        std::to_string(new_version) + ".dat";
+std::string command_t::agg_filename(const std::string &prefix) const {
+    return prefix + "/" + std::string(name) + "-agg-" + std::to_string(version) + ".dat";
 }
 
 std::ostream &operator<<(std::ostream &output, const command_t &c) {

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <mutex>
+#include <cstring>
 
 extern std::ostream *logger;
 static auto beginning = std::chrono::steady_clock::now();

@@ -7,6 +7,7 @@ set(VELOC_MODULES_SRC
   # storage modules
   ${PROJECT_SOURCE_DIR}/src/storage/storage_module.cpp
   ${PROJECT_SOURCE_DIR}/src/storage/posix_module.cpp
+  ${PROJECT_SOURCE_DIR}/src/storage/posix_agg_module.cpp
   # common code
   ${PROJECT_SOURCE_DIR}/src/common/command.cpp
   ${PROJECT_SOURCE_DIR}/src/common/config.cpp

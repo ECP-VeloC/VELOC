@@ -9,7 +9,7 @@
 static void scratch_version_set(const std::string &p, const char *cname, int req_id, std::set<int> &result) {
     parse_dir(p, cname,
               [&](const std::string &f, int id, int v) {
-                  if (id == -1 || id == req_id)
+                  if (id == command_t::ID_EC || id == req_id)
                       result.insert(v);
               });
 }

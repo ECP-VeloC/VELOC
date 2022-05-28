@@ -11,7 +11,7 @@
 #include <cerrno>
 #include <cstring>
 
-#define __DEBUG
+//#define __DEBUG
 #include "debug.hpp"
 
 bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f) {
@@ -68,12 +68,16 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
     return ret;
 }
 
-bool posix_transfer_file(const std::string &source, const std::string &dest) {
+bool posix_transfer_file(const std::string &source, const std::string &dest, size_t soffset, size_t doffset, size_t size) {
     TIMER_START(io_timer);
     int fi = open(source.c_str(), O_RDONLY);
     if (fi == -1) {
 	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
 	return false;
+    }
+    if (lseek(fi, soffset, SEEK_SET) != (ssize_t)soffset) {
+        ERROR("cannot seek in " << source << " to offset " << soffset << "; error = " << std::strerror(errno));
+        return false;
     }
     int fo = open(dest.c_str(), O_CREAT | O_WRONLY, 0644);
     if (fo == -1) {
@@ -81,7 +85,11 @@ bool posix_transfer_file(const std::string &source, const std::string &dest) {
 	ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
 	return false;
     }
-    ssize_t remaining = file_size(source.c_str());
+    if (lseek(fo, doffset, SEEK_SET) != (ssize_t)doffset) {
+        ERROR("cannot seek in " << dest << " to offset " << doffset << "; error = " << std::strerror(errno));
+        return false;
+    }
+    ssize_t remaining = std::min(size, file_size(source.c_str()) - soffset);
     while (remaining > 0) {
 	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
 	if (transferred == -1) {

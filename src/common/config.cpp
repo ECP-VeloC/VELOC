@@ -8,6 +8,7 @@
 #include <limits.h>
 
 #include "storage/posix_module.hpp"
+#include "storage/posix_agg_module.hpp"
 
 #ifdef WITH_AXL
 #include "storage/axl_module.hpp"
@@ -58,8 +59,15 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
             } else
                 FATAL("AXL requested but not available at compile time, please link with AXL");
         } else {
-            INFO("using POSIX to interact with persistent storage, path: " << persistent);
-            sm = new posix_module_t(scratch, persistent);
+            if (get_optional("aggregated", false)) {
+                INFO("using POSIX to interact with persistent storage in aggregated file mode, path: " << persistent);
+                std::string meta;
+                get_optional("meta", meta);
+                sm = new posix_agg_module_t(scratch, persistent, meta);
+            } else {
+                INFO("using POSIX to interact with persistent storage in single file mode, path: " << persistent);
+                sm = new posix_module_t(scratch, persistent);
+            }
         }
     }
 

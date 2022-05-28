@@ -57,6 +57,8 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
     } else
         launch_backend(cfg_file);
     MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &no_ranks);
+    aggregated = cfg.get_optional("aggregated", false);
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
     DBG("VELOC initialized");
@@ -161,6 +163,24 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
 }
 
 bool client_impl_t::checkpoint_end(bool /*success*/) {
+    if (aggregated) {
+        long offset = 0, next_offset = file_size(current_ckpt.filename(cfg.get("scratch")));
+        if (rank > 0)
+            MPI_Recv(&offset, 1, MPI_LONG, rank - 1, 0, comm, NULL);
+        next_offset += offset;
+        if (rank + 1 < no_ranks)
+            MPI_Send(&next_offset, 1, MPI_LONG, rank + 1, 0, comm);
+        DBG("Rank " << rank << ", offset = " << offset);
+        if (rank == 0) {
+            long offset_map[no_ranks + 1];
+            offset_map[0] = no_ranks;
+            MPI_Gather(&offset, 1, MPI_LONG, &offset_map[1], 1, MPI_LONG, 0, comm);
+            if (!write_file(current_ckpt.agg_filename(cfg.get("meta")), (unsigned char *)offset_map, sizeof(long) * (no_ranks + 1)))
+                return false;
+        } else
+            MPI_Gather(&offset, 1, MPI_LONG, NULL, no_ranks, MPI_LONG, 0, comm);
+        current_ckpt.offset = offset;
+    }
     checkpoint_in_progress = false;
     queue->enqueue(current_ckpt);
     return cfg.is_sync() ? queue->wait_completion() == VELOC_SUCCESS : true;
