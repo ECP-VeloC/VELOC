@@ -22,7 +22,7 @@ void posix_agg_module_t::get_versions(const command_t &cmd, std::set<int> &resul
 
 bool posix_agg_module_t::flush(const command_t &cmd) {
     // aggregated mode supported for memory-based API only
-    return posix_transfer_file(cmd.filename(scratch), cmd.agg_filename(persistent), 0, cmd.offset, file_size(cmd.filename(scratch)));
+    return posix_transfer_file(cmd.filename(scratch), cmd.agg_filename(persistent), 0, cmd.offset);
 }
 
 bool posix_agg_module_t::remove(const command_t &cmd) {

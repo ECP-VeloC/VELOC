@@ -166,7 +166,7 @@ bool client_impl_t::checkpoint_end(bool /*success*/) {
     if (aggregated) {
         long offset = 0, next_offset = file_size(current_ckpt.filename(cfg.get("scratch")));
         if (rank > 0)
-            MPI_Recv(&offset, 1, MPI_LONG, rank - 1, 0, comm, NULL);
+            MPI_Recv(&offset, 1, MPI_LONG, rank - 1, 0, comm, MPI_STATUS_IGNORE);
         next_offset += offset;
         if (rank + 1 < no_ranks)
             MPI_Send(&next_offset, 1, MPI_LONG, rank + 1, 0, comm);
