@@ -113,7 +113,8 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
         }
 
         DBG("attempting ER rebuild for checkpoint: " << name);
-	int set_id = ER_Create(comm, comm, name.c_str(), ER_DIRECTION_REBUILD, 0);
+//	int set_id = ER_Create(comm, comm, name.c_str(), ER_DIRECTION_REBUILD, 0);
+	int set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_REBUILD, 0);
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint: " << name);
 	    return VELOC_FAILURE;
