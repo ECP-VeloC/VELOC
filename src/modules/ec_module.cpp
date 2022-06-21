@@ -11,18 +11,18 @@
 
 
 ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
+    if (!cfg.get_optional("ec_interval", interval)) {
+        INFO("EC interval not specified, every checkpoint will be protected using EC");
+	interval = 0;
+    }
     int ranks;
     MPI_Comm_size(comm, &ranks);
     if (ranks < 2) {
         INFO("Running on a single host, EC deactivated");
         interval = -1;
+    }
+    if (interval < 0)
         return;
-    }
-    if (!cfg.get_optional("ec_interval", interval)) {
-        INFO("EC interval not specified, every checkpoint will be protected using EC");
-	interval = 0;
-    }
-
     if (ER_Init(cfg.get_cfg_file().c_str()) != ER_SUCCESS)
 	FATAL("Failed to initialize ER from config file: " << cfg.get_cfg_file());
     if (!cfg.get_optional("failure_domain", fdomain)) {
@@ -35,12 +35,16 @@ ec_module_t::ec_module_t(const config_t &c, MPI_Comm cm) : cfg(c), comm(cm) {
         ER_Finalize();
         FATAL("Failed to create scheme using failure domain: " << fdomain);
     }
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_split(comm, rank, rank, &comm_domain);
 }
 
 ec_module_t::~ec_module_t() {
     if (interval >= 0) {
         ER_Free_Scheme(scheme_id);
         ER_Finalize();
+        MPI_Comm_free(&comm_domain);
     }
 }
 
@@ -76,7 +80,7 @@ int ec_module_t::process_commands(const std::vector<command_t> &cmds) {
 	    else
 		return VELOC_SUCCESS;
 	}
-	int set_id = ER_Create(comm, comm, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
+	int set_id = ER_Create(comm, comm_domain, name.c_str(), ER_DIRECTION_ENCODE, scheme_id);
 	if (set_id == -1) {
 	    ERROR("ER_Create failed for checkpoint: " << name);
 	    return VELOC_FAILURE;
