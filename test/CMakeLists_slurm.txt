@@ -10,17 +10,17 @@ FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_second_chkpoint_loss_slurm.s
 
 
 #Bogdan's initial test:
-add_executable (heatdis_original heatdis_original.c)
-add_executable (heatdis_mem heatdis_mem.c)
-add_executable (heatdis_file heatdis_file.c)
-add_executable (heatdis_fault heatdis_fault.cpp)
+#add_executable (heatdis_original heatdis_original.c)
+#add_executable (heatdis_mem heatdis_mem.c)
+#add_executable (heatdis_file heatdis_file.c)
+#add_executable (heatdis_fault heatdis_fault.cpp)
 #add_executable (serial_test serial_test.cpp)
 
 # Link the executable to the necessary libraries.
-target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
-target_link_libraries (heatdis_mem m veloc-client)
-target_link_libraries (heatdis_file m veloc-client)
-target_link_libraries (heatdis_fault m veloc-client)
+#target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
+#target_link_libraries (heatdis_mem m veloc-client)
+#target_link_libraries (heatdis_file m veloc-client)
+#target_link_libraries (heatdis_fault m veloc-client)
 #target_link_libraries (serial_test veloc-client)
 
 #configure_file(test-async.in test-async.sh @ONLY)
@@ -118,32 +118,53 @@ set_property(TEST parallel_veloc_chkpt_file_test_xor_restart APPEND PROPERTY ENV
 add_test("parallel_veloc_chkpt_file_test_xor_cleanup" "srun" "-N4" "-n4" "./test_cleanup.sh")
 set_property(TEST parallel_veloc_chkpt_file_test_xor_cleanup APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_xor_restart)
 
-add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_mem_test" "256" "veloc_slurm.cfg" "0")
+#add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_mem_test" "256" "veloc_slurm.cfg" "0")
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_xor_cleanup)
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+#
+#add_test("parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption" "./test_simulate_multilevel_corruption.sh")
+#set_property(TEST parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_inital)
+#
+#add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_mem_test" "256" "veloc_slurm.cfg" "1")
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption)
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+#set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+#
+add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_mem_multilevel_corruption_test" "256" "veloc_slurm.cfg" "0")
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_xor_cleanup)
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
 
-add_test("parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption" "./test_simulate_multilevel_corruption.sh")
-set_property(TEST parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_inital)
-
-add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_mem_test" "256" "veloc_slurm.cfg" "1")
-set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_simulate_multilevel_corruption)
+add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_mem_multilevel_corruption_test" "256" "veloc_slurm.cfg" "1")
+set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_inital)
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
 
 add_test("parallel_veloc_chkpt_mem_test_multi_lev_corr_cleanup" "srun" "-N4" "-n4" "./test_cleanup.sh")
 set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr_cleanup APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_restart)
 
-add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_file_test" "256" "veloc_slurm.cfg" "0")
+#add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_file_test" "256" "veloc_slurm.cfg" "0")
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_cleanup)
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+#
+#add_test("parallel_veloc_chkpt_file_test_simulate_multilevel_corruption" "./test_simulate_multilevel_corruption.sh")
+#set_property(TEST parallel_veloc_chkpt_file_test_simulate_multilevel_corruption APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_multi_lev_corr_inital)
+#
+#add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_file_test" "256" "veloc_slurm.cfg" "1")
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_simulate_multilevel_corruption)
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
+#set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+
+add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_inital" "srun" "-N4" "-n4" "../veloc_chkpt_file_multilevel_corruption_test" "256" "veloc_slurm.cfg" "0")
+
 set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY DEPENDS parallel_veloc_chkpt_mem_test_multi_lev_corr_cleanup)
 set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
 set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_inital APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
 
-add_test("parallel_veloc_chkpt_file_test_simulate_multilevel_corruption" "./test_simulate_multilevel_corruption.sh")
-set_property(TEST parallel_veloc_chkpt_file_test_simulate_multilevel_corruption APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_multi_lev_corr_inital)
-
-add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_file_test" "256" "veloc_slurm.cfg" "1")
-set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_simulate_multilevel_corruption)
+add_test("parallel_veloc_chkpt_file_test_multi_lev_corr_restart" "srun" "-N4" "-n4" "../veloc_chkpt_file_multilevel_corruption_test" "256" "veloc_slurm.cfg" "1")
+set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY DEPENDS parallel_veloc_chkpt_file_test_multi_lev_corr_inital)
 set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
 set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr_restart APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
 
