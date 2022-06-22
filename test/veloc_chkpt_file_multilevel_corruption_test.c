@@ -291,16 +291,10 @@ printf("scratch DIR rank =%d\n",rank);
   else{
     if(already_initiated != 0){ 
       printf("Checkpoint had been initiated. Should have been found\n");
-//  char com20[50];
-//printf("persistent DIR rank =%d\n",rank);
-//  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-//  system(com20);
-//  char com21[50];
-//printf("scratch DIR rank =%d\n",rank);
-//  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-//  system(com21);
       return(1);
     }
+//if version is less than -1 make it ecxactly -1 -- for initiating checkpoint below version cannot be less than 0
+    v = -1;
     if (rank == 0) {
       printf("No checkpoint to restart from\n");
     }
