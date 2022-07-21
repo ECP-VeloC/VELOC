@@ -50,6 +50,8 @@ public:
     bool checkpoint_mem();
     bool checkpoint_end(bool success);
     bool checkpoint_wait();
+    
+    int backend_ready();
 
     int restart_test(const char *name, int version);
     bool restart_begin(const char *name, int version);

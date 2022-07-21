@@ -77,6 +77,15 @@ bool veloc_client_t::checkpoint_wait() {
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
+int veloc_client_t::backend_ready() {
+    if (cfg.is_sync()) return true;
+    if (checkpoint_in_progress) {
+	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
+	return false;
+    }
+    return queue->check_completion();
+}
+
 bool veloc_client_t::checkpoint_begin(const char *name, int version) {
     if (checkpoint_in_progress) {
 	ERROR("nested checkpoints not yet supported");
@@ -123,6 +132,7 @@ bool veloc_client_t::checkpoint_mem() {
 	    f.write((char *)e.second.first, e.second.second);
     } catch (std::ofstream::failure &f) {
 	ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
+    std::perror("WERROR: ");
 	return false;
     }
     return true;
@@ -257,6 +267,7 @@ bool veloc_client_t::recover_mem(int mode, std::set<int> &ids) {
 	}
     } catch (std::ifstream::failure &e) {
 	ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
+    perror("Error printout: ");
 	return false;
     }
     return true;

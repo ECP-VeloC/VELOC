@@ -54,10 +54,6 @@ template <class T> class shm_queue_t {
 	}
 	return NULL;
     }
-    bool check_completion() {
-	// this is a predicate intended to be used for condition variables only
-	return data->pending.empty() && data->progress.empty();
-    }
     void set_completion(container_t *q, const list_iterator_t  &it, int status) {
 	// delete the element from the progress queue and notify the producer
 	scoped_lock<interprocess_mutex> queue_lock(q->mutex);
@@ -78,6 +74,10 @@ template <class T> class shm_queue_t {
 	if (id != NULL)
 	    data = segment.find_or_construct<container_t>(id)(segment.get_allocator<typename container_t::T_allocator>());
     }
+    bool check_completion() {
+	// this is a predicate intended to be used for condition variables only
+	return data->pending.empty() && data->progress.empty();
+    }
     int wait_completion(bool reset_status = true) {
 	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
 	while (!check_completion())
@@ -86,6 +86,10 @@ template <class T> class shm_queue_t {
 	if (reset_status)
 	    data->status = VELOC_SUCCESS;
 	return ret;
+    }
+    bool check_completion_locked() {    
+	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
+    return check_completion();
     }
     void enqueue(const T &e) {
 	// enqueue an element and notify the consumer

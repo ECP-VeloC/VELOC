@@ -92,6 +92,10 @@ int VELOC_Checkpoint_end(int success);
 // Only valid in async mode. Typically called before beginning a new checkpoint.
 int VELOC_Checkpoint_wait();
 
+//Returns 0 if an asynchronous checkpoint is still happening on the backend
+//Note, returns VELOC_FAILURE if client is null.
+int VELOC_Backend_ready();
+
 int VELOC_Checkpoint(const char *name, int version);
     
 /**************************
