@@ -87,10 +87,6 @@ template <class T> class shm_queue_t {
 	    data->status = VELOC_SUCCESS;
 	return ret;
     }
-    bool check_completion_locked() {    
-	scoped_lock<interprocess_mutex> cond_lock(data->mutex);
-    return check_completion();
-    }
     void enqueue(const T &e) {
 	// enqueue an element and notify the consumer
 	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
