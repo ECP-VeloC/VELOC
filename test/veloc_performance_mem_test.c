@@ -25,7 +25,7 @@ int main (int argc, char* argv[])
   int proc_per_core = atoi(argv[4]);
   //we want to allocate about 1/2 of total node memory between all processes on the node
   //actually, 1/2 is leading to "out of memory" errors. cap at 1/10
-  long filesize = (long)(core_mem_size_GB*1E9/sizeof(char)/proc_per_core/10);
+  long filesize = (long)(core_mem_size_GB*1E9/sizeof(char)/proc_per_core/50);
   FILE *file_csv_f;
   file_csv_f=fopen(path, "a");
   if(file_csv_f==NULL) {
