@@ -12,6 +12,15 @@ set(VELOC_RESOURCE_MANAGER "LSF" CACHE STRING "Resource Manager for CLI (SLURM L
 set_property(CACHE VELOC_RESOURCE_MANAGER PROPERTY STRINGS SLURM LSF ALPS NONE)
 set(COMM_QUEUE "ipc_queue" CACHE STRING "Communication protocol between client library and active backend")
 set_property(CACHE COMM_QUEUE PROPERTY STRINGS ipc_queue socket_queue thallium_queue)
+set(POSIX_IO "posix_io" CACHE STRING "POSIX transfer method between scratch and persistent")
+set_property(CACHE POSIX_IO PROPERTY STRINGS sendfile rw)
+
+##### Set preprocessor definitions
+if (${POSIX_IO} STREQUAL "sendfile")
+    add_definitions(-DWITH_POSIX_SENDFILE)
+else()
+    add_definitions(-DWITH_POSIX_RW)
+endif()
 
 ##### Find dependencies
 
