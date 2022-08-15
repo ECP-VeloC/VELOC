@@ -28,7 +28,6 @@ printf("in check_buffer, SIZE=%d\n", size);
   size_t i;
   for(i=0; i < size; i++) {
     char c = (char) ((size_t)rank + i) % 256;
-//printf("i=%d, c=%c, buf_i=%c\n", i,c,buf[i]);
     if (buf[i] != c)  {
       return 0;
     }
@@ -40,10 +39,6 @@ int main (int argc, char* argv[])
 {
 printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 printf("in test/veloc_chkpt_mem_test.c 1");
-//  char com0[50];
-printf("persistent DIR \n");
-//  sprintf(com0, "ls -d -l /g/g19/kosinov/persistent/*");
-//  system(com0);
 
   int rank, ranks;
   int chkpt_version;
@@ -127,15 +122,6 @@ printf("scratch DIR rank =%d\n",rank);
   else{
     if(already_initiated != 0){
       printf("Checkpoint had been initiated. Should have been found\n");
-//  char com20[50];
-//printf("persistent DIR rank =%d\n",rank);
-//  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-//  system(com20);
-//  char com21[50];
-//printf("scratch DIR rank =%d\n",rank);
-//  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-//  system(com21);
-
       return(1);
     }
     if (rank == 0) {
@@ -154,13 +140,13 @@ printf("scratch DIR rank =%d\n",rank);
     free(buf);
     buf = NULL;
   }
- 
+
 //  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
 //  VELOC_Checkpoint_wait();
-// if the test  is initial rather than restart, simulate multi-level corruption
+//  if the test  is initial rather than restart, simulate multi-level corruption
   if(already_initiated != 0){
     char sysCom[50];
-    char *scratch = getenv("SCRATCH"); 
+    char *scratch = getenv("SCRATCH");
     assert(scratch != NULL);
     if (rank == 0) {
        sprintf(sysCom, "rm -rf %s/*", scratch);

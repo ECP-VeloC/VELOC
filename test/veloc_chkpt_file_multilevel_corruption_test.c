@@ -7,11 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
-
-//#include "heatdis.h"
 #include "include/veloc.h"
-// cannot include C++ file 
-//#include "src/common/config.hpp"
 
 /* reliable read from file descriptor (retries, if necessary, until hard error) */
 ssize_t reliable_read(int fd, void* buf, size_t size)
@@ -24,7 +20,7 @@ ssize_t reliable_read(int fd, void* buf, size_t size)
   {
     ssize_t rc = read(fd, (char*) buf + n, size - n);
 printf("RC=%d\n",rc);
-    if (rc  > 0) { 
+    if (rc  > 0) {
       n += rc;
 printf("RC>\n");
     } else if (rc == 0) {
@@ -95,12 +91,10 @@ printf("RC=%d\n",rc);
 /* read the checkpoint data from file into buf, and return whether the read was successful */
 int read_checkpoint(char* file, int* ckpt, char* buf, size_t size)
 {
-printf("in read_checkpoint\n");
   ssize_t n;
   char ckpt_buf[7];
 
   int fd = open(file, O_RDONLY);
-//int fd = -2;
   if (fd > 0) {
     /* read the checkpoint id */
 printf("before read chepoint id\n");
@@ -124,7 +118,7 @@ printf("after read chepoint data\n");
     return 1;
   }
   else {
-  	printf("Could not open file %s\n", file);
+        printf("Could not open file %s\n", file);
   }
 
   return 0;
@@ -171,7 +165,6 @@ printf("in check_buffer, SIZE=%d\n", size);
   for(i=0; i < size; i++) {
     /*char c = 'a' + (rank+i) % 26;*/
     char c = (char) ((size_t)rank + i) % 256;
-//printf("i=%d, c=%c, buf_i=%c\n", i,c,buf[i]);
     if (buf[i] != c)  {
       return 0;
     }
@@ -207,10 +200,6 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
-// 3 lines below cannot be executed because of error trying to include  C++ file above
-//config_t cfg(argv[2]);
-//printf("persistent dir is %s\n", sfg.get("persistent");
-//printf("scratch dir is %s\n", sfg.get("scratch");
   char com20[50];
 printf("persistent DIR rank =%d\n",rank);
   sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
@@ -248,7 +237,6 @@ printf("scratch DIR rank =%d\n",rank);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
   int already_initiated = atoi(argv[3]);
   printf("had already initiated = %d\n",already_initiated);
-//v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart_begin("veloc_test", v) != VELOC_SUCCESS){
@@ -256,9 +244,6 @@ printf("scratch DIR rank =%d\n",rank);
       return 1;
     }
     char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-   // sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
-   // sprintf(original,"/g/g19/kosinov/persistent/");
-   // strcat(original,fname);
     sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
     printf("ORIGINAL=%s\n", original);
     if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
@@ -277,28 +262,20 @@ printf("scratch DIR rank =%d\n",rank);
       }
     } else {
           valid = 0;
-    	  printf("%d: Could not read checkpoint %d from %s\n", rank, timestep, veloc_file);
+          printf("%d: Could not read checkpoint %d from %s\n", rank, timestep, veloc_file);
     }
     if(VELOC_Restart_end(valid) != VELOC_SUCCESS){
       printf("VELOC_Restart_end FAILED\n");
       return 1;
     }
     return 0;
-  } 
+  }
 /*  if (rank == 0) {
-      printf("No checkpoint to restart from\n");
-  }*/
+ *        printf("No checkpoint to restart from\n");
+ *          }*/
   else{
-    if(already_initiated != 0){ 
+    if(already_initiated != 0){
       printf("Checkpoint had been initiated. Should have been found\n");
-//  char com20[50];
-//printf("persistent DIR rank =%d\n",rank);
-//  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-//  system(com20);
-//  char com21[50];
-//printf("scratch DIR rank =%d\n",rank);
-//  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-//  system(com21);
       return(1);
     }
     if (rank == 0) {
@@ -311,10 +288,7 @@ printf("scratch DIR rank =%d\n",rank);
     return 1;
   }
   char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-  //  sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
-  //  sprintf(original,"/g/g19/kosinov/persistent/");
-  //  strcat(original,fname);
-  sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
+   sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
   printf("ORIGINAL=%s\n", original);
   if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
     printf("VELOC_Route_file FAILED\n");
@@ -352,7 +326,7 @@ printf("scratch DIR rank =%d\n",rank);
   }
 //  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
 //  VELOC_Checkpoint_wait();
-// if the test  is initial rather than restart, simulate multi-level corruption
+//  if the test  is initial rather than restart, simulate multi-level corruption
   if(already_initiated != 0){
     char sysCom[50];
     char *scratch = getenv("SCRATCH");
