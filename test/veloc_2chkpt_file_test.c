@@ -207,6 +207,18 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
+// 3 lines below cannot be executed because of error trying to include  C++ file above
+//config_t cfg(argv[2]);
+//printf("persistent dir is %s\n", sfg.get("persistent");
+//printf("scratch dir is %s\n", sfg.get("scratch");
+  char com20[50];
+printf("persistent DIR rank =%d\n",rank);
+  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
+  system(com20);
+  char com21[50];
+printf("scratch DIR rank =%d\n",rank);
+  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
+  system(com21);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -232,12 +244,10 @@ printf("CONFIG FILE = %s\n", argv[2]);
   sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
-int already_initiated = atoi(argv[3]);
-printf("had already initiated = %d\n",already_initiated);
-int v;
-if(already_initiated != 0){ 
-  v = VELOC_Restart_test("veloc_test", 0);
+  int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
+  int already_initiated = atoi(argv[3]);
+  printf("had already initiated = %d\n",already_initiated);
 //v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
@@ -272,13 +282,18 @@ if(already_initiated != 0){
     }
     return 0;
   } 
+/*  if (rank == 0) {
+      printf("No checkpoint to restart from\n");
+  }*/
   else{
+    if(already_initiated != 0){ 
+      printf("Checkpoint had been initiated. Should have been found\n");
+      return(1);
+    }
     if (rank == 0) {
       printf("No checkpoint to restart from\n");
     }
   }
-}
-else{
 //write first checkpoint
   if(VELOC_Checkpoint_begin("veloc_test", v+1) != VELOC_SUCCESS){
     printf("VELOC_Checkpoint_begin FAILED\n");
@@ -316,7 +331,6 @@ else{
     printf("VELOC_Checkpoint_end FAILED\n");
     return 1;
   }
-  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
 
 //write second checkpoint
   if(VELOC_Checkpoint_begin("veloc_test", v+2) != VELOC_SUCCESS){
@@ -360,9 +374,9 @@ else{
     free(buf);
     buf = NULL;
   }
-  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
+//  assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
 //VELOC_Checkpoint_wait();
-}
+
   VELOC_Finalize(1);
   MPI_Finalize();
   return 0;
