@@ -7,10 +7,12 @@
 
 #include <chrono>
 #include <map>
+#include <mutex>
 
 class transfer_module_t {
     const config_t &cfg;
     int interval;
+    std::mutex ts_lock;
     std::map<int, std::chrono::system_clock::time_point> last_timestamp;
 
     int transfer_file(const std::string &source, const std::string &dest);

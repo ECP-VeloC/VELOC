@@ -26,8 +26,10 @@ def install_dep(git_link, dep_vers, pkg_options = ["-DENABLE_TESTS=OFF"]):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
-    parser.add_argument('--protocol', default='ipc_queue',
-                        help='communication protocol between client and active backend (default: ipc_queue). Only for advanced users.')
+    parser.add_argument('--protocol', default='socket_queue',
+                        help='communication protocol between client and active backend (default: socket_queue). Only for advanced users.')
+    parser.add_argument('--posix-io', default='sendfile',
+                        help='POSIX transfer method between scratch and persistent (default: sendfile, alternative: rw).')
     parser.add_argument('--without-boost', action='store_true',
                         help='use existing Boost libraries for ipc_queue protocol (assume pre-installed)')
     parser.add_argument('--without-deps', action='store_true',
@@ -96,8 +98,10 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # Construct the fulls et of CMake arguments
-    cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix, '-DCMAKE_BUILD_TYPE='+cmake_build_type, '-DCOMM_QUEUE='+args.protocol] + compiler_options + args.extra_cmake_args
-
+    cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix,
+                 '-DCMAKE_BUILD_TYPE='+cmake_build_type,
+                 '-DCOMM_QUEUE='+args.protocol,
+                 '-DPOSIX_IO='+args.posix_io] + compiler_options + args.extra_cmake_args
     # Configure
     print("CMake arguments: " + " ".join(cmake_args))
     ret = subprocess.call(['cmake'] + cmake_args + [os.getcwd()], cwd=veloc_build,)

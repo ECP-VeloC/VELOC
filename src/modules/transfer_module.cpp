@@ -28,11 +28,14 @@ int transfer_module_t::process_command(const command_t &c) {
 
     switch (c.command) {
     case command_t::INIT:
-	last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
-	return VELOC_SUCCESS;
+        ts_lock.lock();
+        last_timestamp[c.unique_id] = std::chrono::system_clock::now() + std::chrono::seconds(interval);
+        ts_lock.unlock();
+        return VELOC_SUCCESS;
 
     case command_t::CHECKPOINT:
 	if (interval > 0) {
+            std::unique_lock<std::mutex> lock(ts_lock);
 	    auto t = std::chrono::system_clock::now();
 	    if (t < last_timestamp[c.unique_id])
 		return VELOC_SUCCESS;

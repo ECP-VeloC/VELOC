@@ -68,6 +68,39 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
     return ret;
 }
 
+#ifdef WITH_POSIX_SENDFILE
+static bool file_transfer_loop(int fi, int fo, size_t remaining) {
+    bool success = true;
+    while (remaining > 0) {
+	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
+        if (transferred == -1) {
+            success = false;
+            break;
+        }
+        remaining -= transferred;
+    }
+    return success;
+}
+#elif WITH_POSIX_RW
+static bool file_transfer_loop(int fi, int fo, size_t remaining) {
+    const size_t MAX_BUFF_SIZE = 1 << 24;
+    bool success = true;
+    char *buff = new char[MAX_BUFF_SIZE];
+    while (remaining > 0) {
+	ssize_t transferred = read(fi, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining));
+        if (transferred == -1 || write(fo, buff, transferred) != transferred) {
+            success = false;
+            break;
+        }
+        remaining -= transferred;
+    }
+    delete []buff;
+    return success;
+}
+#else
+#error Invalid POSIX IO transfer method selected. Valid choices: WITH_POSIX_SENDFILE, WITH_POSIX_RW
+#endif
+
 bool posix_transfer_file(const std::string &source, const std::string &dest, size_t soffset, size_t doffset, size_t size) {
     TIMER_START(io_timer);
     int fi = open(source.c_str(), O_RDONLY);
@@ -90,20 +123,14 @@ bool posix_transfer_file(const std::string &source, const std::string &dest, siz
         return false;
     }
     ssize_t remaining = std::min(size, file_size(source.c_str()) - soffset);
-    while (remaining > 0) {
-	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
-	if (transferred == -1) {
-	    close(fi);
-	    close(fo);
-	    ERROR("cannot copy " <<  source << " to " << dest << "; error = " << std::strerror(errno));
-	    return false;
-	} else
-	    remaining -= transferred;
-    }
+    bool success = file_transfer_loop(fi, fo, remaining);
     close(fi);
     close(fo);
-    TIMER_STOP(io_timer, "transferred " << source << " to " << dest);
-    return true;
+    if (success) {
+        TIMER_STOP(io_timer, "transferred " << source << " to " << dest);
+    } else
+        ERROR("cannot copy " <<  source << " to " << dest << "; error = " << std::strerror(errno));
+    return success;
 }
 
 bool check_dir(const std::string &d) {

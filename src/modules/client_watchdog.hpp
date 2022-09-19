@@ -5,12 +5,14 @@
 #include "common/command.hpp"
 
 #include <thread>
+#include <mutex>
 #include <chrono>
 #include <map>
 
 class client_watchdog_t {
     std::thread watchdog_thread;
     const config_t &cfg;
+    std::mutex ts_lock;
     std::map<int, std::chrono::system_clock::time_point> client_map;
     int timeout;
 

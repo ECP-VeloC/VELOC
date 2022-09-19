@@ -30,6 +30,7 @@ int client_watchdog_t::process_command(const command_t &c) {
     if (timeout == 0)
 	return VELOC_IGNORED;
 
+    std::unique_lock<std::mutex> lock(ts_lock);
     switch(c.command) {
     case command_t::INIT:
 	if (client_map.find(c.unique_id) == client_map.end())
