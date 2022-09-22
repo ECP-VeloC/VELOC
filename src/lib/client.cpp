@@ -61,7 +61,8 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
     aggregated = cfg.get_optional("aggregated", false);
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
-    MPI_Barrier(local);
+    if (local != MPI_COMM_NULL)
+	MPI_Barrier(local);
     DBG("VELOC initialized");
 }
 

@@ -1,7 +1,6 @@
 #include "file_util.hpp"
 #include "command.hpp"
 
-#include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -69,10 +68,10 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
 }
 
 #ifdef WITH_POSIX_SENDFILE
-static bool file_transfer_loop(int fi, int fo, size_t remaining) {
+bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
     bool success = true;
     while (remaining > 0) {
-	ssize_t transferred = sendfile(fo, fi, NULL, remaining);
+	ssize_t transferred = copy_file_range(fs, &soff, fd, &doff, remaining, 0);
         if (transferred == -1) {
             success = false;
             break;
@@ -82,17 +81,19 @@ static bool file_transfer_loop(int fi, int fo, size_t remaining) {
     return success;
 }
 #elif WITH_POSIX_RW
-static bool file_transfer_loop(int fi, int fo, size_t remaining) {
+bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
     const size_t MAX_BUFF_SIZE = 1 << 24;
     bool success = true;
     char *buff = new char[MAX_BUFF_SIZE];
     while (remaining > 0) {
-	ssize_t transferred = read(fi, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining));
-        if (transferred == -1 || write(fo, buff, transferred) != transferred) {
+	ssize_t transferred = pread(fs, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining), soff);
+        if (transferred == -1 || pwrite(fd, buff, transferred, doff) != transferred) {
             success = false;
             break;
         }
         remaining -= transferred;
+	soff += transferred;
+	doff += transferred;
     }
     delete []buff;
     return success;
@@ -103,29 +104,21 @@ static bool file_transfer_loop(int fi, int fo, size_t remaining) {
 
 bool posix_transfer_file(const std::string &source, const std::string &dest, size_t soffset, size_t doffset, size_t size) {
     TIMER_START(io_timer);
-    int fi = open(source.c_str(), O_RDONLY);
-    if (fi == -1) {
+    int fs = open(source.c_str(), O_RDONLY);
+    if (fs == -1) {
 	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
 	return false;
     }
-    if (lseek(fi, soffset, SEEK_SET) != (ssize_t)soffset) {
-        ERROR("cannot seek in " << source << " to offset " << soffset << "; error = " << std::strerror(errno));
-        return false;
-    }
-    int fo = open(dest.c_str(), O_CREAT | O_WRONLY, 0644);
-    if (fo == -1) {
-	close(fi);
+    int fd = open(dest.c_str(), O_CREAT | O_WRONLY, 0644);
+    if (fd == -1) {
+	close(fs);
 	ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
 	return false;
     }
-    if (lseek(fo, doffset, SEEK_SET) != (ssize_t)doffset) {
-        ERROR("cannot seek in " << dest << " to offset " << doffset << "; error = " << std::strerror(errno));
-        return false;
-    }
     ssize_t remaining = std::min(size, file_size(source.c_str()) - soffset);
-    bool success = file_transfer_loop(fi, fo, remaining);
-    close(fi);
-    close(fo);
+    bool success = file_transfer_loop(fs, soffset, fd, doffset, remaining);
+    close(fs);
+    close(fd);
     if (success) {
         TIMER_STOP(io_timer, "transferred " << source << " to " << dest);
     } else
