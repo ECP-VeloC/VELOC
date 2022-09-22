@@ -54,7 +54,7 @@ machines (e.g. Cray) are included as comments. After editing the script, run it 
    $./auto-install.py <install_dir>
    
 Note that it may be possible that your Python installation will not detect the libraries installed by the bootstrapping 
-automatically. In this case, the ``auto-install.pu`` script will fail. Locate the installed libraries and tell Python about them as follows:
+automatically. In this case, the ``auto-install.py`` script will fail. Locate the installed libraries and tell Python about them as follows:
 
 ::
 
@@ -87,10 +87,10 @@ In addition, the following optional fields are available:
   scratch_versions = <int> (number of previous checkpoints to keep on scratch, default: 0 - keep all)
   failure_domain = <string> (failure domain used for smart distribution of erasure codes, default: <hostname>)
   axl_type = <string> (AXL read/write strategy to/from the persistent path, default: <empty> - deactivate AXL)
-  chksum = <boolean> (activates checksum calculationa and verification for checkpoints, default: false)
+  chksum = <boolean> (activates checksum calculation and verification for checkpoints, default: false)
   meta = <path> (persistent path where VELOC will save checksumming information)
   
-Both the persisten and ec interval can be set to -1, which fully deactivates that feature. This is preferred to setting a high number
+Both the persistent and ec interval can be set to -1, which fully deactivates that feature. This is preferred to setting a high number
 (which also works but is less readable and has slightly higher overhead because VeloC will need to do extra checks). If you leave
 scratch_versions to the default value, you must ensure the scratch mount point will run out of space. VELOC will not automatically
 delete checkpoints when space is low. If space is a concern, set scratch_versions accordingly. Similar observations apply for
