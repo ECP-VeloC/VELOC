@@ -67,11 +67,11 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
     return ret;
 }
 
-#ifdef WITH_POSIX_SENDFILE
+#ifdef WITH_POSIX_DIRECT
 bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
     bool success = true;
     while (remaining > 0) {
-	ssize_t transferred = copy_file_range(fs, &soff, fd, &doff, remaining, 0);
+	ssize_t transferred = copy_file_range(fs, (off64_t *)&soff, fd, (off64_t *)&doff, remaining, 0);
         if (transferred == -1) {
             success = false;
             break;
@@ -99,7 +99,7 @@ bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaini
     return success;
 }
 #else
-#error Invalid POSIX IO transfer method selected. Valid choices: WITH_POSIX_SENDFILE, WITH_POSIX_RW
+#error Invalid POSIX IO transfer method selected. Valid choices: WITH_POSIX_DIRECT, WITH_POSIX_RW
 #endif
 
 bool posix_transfer_file(const std::string &source, const std::string &dest, size_t soffset, size_t doffset, size_t size) {

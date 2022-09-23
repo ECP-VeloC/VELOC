@@ -28,8 +28,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
     parser.add_argument('--protocol', default='socket_queue',
                         help='communication protocol between client and active backend (default: socket_queue). Only for advanced users.')
-    parser.add_argument('--posix-io', default='sendfile',
-                        help='POSIX transfer method between scratch and persistent (default: sendfile, alternative: rw).')
+    parser.add_argument('--posix-io', default='direct',
+                        help='POSIX transfer method between scratch and persistent (default: direct, alternative: rw).')
     parser.add_argument('--without-boost', action='store_true',
                         help='use existing Boost libraries for ipc_queue protocol (assume pre-installed)')
     parser.add_argument('--without-deps', action='store_true',
