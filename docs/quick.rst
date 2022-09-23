@@ -20,7 +20,7 @@ Note: replace ``x.y`` with the latest stable version available on github.
 Configure
 ---------
 
-Create and swich to the temporary working directory ``/tmp/work``.
+Create and switch to the temporary working directory ``/tmp/work``.
 Open ``test.cfg`` and add the following contents:
 
 ::

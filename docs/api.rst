@@ -164,8 +164,8 @@ ARGUMENTS
 
 - **ckpt_file_name**: The name of the checkpoint file that the user needs to use to perform I/O
 - **original_name**: The original name of the checkpoint file. VELOC will use **ckpt_file_name** internally 
-but will stick to the original name when persisting the checkpoint on the parallel file system. This enables
-users to customize the checkpoint namespace to facilitate their use for other purposes than restart (e.g. analytics).
+  but will stick to the original name when persisting the checkpoint on the parallel file system. This enables
+  users to customize the checkpoint namespace to facilitate their use for other purposes than restart (e.g. analytics).
 
 .. _description-5:
 
@@ -245,11 +245,11 @@ DESCRIPTION
 '''''''''''
 
 This function ends the checkpoint phase. It must be called collectively by all processes within the 
-same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
+same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfully managed
 to write the local checkpoint. In synchronous mode, ending the checkpoint phase will perform all resilience strategies
 employed by VeloC in blocking fashion. The return value indicates whether these strategies succeeded or not. In 
-asynchornous mode, ending the checkpoint phase will trigger all resilience strategies in the background, while 
-returning control to the application immediately. This operation is always succesful.
+asynchronous mode, ending the checkpoint phase will trigger all resilience strategies in the background, while 
+returning control to the application immediately. This operation is always successful.
 
 Wait for Checkpoint Completion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -270,7 +270,7 @@ DESCRIPTION
 '''''''''''
 
 This routine waits for any resilience strategies employed by VeloC in the background to finish. The return value 
-indicates whether they were successful or not. The function is meaningul only in asynchronous mode. It has no effect 
+indicates whether they were successful or not. The function is meaningful only in asynchronous mode. It has no effect
 in synchronous mode and simply returns success.
 
 Convenience Checkpoint Wrapper
@@ -359,12 +359,12 @@ ARGUMENTS
 
 - **mode** : One of VELOC_RECOVER_ALL (all regions from the checkpoint, ignores rest of arguments), VELOC_RECOVER_SOME (regions explicitly specified in ids), VELOC_RECOVER_REST (all regions except those specified in ids)
 - **ids** :  Array of ids corresponding to the memory regions previously saved in the checkpoint
-- **length**: Numer of elements in array of ids
+- **length**: Number of elements in array of ids
 
 DESCRIPTION
 '''''''''''
 
-This function restores the memory regions from the checkpoint speficied when calling ``VELOC_Restart_begin()``. Must be called between ``VELOC_Restart_begin()`` and ``VELOC_Restart_end()``. For all ids that will be restored, a previous call to ``VELOC_Mem_protect()`` must have been issued. The size of the registered memory region must be large enough to fit the data from the checkpoint. A typical use of this function relies on VELOC_RECOVER_SOME to figure out the size of data structures (assumed to be saved into the checkpoint), allocate and protect memory regions large enough to hold them, the use VELOC_RECOVER_REST to restore the content.
+This function restores the memory regions from the checkpoint specified when calling ``VELOC_Restart_begin()``. Must be called between ``VELOC_Restart_begin()`` and ``VELOC_Restart_end()``. For all ids that will be restored, a previous call to ``VELOC_Mem_protect()`` must have been issued. The size of the registered memory region must be large enough to fit the data from the checkpoint. A typical use of this function relies on VELOC_RECOVER_SOME to figure out the size of data structures (assumed to be saved into the checkpoint), allocate and protect memory regions large enough to hold them, the use VELOC_RECOVER_REST to restore the content.
 
 ::
 
@@ -396,7 +396,7 @@ Close Restart Phase
 ARGUMENTS
 '''''''''
 
--  **sucess**: Bool flag indicating whether the calling process restored its state from the checkpoint successfully.
+-  **success**: Bool flag indicating whether the calling process restored its state from the checkpoint successfully.
 
 .. _description-13:
 
@@ -404,8 +404,8 @@ DESCRIPTION
 '''''''''''
 
 This function ends the restart phase. It must be called collectively by all processes within the 
-same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfuly managed
-to restore the cricial data structures from the checkpoint specified in ``VELOC_Restart_begin()``. 
+same checkpoint/restart group. The success flag indicates to VeloC whether the process has successfully managed
+to restore the critical data structures from the checkpoint specified in ``VELOC_Restart_begin()``.
 
 Convenience Restart Wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
