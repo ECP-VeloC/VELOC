@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 	printf("MPI Init failed to provide MPI_THREAD_MULTIPLE");
 	exit (2);
     }
-    
+
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }
-	
+
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
     nbLines = (M / nbProcs) + 3;
     h = (double *) malloc(sizeof(double *) * M * nbLines);
@@ -120,7 +120,10 @@ int main(int argc, char *argv[]) {
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
-	assert(VELOC_Restart("heatdis", v) == VELOC_SUCCESS);
+	if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
+            printf("Error restarting from checkpoint! Aborting...\n");
+            exit(2);
+        }
 	if (rank == 0)
             printf("Restart from iteration %d finished in %.2lf seconds\n", v, MPI_Wtime() - wtime);
     } else
@@ -135,7 +138,10 @@ int main(int argc, char *argv[]) {
 	    break;
 	i++;
 	if (i % CKPT_FREQ == 0)
-	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
+	    if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
+                printf("Error checkpointing! Aborting...\n");
+                exit(2);
+            }
 	if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1)
             MPI_Abort(MPI_COMM_WORLD, 1);
     }

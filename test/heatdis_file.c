@@ -5,16 +5,19 @@
 #include "heatdis.h"
 #include "include/veloc.h"
 
-// this example uses asserts so they need to be activated
-#undef NDEBUG
-#include <assert.h>
-
 /*
     This sample application is based on the heat distribution code
     originally developed within the FTI project: github.com/leobago/fti
 */
 
 static const unsigned int CKPT_FREQ = ITER_TIMES / 3;
+
+#define check_result(VELOC_Command) {\
+    if (VELOC_Command != VELOC_SUCCESS) {\
+        printf("Error running " #VELOC_Command ", aborting!\n");\
+        exit(2);\
+    }\
+}
 
 void initData(int nbLines, int M, int rank, double *h) {
     int i, j;
@@ -80,19 +83,19 @@ int main(int argc, char *argv[]) {
 	exit(1);
     }
 
-    MPI_Init(&argc, &argv);	
+    MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (sscanf(argv[1], "%d", &arg) != 1) {
         printf("Wrong memory size! See usage\n");
 	exit(3);
-    }    
+    }
     if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }
-	
+
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
     nbLines = (M / nbProcs) + 3;
     h = (double *) malloc(sizeof(double *) * M * nbLines);
@@ -111,11 +114,11 @@ int main(int argc, char *argv[]) {
     int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
-	assert(VELOC_Restart_begin("heatdis", v) == VELOC_SUCCESS);
-	
+	check_result(VELOC_Restart_begin("heatdis", v));
+
 	char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
 	sprintf(original, "heatdis-file-ckpt-%d_%d.dat", v, rank);
-	assert(VELOC_Route_file(original, veloc_file) == VELOC_SUCCESS);
+	check_result(VELOC_Route_file(original, veloc_file));
 
 	int valid = 1;
         FILE* fd = fopen(veloc_file, "rb");
@@ -127,8 +130,8 @@ int main(int argc, char *argv[]) {
         } else
             // failed to open file
             valid = 0;
-	
-	assert(VELOC_Restart_end(valid) == VELOC_SUCCESS);
+
+	check_result(VELOC_Restart_end(valid));
     } else
 	i = 0;
 
@@ -142,13 +145,13 @@ int main(int argc, char *argv[]) {
 	    break;
 	i++;
 	if (i % CKPT_FREQ == 0) {
-	    assert(VELOC_Checkpoint_wait() == VELOC_SUCCESS);
-	    assert(VELOC_Checkpoint_begin("heatdis", i) == VELOC_SUCCESS);
+	    check_result(VELOC_Checkpoint_wait());
+	    check_result(VELOC_Checkpoint_begin("heatdis", i));
 
 	    char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
 	    sprintf(original, "heatdis-file-ckpt_%d_%d.dat", i, rank);
-	    assert(VELOC_Route_file(original, veloc_file) == VELOC_SUCCESS);
-	
+	    check_result(VELOC_Route_file(original, veloc_file));
+
             int valid = 1;
             FILE* fd = fopen(veloc_file, "wb");
             if (fd != NULL) {
@@ -156,11 +159,11 @@ int main(int argc, char *argv[]) {
                 if (fwrite( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
                 if (fwrite( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
                 fclose(fd);
-            } else 
+            } else
                 // failed to open file
                 valid = 0;
 
-	    assert(VELOC_Checkpoint_end(valid) == VELOC_SUCCESS);
+	    check_result(VELOC_Checkpoint_end(valid));
 	}
     }
     if (rank == 0)

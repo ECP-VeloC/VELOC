@@ -5,10 +5,6 @@
 #include "heatdis.h"
 #include "include/veloc.h"
 
-// this examples uses asserts so they need to be activated
-#undef NDEBUG
-#include <assert.h>
-
 /*
     This sample application is based on the heat distribution code
     originally developed within the FTI project: github.com/leobago/fti
@@ -80,7 +76,7 @@ int main(int argc, char *argv[]) {
 	exit(1);
     }
 
-    MPI_Init(&argc, &argv);	
+    MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -92,7 +88,7 @@ int main(int argc, char *argv[]) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }
-	
+
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
     nbLines = (M / nbProcs) + 3;
     h = (double *) malloc(sizeof(double *) * M * nbLines);
@@ -116,7 +112,10 @@ int main(int argc, char *argv[]) {
     if (v > 0) {
 	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
 	// v can be any version, independent of what VELOC_Restart_test is returning
-	assert(VELOC_Restart("heatdis", v) == VELOC_SUCCESS);
+        if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
+            printf("Error restarting from checkpoint! Aborting...\n");
+            exit(2);
+        }
     } else
 	i = 0;
     while(i < ITER_TIMES) {
@@ -129,7 +128,10 @@ int main(int argc, char *argv[]) {
 	    break;
 	i++;
 	if (i % CKPT_FREQ == 0)
-	    assert(VELOC_Checkpoint("heatdis", i) == VELOC_SUCCESS);
+	    if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
+                printf("Error checkpointing! Aborting...\n");
+                exit(2);
+            }
     }
     if (rank == 0)
 	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);

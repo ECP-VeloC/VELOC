@@ -1,11 +1,10 @@
 #include "include/veloc.hpp"
 #include "include/veloc/bitsery.hpp"
 #include "include/veloc/cereal.hpp"
+
 #include <map>
 #include <cereal/types/map.hpp>
-
-#undef NDEBUG
-#include <cassert>
+#include <stdexcept>
 
 enum class MyEnum:uint16_t { V1,V2,V3 };
 struct MyStruct {
@@ -42,7 +41,8 @@ int main(int argc, char **argv) {
     ckpt->mem_protect(1, veloc::bitsery::serializer(data), veloc::bitsery::deserializer(data));
     ckpt->mem_protect(2, veloc::cereal::serializer(map), veloc::cereal::deserializer(map));
 
-    ckpt->checkpoint("serial.test", 0);
+    if (!ckpt->checkpoint("serial.test", 0))
+        throw std::runtime_error("checkpointing failed");
 
     // change the data structures after taking the checkpoint
     k = 0;
@@ -51,11 +51,13 @@ int main(int argc, char **argv) {
     map[2] = 3;
 
     // verify the data structures were correctly restored to their original values on restart
-    ckpt->restart("serial.test", 0);
-    assert(k == 7);
-    assert(data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045);
-    assert(map.size() == 1 && map[1] == 2);
-    std::cout << "All tests passed!" << std::endl;
+    if (!ckpt->restart("serial.test", 0))
+        throw std::runtime_error("restart failed");
+
+    if (k == 7 && data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045 && map.size() == 1 && map[1] == 2)
+        std::cout << "serialization test passed" << std::endl;
+    else
+        std::cout << "serialization test failed" << std::endl;
 
     return 0;
 }
