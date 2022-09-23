@@ -1,7 +1,7 @@
 add_library (veloc-client SHARED
   veloc.cpp
   client.cpp
-  cache.cpp
+  posix_cache.cpp
   ${PROJECT_SOURCE_DIR}/src/backend/work_queue.cpp
 )
 
