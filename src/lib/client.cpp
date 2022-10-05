@@ -32,11 +32,10 @@ static void launch_backend(const std::string &cfg_file) {
 
 client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
     cfg(cfg_file, false), rank(id) {
-    if(cfg.is_sync()){
+    if(cfg.is_sync())
         start_main_loop(cfg, MPI_COMM_NULL);   
-    } else {
+    else 
         launch_backend(cfg_file);
-    }
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
     DBG("VELOC initialized");
@@ -87,8 +86,9 @@ bool client_impl_t::checkpoint_wait() {
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
-bool client_impl_t::backend_ready() {
-    if(cfg.is_sync()) return true;
+bool client_impl_t::checkpoint_finished() {
+    if(cfg.is_sync()) 
+        return true;
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
 	return false;

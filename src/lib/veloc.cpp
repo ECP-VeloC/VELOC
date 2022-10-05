@@ -66,9 +66,10 @@ extern "C" int VELOC_Checkpoint_wait() {
     return CLIENT_CALL(veloc_client->checkpoint_wait());
 }
 
-extern "C" int VELOC_Backend_ready() {
-    if (veloc_client == NULL) return -1;
-    return veloc_client->backend_ready();
+extern "C" int VELOC_Checkpoint_finished() {
+    if (veloc_client == NULL) 
+        return -1;
+    return veloc_client->checkpoint_finished();
 }
 
 extern "C" int VELOC_Restart_test(const char *name, int version) {

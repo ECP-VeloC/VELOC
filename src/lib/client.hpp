@@ -36,9 +36,8 @@ public:
     virtual bool checkpoint_begin(const std::string &name, int version);
     virtual bool checkpoint_mem(int mode, const std::set<int> &ids);
     virtual bool checkpoint_end(bool success);
-    virtual bool checkpoint_wait();
-    
-    virtual bool backend_ready();
+    virtual bool checkpoint_wait(); 
+    virtual bool checkpoint_finished();
 
     virtual int restart_test(const std::string &name, int version);
     virtual bool restart(const std::string &name, int version);

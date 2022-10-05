@@ -69,6 +69,7 @@ template<typename T> class comm_client_t {
 	return ret;
     }
     bool check_completion() {
+        scoped_lock<interprocess_mutex> cond_lock(data->mutex);
         return data->pending.empty() && data->progress.empty();
     }
 

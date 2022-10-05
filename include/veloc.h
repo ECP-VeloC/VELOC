@@ -96,7 +96,7 @@ int VELOC_Checkpoint_wait();
 
 //Returns 0 if an asynchronous checkpoint is still happening on the backend
 //Note, returns VELOC_FAILURE if client is null.
-int VELOC_Backend_ready();
+int VELOC_Checkpoint_finished();
 
 // convenience wrapper for VELOC_Checkpoint_wait, VELOC_Checkpoint_begin, VELOC_Checkpoint_mem, VELOC_Checkpoint_end
 int VELOC_Checkpoint(const char *name, int version);
