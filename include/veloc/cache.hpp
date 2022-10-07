@@ -16,6 +16,7 @@ public:
     bool pread(void *buf, size_t count, off_t offset);
     bool pwrite(const void *buf, size_t count, off_t offset);
     void close();
+    static void flush();
 };
 }
 
