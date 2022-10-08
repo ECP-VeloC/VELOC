@@ -22,7 +22,7 @@ using axl_module_t = storage_module_t;
 using daos_module_t = storage_module_t;
 #endif
 
-#define __DEBUG
+//#define __DEBUG
 #include "debug.hpp"
 
 std::ostream *logger = &std::cout;
@@ -32,8 +32,23 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
 	FATAL("cannot open config file: " << cfg_file);
     if (reader.ParseError() > 0)
 	FATAL("error parsing config file " << cfg_file << " at line " << reader.ParseError());
-    std::string val, scratch, persistent;
 
+    // configure logging
+    std::string log_prefix = "/dev/shm";
+    if (get_optional("log_prefix", log_prefix) || is_backend) {
+        DBG("Log prefix=" << log_prefix);
+        char host_name[HOST_NAME_MAX] = "";
+        gethostname(host_name, HOST_NAME_MAX);
+        std::string log_file = log_prefix + "/" + (is_backend ? "veloc-backend-" : "veloc-client-")
+            + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
+        try {
+            logger = new std::ofstream(log_file, std::ofstream::out | std::ofstream::trunc);
+        } catch(std::exception &e) {
+            FATAL("cannot log to " << log_file << ", error: " << e.what());
+        }
+    }
+
+    std::string val, scratch, persistent;
     // set sync or async mode
     if (get_optional("mode", val)) {
         if (val != "sync" && val != "async")
@@ -69,25 +84,6 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
                 sm = new posix_module_t(scratch, persistent);
             }
         }
-    }
-
-    // configure logging
-    std::string log_prefix;
-    if (!get_optional("log_prefix", log_prefix)) {
-        if (is_backend)
-            log_prefix = "/dev/shm";
-        else
-            return;
-    }
-    DBG("Log prefix=" << log_prefix);
-    char host_name[HOST_NAME_MAX] = "";
-    gethostname(host_name, HOST_NAME_MAX);
-    std::string log_file = log_prefix + "/" + (is_backend ? "veloc-backend-" : "veloc-client-")
-        + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
-    try {
-        logger = new std::ofstream(log_file, std::ofstream::out | std::ofstream::trunc);
-    } catch(std::exception &e) {
-        FATAL("cannot log to " << log_file << ", error: " << e.what());
     }
 }
 

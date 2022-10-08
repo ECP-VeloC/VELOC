@@ -10,12 +10,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 // async background I/O implementation
 struct async_command_t {
-    static const int SHUTDOWN = 1, WRITE = 2, CLOSE = 3;
+    static const int WRITE = 1, CLOSE = 2;
     int op, fl, fr;
     size_t offset, size;
     async_command_t(int _op) : op(_op) { }
@@ -31,6 +31,7 @@ struct async_context_t {
     std::condition_variable async_cond;
     std::deque<async_command_t> async_op_queue;
     std::thread async_thread;
+    bool started = false, finished = false;
 };
 
 static async_context_t static_context;
@@ -38,15 +39,15 @@ static async_context_t static_context;
 static void async_write() {
     while (true) {
 	std::unique_lock<std::mutex> lock(static_context.async_mutex);
-	while (static_context.async_op_queue.size() == 0)
+	while (static_context.async_op_queue.size() == 0 && !static_context.finished)
 	    static_context.async_cond.wait(lock);
+        if (static_context.async_op_queue.size() == 0 && static_context.finished)
+            break;
 	auto cmd = static_context.async_op_queue.front();
 	static_context.async_op_queue.pop_front();
 	lock.unlock();
-	static_context.async_cond.notify_one();
+	static_context.async_cond.notify_all();
 	switch (cmd.op) {
-	case async_command_t::SHUTDOWN:
-	    return;
         case async_command_t::CLOSE:
             DBG("close, fl = " << cmd.fl << ", fr = " << cmd.fr);
 	    close(cmd.fl);
@@ -66,36 +67,10 @@ static void send_command(const async_command_t &cmd) {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
     while (static_context.async_op_queue.size() > static_context.MAX_QUEUE_SIZE)
 	static_context.async_cond.wait(lock);
-    static_context.async_op_queue.push_back(cmd);
+    if (!static_context.finished)
+        static_context.async_op_queue.push_back(cmd);
     lock.unlock();
-    static_context.async_cond.notify_one();
-}
-
-// PIMPL wrappers
-namespace veloc {
-cached_file_t::cached_file_t(const std::string &cfg_file) : ptr(new ::posix_cached_file_t(cfg_file)) {}
-cached_file_t::~cached_file_t() = default;
-bool cached_file_t::open(const std::string &fname, int flags, mode_t mode) {
-    return ptr->open(fname, flags, mode);
-}
-bool cached_file_t::pread(void *buf, size_t count, off_t offset) {
-    return ptr->pread(buf, count, offset);
-}
-bool cached_file_t::pwrite(const void *buf, size_t count, off_t offset) {
-    return ptr->pwrite(buf, count, offset);
-}
-void cached_file_t::close() {
-    ptr->close();
-}
-void cached_file_t::flush() {
-    TIMER_START(flush_timer);
-    // wait for background thread to finish async operations
-    std::unique_lock<std::mutex> lock(static_context.async_mutex);
-    while (static_context.async_op_queue.size() > 0)
-	static_context.async_cond.wait(lock);
-    lock.unlock();
-    TIMER_STOP(flush_timer, "wait for async I/O background thread finished");
-}
+    static_context.async_cond.notify_all();
 }
 
 // actual client implementation
@@ -103,9 +78,10 @@ posix_cached_file_t::posix_cached_file_t(const std::string &cfg_file) {
     config_t cfg(cfg_file, false);
     scratch = cfg.get("scratch");
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
-    if (static_context.async_thread.joinable())
-        return;
-    static_context.async_thread = std::thread(async_write);
+    if (!static_context.started) {
+        std::thread(async_write).detach();
+        static_context.started = true;
+    }
 }
 
 posix_cached_file_t::~posix_cached_file_t() {
@@ -173,4 +149,34 @@ void posix_cached_file_t::close() {
         fl = -1;
         fr = -1;
     }
+}
+
+// PIMPL wrappers
+namespace veloc {
+cached_file_t::cached_file_t(const std::string &cfg_file) : ptr(new ::posix_cached_file_t(cfg_file)) {}
+cached_file_t::~cached_file_t() = default;
+bool cached_file_t::open(const std::string &fname, int flags, mode_t mode) {
+    return ptr->open(fname, flags, mode);
+}
+bool cached_file_t::pread(void *buf, size_t count, off_t offset) {
+    return ptr->pread(buf, count, offset);
+}
+bool cached_file_t::pwrite(const void *buf, size_t count, off_t offset) {
+    return ptr->pwrite(buf, count, offset);
+}
+void cached_file_t::close() {
+    ptr->close();
+}
+void cached_file_t::flush() {
+    // wait for background thread to finish async operations
+    std::unique_lock<std::mutex> lock(static_context.async_mutex);
+    while (static_context.async_op_queue.size() > 0)
+	static_context.async_cond.wait(lock);
+    lock.unlock();
+}
+void cached_file_t::shutdown() {
+    std::unique_lock<std::mutex> lock(static_context.async_mutex);
+    static_context.finished = true;
+    static_context.async_cond.notify_all();
+}
 }
