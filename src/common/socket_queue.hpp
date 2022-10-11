@@ -69,6 +69,11 @@ public:
         return reply;
     }
 
+    bool check_completion() {
+	ERROR("not yet implemented, use ipc_queue instead");
+	return false;
+    }
+
     void enqueue(const command_t &c) {
         if (write(fd, &c, sizeof(c)) != sizeof(c))
             fatal_comm();

@@ -59,6 +59,7 @@ public:
         server = engine.lookup(buff);
         delete []buff;
     }
+
     int wait_completion(bool reset_status = true) {
         std::pair<int, int> reply;
         while (true) {
@@ -69,6 +70,12 @@ public:
         }
         return reply.second;
     }
+
+    bool check_completion() {
+	ERROR("not yet implemented, use ipc_queue instead");
+	return false;
+    }
+
     void enqueue(const T &e) {
         enqueue_rpc.on(server)(e);
 	DBG("enqueued element " << e);

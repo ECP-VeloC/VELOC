@@ -30,11 +30,22 @@ static void launch_backend(const std::string &cfg_file) {
         FATAL("cannot launch active backend for async mode, error: " << strerror(errno));
 }
 
+bool client_impl_t::check_threaded() {
+    bool threaded = cfg.get_optional("threaded", false);
+    if (threaded) {
+	int provided;
+        MPI_Query_thread(&provided);
+        if (provided != MPI_THREAD_MULTIPLE)
+            FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread with the MPI_THREAD_MULTIPLE flag");
+    }
+    return threaded;
+}
+
 client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
     cfg(cfg_file, false), rank(id) {
-    if(cfg.is_sync())
-        start_main_loop(cfg, MPI_COMM_NULL);   
-    else 
+    if(cfg.is_sync() || check_threaded())
+        start_main_loop(cfg, MPI_COMM_NULL);
+    else
         launch_backend(cfg_file);
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
@@ -43,14 +54,8 @@ client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
 
 client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
     cfg(cfg_file, false), comm(c) {
-    int provided;
-    bool threaded = cfg.get_optional("threaded", false);
-    if (threaded) {
-        MPI_Query_thread(&provided);
-        if (provided != MPI_THREAD_MULTIPLE)
-            FATAL("MPI threaded mode requested but not available, please use MPI_Init_thread with the MPI_THREAD_MULTIPLE flag");
-    }
-    if (cfg.is_sync() || threaded) {
+    if (cfg.is_sync() || check_threaded()) {
+	int provided;
         MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
         MPI_Comm_rank(local, &provided);
         MPI_Comm_split(comm, provided == 0 ? 0 : MPI_UNDEFINED, rank, &backends);
@@ -89,7 +94,7 @@ bool client_impl_t::checkpoint_wait() {
 }
 
 bool client_impl_t::checkpoint_finished() {
-    if(cfg.is_sync()) 
+    if(cfg.is_sync())
         return true;
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");

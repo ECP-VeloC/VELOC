@@ -23,6 +23,7 @@ class client_impl_t : public veloc::client_t {
     size_t header_size = 0;
     comm_client_t<command_t> *queue = NULL;
 
+    bool check_threaded();
     int run_blocking(const command_t &cmd);
     bool read_header();
 
@@ -36,7 +37,7 @@ public:
     virtual bool checkpoint_begin(const std::string &name, int version);
     virtual bool checkpoint_mem(int mode, const std::set<int> &ids);
     virtual bool checkpoint_end(bool success);
-    virtual bool checkpoint_wait(); 
+    virtual bool checkpoint_wait();
     virtual bool checkpoint_finished();
 
     virtual int restart_test(const std::string &name, int version);
