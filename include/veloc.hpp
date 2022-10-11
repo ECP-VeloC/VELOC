@@ -45,6 +45,7 @@ public:
     virtual bool checkpoint_mem(int mode, const std::set<int> &ids) = 0;
     virtual bool checkpoint_end(bool success) = 0;
     virtual bool checkpoint_wait() = 0;
+    virtual bool checkpoint_finished() = 0;
 
     virtual int restart_test(const std::string &name, int version) = 0;
     virtual bool restart(const std::string &name, int version) = 0;

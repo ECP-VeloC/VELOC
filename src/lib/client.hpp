@@ -13,7 +13,7 @@
 
 class client_impl_t : public veloc::client_t {
     config_t cfg;
-    MPI_Comm comm, local = MPI_COMM_NULL, backends = MPI_COMM_NULL;
+    MPI_Comm comm = MPI_COMM_NULL, local = MPI_COMM_NULL, backends = MPI_COMM_NULL;
     int rank, no_ranks;
 
     command_t current_ckpt;
@@ -36,7 +36,8 @@ public:
     virtual bool checkpoint_begin(const std::string &name, int version);
     virtual bool checkpoint_mem(int mode, const std::set<int> &ids);
     virtual bool checkpoint_end(bool success);
-    virtual bool checkpoint_wait();
+    virtual bool checkpoint_wait(); 
+    virtual bool checkpoint_finished();
 
     virtual int restart_test(const std::string &name, int version);
     virtual bool restart(const std::string &name, int version);

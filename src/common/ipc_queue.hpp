@@ -68,6 +68,11 @@ template<typename T> class comm_client_t {
 	    data->status = VELOC_SUCCESS;
 	return ret;
     }
+    bool check_completion() {
+        scoped_lock<interprocess_mutex> cond_lock(data->mutex);
+        return data->pending.empty() && data->progress.empty();
+    }
+
     void enqueue(const T &e) {
 	// enqueue an element and notify the consumer
 	scoped_lock<interprocess_mutex> queue_lock(data->mutex);
