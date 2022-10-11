@@ -37,10 +37,9 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
     std::string log_prefix = "/dev/shm";
     if (get_optional("log_prefix", log_prefix) || is_backend) {
         DBG("Log prefix=" << log_prefix);
-        char host_name[HOST_NAME_MAX] = "";
-        gethostname(host_name, HOST_NAME_MAX);
-        std::string log_file = log_prefix + "/" + (is_backend ? "veloc-backend-" : "veloc-client-")
-            + std::string(host_name) + "-" + std::to_string(getuid()) + ".log";
+	std::string log_file = log_prefix + "/"
+	    + (is_backend ? "veloc-backend-" : "veloc-client-")
+	    + unique_suffix() + ".log";
         try {
             logger = new std::ofstream(log_file, std::ofstream::out | std::ofstream::trunc);
         } catch(std::exception &e) {

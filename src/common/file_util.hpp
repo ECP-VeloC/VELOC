@@ -18,4 +18,6 @@ bool posix_transfer_file(const std::string &source, const std::string &dest, siz
 bool check_dir(const std::string &d);
 bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f);
 
+std::string unique_suffix();
+
 #endif //__FILE_UTIL

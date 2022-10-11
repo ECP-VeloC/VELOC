@@ -134,3 +134,9 @@ bool check_dir(const std::string &d) {
     closedir(entry);
     return true;
 }
+
+std::string unique_suffix() {
+    char host_name[HOST_NAME_MAX] = "";
+    gethostname(host_name, HOST_NAME_MAX);
+    return std::string(host_name) + "-" + std::to_string(getuid());
+}

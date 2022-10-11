@@ -25,7 +25,7 @@ namespace tl = thallium;
 
 typedef std::function<void (int)> completion_t;
 
-static const std::string CHANNEL = "/dev/shm/veloc-thallium";
+static const std::string CHANNEL = "/dev/shm/veloc-thallium-" + unique_suffix();
 static const auto SLEEP_DURATION = 2s;
 
 inline void backend_cleanup() {

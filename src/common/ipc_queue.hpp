@@ -2,6 +2,7 @@
 #define __IPC_QUEUE_HPP
 
 #include "status.hpp"
+#include "file_util.hpp"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
@@ -22,10 +23,9 @@ using namespace boost::interprocess;
 typedef std::function<void (int)> completion_t;
 
 static const size_t IPC_MAX_SIZE = 1 << 20;
-static const std::string UID = std::to_string(getuid());
-static const std::string IPC_BUFFER = "veloc-ipc-buffer" + UID;
-static const std::string IPC_MUTEX = "veloc-ipc-mutex-" + UID;
-static const std::string IPC_COND = "veloc-ipc-cond-" + UID;
+static const std::string IPC_BUFFER = "veloc-ipc-buffer-" + unique_suffix();
+static const std::string IPC_MUTEX = "veloc-ipc-mutex-" + unique_suffix();
+static const std::string IPC_COND = "veloc-ipc-cond-" + unique_suffix();
 
 inline void backend_cleanup() {
     shared_memory_object::remove(IPC_BUFFER.c_str());

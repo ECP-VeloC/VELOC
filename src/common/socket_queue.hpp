@@ -3,6 +3,7 @@
 
 #include "status.hpp"
 #include "command.hpp"
+#include "file_util.hpp"
 
 #include <unordered_map>
 #include <functional>
@@ -24,7 +25,7 @@ using namespace std::placeholders;
 
 typedef std::function<void (int)> completion_t;
 
-static const std::string CHANNEL = "/dev/shm/veloc-socket-" + std::to_string(getuid());
+static const std::string CHANNEL = "/dev/shm/veloc-socket-" + unique_suffix();
 static const int MAX_CLIENTS = 256;
 
 inline void backend_cleanup() {
