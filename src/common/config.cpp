@@ -28,7 +28,7 @@ using daos_module_t = storage_module_t;
 std::ostream *logger = &std::cout;
 
 config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(cfg_file) {
-    if (reader.ParseError() < 0)
+    if (!cfg_file.empty() && reader.ParseError() < 0)
 	FATAL("cannot open config file: " << cfg_file);
     if (reader.ParseError() > 0)
 	FATAL("error parsing config file " << cfg_file << " at line " << reader.ParseError());
@@ -36,7 +36,7 @@ config_t::config_t(const std::string &f, bool is_backend) : cfg_file(f), reader(
     // configure logging
     std::string log_prefix = "/dev/shm";
     if (get_optional("log_prefix", log_prefix) || is_backend) {
-        DBG("Log prefix=" << log_prefix);
+        DBG("log prefix=" << log_prefix);
 	std::string log_file = log_prefix + "/"
 	    + (is_backend ? "veloc-backend-" : "veloc-client-")
 	    + unique_suffix() + ".log";
@@ -94,9 +94,50 @@ config_t::~config_t() {
     }
 }
 
+std::string config_t::env_param(const std::string &param) {
+    std::string ret = param;
+    for (auto &c: ret)
+	c = toupper(c);
+    char *env = getenv(("VELOC_" + ret).c_str());
+    if (env == NULL)
+	return "";
+    return env;
+}
+
 std::string config_t::get(const std::string &param) const {
-    std::string ret = reader.Get("", param, "");
-    if (ret.empty())
+    std::string ret;
+    if (!get_optional(param, ret))
         FATAL("config parameter " << param << " missing or empty");
     return ret;
+}
+
+bool config_t::get_optional(const std::string &param, std::string &value) const {
+    auto ret = env_param(param);
+    if (ret.empty())
+	ret = reader.Get("", param, "");
+    if (ret.empty())
+	return false;
+    value = ret;
+    return true;
+}
+
+bool config_t::get_optional(const std::string &param, int &value) const {
+    std::string ret;
+    if (!get_optional(param, ret))
+	return false;
+    try {
+	value = std::stoi(ret);
+    } catch (std::exception &e) {
+	return false;
+    }
+    return true;
+}
+
+bool config_t::get_optional(const std::string &param, bool def) const {
+    std::string ret;
+    if (!get_optional(param, ret))
+	return false;
+    for (auto &c: ret)
+	c = tolower(c);
+    return ret == "true" ? true : false;
 }

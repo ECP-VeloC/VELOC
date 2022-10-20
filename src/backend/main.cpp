@@ -23,8 +23,8 @@ void exit_handler(int signum) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2 || argc > 3) {
-	std::cout << "Usage: " << argv[0] << " <veloc_config> [--disable-ec]" << std::endl;
+    if (argc > 3) {
+	std::cout << "Usage: " << argv[0] << " [<veloc_config>] [--disable-ec]" << std::endl;
 	return -1;
     }
 
@@ -48,14 +48,17 @@ int main(int argc, char *argv[]) {
 
     // first instance, continue initialization
     parent_id = getpid();
-    config_t cfg(argv[1], true);
+    config_t cfg(argc > 1 && strcmp(argv[1], "--disable-ec") != 0 ? argv[1] : "", true);
     if (cfg.is_sync())
 	FATAL("configuration requests sync mode, backend is not needed");
 
     // disable EC on request
-    if (argc == 3 && std::string(argv[2]) == "--disable-ec") {
-	INFO("EC module disabled by commmand line switch");
-	ec_active = false;
+    for (int i = 1; i < argc; i++) {
+	if (strcmp(argv[i], "--disable-ec") == 0) {
+	    INFO("EC module disabled by commmand line switch");
+	    ec_active = false;
+	    break;
+	}
     }
 
     // start main loop: initialize MPI or fork into deamon mode if EC disabled

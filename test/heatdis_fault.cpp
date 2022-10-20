@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
-    if (argc < 3) {
-	printf("Usage: %s <mem_in_mb> <cfg_file>\n", argv[0]);
+    if (argc < 2) {
+	printf("Usage: %s <mem_in_mb> [<cfg_file>]\n", argv[0]);
 	exit(1);
     }
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong memory size! See usage\n");
 	exit(3);
     }
-    if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
+    if (VELOC_Init(MPI_COMM_WORLD, argc > 2 ? argv[2] : "") != VELOC_SUCCESS) {
 	printf("Error initializing VELOC! Aborting...\n");
 	exit(2);
     }

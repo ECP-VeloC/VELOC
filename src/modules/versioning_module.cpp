@@ -15,7 +15,7 @@ static void scratch_version_set(const std::string &p, const char *cname, int req
 }
 
 versioning_module_t::versioning_module_t(const config_t &c) : cfg(c) {
-    if (!cfg.get_optional("max_versions", max_versions)) {
+    if (cfg.storage() && !cfg.get_optional("max_versions", max_versions)) {
 	max_versions = 0;
         INFO("persisting last " << max_versions << " checkpoints to " << cfg.get("persistent") << " (0 means all), change using 'max_versions'");
     }

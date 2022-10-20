@@ -11,23 +11,17 @@ class config_t {
     bool sync_mode = false;
     storage_module_t *sm = NULL;
 
+    static std::string env_param(const std::string &param);
+
 public:
     config_t(const std::string &cfg_file, bool is_backend);
     config_t(const config_t &other) = delete;
     ~config_t();
 
     std::string get(const std::string &param) const;
-    bool get_optional(const std::string &param, std::string &value) const {
-	value = reader.Get("", param, "");
-	return !value.empty();
-    }
-    bool get_optional(const std::string &param, int &value) const {
-	value = reader.GetInteger("", param, std::numeric_limits<int>::lowest());
-	return value != std::numeric_limits<int>::lowest();
-    }
-    bool get_optional(const std::string &param, bool def) const {
-	return reader.GetBoolean("", param, def);
-    }
+    bool get_optional(const std::string &param, std::string &value) const;
+    bool get_optional(const std::string &param, int &value) const;
+    bool get_optional(const std::string &param, bool def) const;
     bool is_sync() const {
 	return sync_mode;
     }
