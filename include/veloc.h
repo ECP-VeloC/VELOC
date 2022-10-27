@@ -66,6 +66,13 @@ int VELOC_Mem_unprotect(int id);
 int VELOC_Route_file(const char *original, char *routed);
 
 /**************************
+* Cleanup
+*************************/
+
+// remove all checkpoints in "scratch" corresponding to name
+int VELOC_Cleanup(const char *name);
+
+/**************************
  * Checkpoint routines
  *************************/
 

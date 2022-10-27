@@ -85,6 +85,13 @@ client_impl_t::~client_impl_t() {
     DBG("VELOC finalized");
 }
 
+bool client_impl_t::cleanup(const std::string &name) {
+    parse_dir(cfg.get("scratch"), name, [](const std::string &fname, int, int) {
+        remove(fname.c_str());
+    });
+    return true;
+}
+
 bool client_impl_t::checkpoint_wait() {
     if (checkpoint_in_progress) {
 	ERROR("need to finalize local checkpoint first by calling checkpoint_end()");

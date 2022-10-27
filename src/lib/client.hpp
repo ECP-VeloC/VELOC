@@ -32,6 +32,7 @@ public:
     client_impl_t(MPI_Comm comm, const std::string &cfg_file);
 
     virtual std::string route_file(const std::string &original);
+    virtual bool cleanup(const std::string &name);
 
     virtual bool checkpoint(const std::string &name, int version);
     virtual bool checkpoint_begin(const std::string &name, int version);

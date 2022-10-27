@@ -150,7 +150,9 @@ int main(int argc, char *argv[]) {
 
     free(h);
     free(g);
-    VELOC_Finalize(1); // wait for checkpoints to finish
+    VELOC_Checkpoint_wait();
+    VELOC_Cleanup("heatdis");
+    VELOC_Finalize(1);
     MPI_Finalize();
     return 0;
 }

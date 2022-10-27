@@ -67,7 +67,7 @@ extern "C" int VELOC_Checkpoint_wait() {
 }
 
 extern "C" int VELOC_Checkpoint_finished() {
-    if (veloc_client == NULL) 
+    if (veloc_client == NULL)
         return -1;
     return veloc_client->checkpoint_finished();
 }
@@ -84,6 +84,10 @@ extern "C" int VELOC_Route_file(const char *original, char *routed) {
     routed[cname.length()] = 0;
 
     return routed[0] != 0 ? VELOC_SUCCESS : VELOC_FAILURE;
+}
+
+extern "C" int VELOC_Cleanup(const char *name) {
+    return CLIENT_CALL(veloc_client->cleanup(std::string(name)));
 }
 
 extern "C" int VELOC_Restart_begin(const char *name, int version) {

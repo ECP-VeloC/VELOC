@@ -39,6 +39,7 @@ public:
     }
 
     virtual std::string route_file(const std::string &original) = 0;
+    virtual bool cleanup(const std::string &name) = 0;
 
     virtual bool checkpoint(const std::string &name, int version) = 0;
     virtual bool checkpoint_begin(const std::string &name, int version) = 0;
