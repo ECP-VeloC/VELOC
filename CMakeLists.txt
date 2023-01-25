@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 3.10)
-project (VELOC)
+cmake_minimum_required (VERSION 3.14)
+project (VELOC VERSION 1.6)
 
 ##### Global settings
 include(GNUInstallDirs)
@@ -26,15 +26,13 @@ endif()
 
 # PThreads
 find_package(Threads REQUIRED)
-set(COMM_QUEUE_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+set(COMM_QUEUE_LIBRARIES Threads::Threads)
 
 # Communication protocol
 if (${COMM_QUEUE} STREQUAL "ipc_queue")
     # Boost is required for ipc_queue
-    set(Boost_FIND_REQUIRED True)
-    find_package(Boost 1.40)
-    include_directories(${Boost_INCLUDE_DIR})
-    list(APPEND COMM_QUEUE_LIBRARIES "rt")
+    find_package(Boost 1.40 REQUIRED)
+    list(APPEND COMM_QUEUE_LIBRARIES rt Boost::boost)
 elseif (${COMM_QUEUE} STREQUAL "thallium_queue")
     # Thallium is required for thallium_queue
     find_package(thallium REQUIRED)
@@ -49,16 +47,13 @@ find_package(OpenSSL REQUIRED)
 
 # MPI
 find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
 
 # ER
-find_package(ER REQUIRED)
-include_directories(${ER_INCLUDE_DIRS})
+find_package(er REQUIRED)
 
 # AXL
-find_package(AXL)
-if(AXL_FOUND)
-  include_directories(${AXL_INCLUDE_DIRS})
+find_package(axl)
+if(axl_FOUND)
   add_definitions(-DWITH_AXL)
 endif()
 
@@ -70,9 +65,29 @@ if(DAOS_FOUND)
 endif()
 
 # -----------------------------------------------------------------------------------
-include_directories(${VELOC_SOURCE_DIR})
 add_subdirectory (src)
 
 # -----------------------------------------------------------------------------------
 enable_testing()
 add_subdirectory (test)
+
+# Install export sets and configs
+install(EXPORT velocTargets
+        FILE velocTargets.cmake
+        NAMESPACE veloc::
+        DESTINATION share/veloc/cmake)
+
+# Add the export set to the build directory
+export(EXPORT velocTargets NAMESPACE veloc:: FILE velocTargets.cmake)
+
+# Setup the configs
+include(CMakePackageConfigHelpers)
+configure_package_config_file(cmake/velocConfig.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/velocConfig.cmake
+                              INSTALL_DESTINATION share/veloc/cmake)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/velocConfigVersion.cmake
+                                 COMPATIBILITY SameMajorVersion)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/velocConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/velocConfigVersion.cmake
+        DESTINATION share/veloc/cmake)

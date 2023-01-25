@@ -6,10 +6,10 @@ add_executable (heatdis_fault heatdis_fault.cpp)
 #add_executable (serial_test serial_test.cpp)
 
 # Link the executable to the necessary libraries.
-target_link_libraries (heatdis_original m ${MPI_C_LIBRARIES})
-target_link_libraries (heatdis_mem m veloc-client)
-target_link_libraries (heatdis_file m veloc-client)
-target_link_libraries (heatdis_fault m veloc-client)
+target_link_libraries (heatdis_original PRIVATE m MPI::MPI_C)
+target_link_libraries (heatdis_mem PRIVATE m veloc::client)
+target_link_libraries (heatdis_file PRIVATE m veloc::client)
+target_link_libraries (heatdis_fault PRIVATE m veloc::client)
 #target_link_libraries (serial_test veloc-client)
 
 # Configure test paths
