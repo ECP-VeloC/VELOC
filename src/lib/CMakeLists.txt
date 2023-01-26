@@ -8,7 +8,11 @@ add_library (veloc-client SHARED
 add_library (veloc::client ALIAS veloc-client)
 
 # Link the executable to the necessary libraries.
-target_include_directories (veloc-client PUBLIC $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
+target_include_directories (veloc-client PUBLIC $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 target_link_libraries (veloc-client PUBLIC veloc::modules ${COMM_QUEUE_LIBRARIES})
 set_target_properties (veloc-client PROPERTIES EXPORT_NAME client)
 

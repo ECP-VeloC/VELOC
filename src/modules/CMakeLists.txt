@@ -27,7 +27,9 @@ if (DAOS_FOUND)
 endif()
 
 target_include_directories (veloc-modules PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+  $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${VELOC_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
