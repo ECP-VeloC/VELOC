@@ -80,12 +80,12 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.without_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.2.0')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.5.0')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.1.0')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.1.0')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.1.0')
-        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.1.0')
+        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.4.0')
+        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.8.0')
+        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.3.0')
+        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.3.0')
+        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.3.0')
+        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.4.0')
 
     # VeloC
     veloc_build = './build'
