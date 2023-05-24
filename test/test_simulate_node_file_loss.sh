@@ -1,5 +1,5 @@
 #!/bin/bash
 #rm -rf $SCRATCH/*
-rm -rf /dev/shm/gregscratch/*
+rm -rf /dev/shm/greg_scratch/*
 
 

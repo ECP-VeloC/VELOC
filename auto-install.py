@@ -91,12 +91,18 @@ if __name__ == "__main__":
 
     # Other depenencies
     if (not args.without_deps):
-        install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.3')
-        install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
-        install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
-        install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
-        install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
-        install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
+        #install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.0.3')
+        #install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.3.0')
+        #install_dep('https://github.com/ECP-VeloC/rankstr.git', 'v0.0.2')
+        #install_dep('https://github.com/ECP-VeloC/shuffile.git', 'v0.0.3')
+        #install_dep('https://github.com/ECP-VeloC/redset.git', 'v0.0.4')
+        #install_dep('https://github.com/ECP-VeloC/er.git', 'v0.0.3')
+        install_dep('git@github.com:ECP-VeloC/KVTree.git', 'v1.0.3')
+        install_dep('git@github.com:ECP-VeloC/AXL.git', 'v0.3.0')
+        install_dep('git@github.com:ECP-VeloC/rankstr.git', 'v0.0.2')
+        install_dep('git@github.com:ECP-VeloC/shuffile.git', 'v0.0.3')
+        install_dep('git@github.com:ECP-VeloC/redset.git', 'v0.0.4')
+        install_dep('git@github.com:ECP-VeloC/er.git', 'v0.0.3')
 
     # VeloC
     veloc_build = './build'
