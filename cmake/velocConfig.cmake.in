@@ -1,0 +1,18 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads REQUIRED)
+if (@COMM_QUEUE@ STREQUAL "ipc_queue")
+  find_dependency(Boost 1.40 REQUIRED)
+elseif (@COMM_QUEUE@ STREQUAL "thallium")
+  find_dependency(thallium REQUIRED)
+endif()
+find_dependency(OpenSSL REQUIRED)
+find_dependency(MPI REQUIRED)
+find_dependency(er REQUIRED)
+if (@axl_FOUND@)
+  find_dependency(axl REQUIRED)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/velocTargets.cmake")
