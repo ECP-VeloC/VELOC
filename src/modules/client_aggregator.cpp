@@ -1,10 +1,15 @@
 #include "client_aggregator.hpp"
 
+#include <thread>
+
 //#define __DEBUG
 #include "common/debug.hpp"
 
-client_aggregator_t::client_aggregator_t(const agg_function_t &f, const single_function_t &g) :
-    agg_function(f), single_function(g) { }
+client_aggregator_t::client_aggregator_t(const config_t &cfg, const agg_function_t &f, const single_function_t &g) :
+    agg_function(f), single_function(g) {
+    if (!cfg.get_optional("max_parallelism", max_parallelism))
+	max_parallelism = std::thread::hardware_concurrency();
+}
 
 int client_aggregator_t::process_command(const command_t &c) {
     if (c.command == command_t::INIT) {
@@ -16,6 +21,10 @@ int client_aggregator_t::process_command(const command_t &c) {
     } else if (c.command == command_t::TEST) {
         return single_function(c);
     } else if (c.command == command_t::CHECKPOINT || c.command == command_t::RESTART) {
+	if (max_parallelism < client_set.size()) {
+	    ERROR("max_parallelism is too low, needs to be higher than " << client_set.size() << " to activate aggregated commands");
+	    return VELOC_IGNORED;
+	}
         std::unique_lock<std::mutex> cmds_lock(cmds_mutex);
         cmds[c.command].push_back(c);
         if (cmds[c.command].size() == client_set.size()) {

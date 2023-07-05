@@ -6,13 +6,13 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <openssl/md5.h>
+#include <openssl/sha.h>
 
 #define __DEBUG
 #include "common/debug.hpp"
 
 chksum_module_t::chksum_module_t(const config_t &c) : cfg(c) {
-    active = cfg.get_optional("chksum", false);
+    active = cfg.get_bool("chksum", false);
     if (active && !check_dir(cfg.get("meta"))) {
         ERROR("metadata directory " << cfg.get("meta") << " inaccessible, checksumming deactivated!");
         active = false;
@@ -33,7 +33,7 @@ static bool chksum_file(const std::string &source, unsigned char *result) {
         ERROR("cannot mmap " << source << ", error = " << std::strerror(errno));
 	return false;
     }
-    MD5(buff, size, result);
+    SHA256(buff, size, result);
     munmap(buff, size);
     return true;
 }
@@ -42,7 +42,7 @@ int chksum_module_t::process_command(const command_t &c) {
     if (!active)
         return VELOC_IGNORED;
 
-    const unsigned int HASH_SIZE = 16;
+    const unsigned int HASH_SIZE = 32;
     unsigned char chksum[HASH_SIZE], orig_chksum[HASH_SIZE];
     std::string meta = c.filename(cfg.get("meta")) + ".md5",
         local = c.filename(cfg.get("scratch"));

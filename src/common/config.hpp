@@ -7,9 +7,9 @@
 
 class config_t {
     std::string cfg_file;
-    INIReader reader;
-    bool sync_mode = false;
+    INIReader *reader = NULL;
     storage_module_t *sm = NULL;
+    bool sync_mode = false;
 
     static std::string env_param(const std::string &param);
 
@@ -18,10 +18,10 @@ public:
     config_t(const config_t &other) = delete;
     ~config_t();
 
+    template <class T> bool get_optional(const std::string &param, T &value) const;
     std::string get(const std::string &param) const;
-    bool get_optional(const std::string &param, std::string &value) const;
-    bool get_optional(const std::string &param, int &value) const;
-    bool get_optional(const std::string &param, bool def) const;
+    bool get_bool(const std::string &param, bool def) const;
+
     bool is_sync() const {
 	return sync_mode;
     }

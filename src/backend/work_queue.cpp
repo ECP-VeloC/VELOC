@@ -13,7 +13,7 @@ void start_main_loop(const config_t &cfg, MPI_Comm comm) {
     std::condition_variable thread_cond;
     bool init_finished = false;
     std::thread([&]() {
-        int max_parallelism;
+        unsigned int max_parallelism;
         if (!cfg.get_optional("max_parallelism", max_parallelism))
             max_parallelism = std::thread::hardware_concurrency();
 
@@ -22,6 +22,7 @@ void start_main_loop(const config_t &cfg, MPI_Comm comm) {
         long nproc = sysconf(_SC_NPROCESSORS_ONLN);
         for (int i = 0; i < nproc; i++)
             CPU_SET(i, &cpu_mask);
+	sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
 
         backend_cleanup();
         comm_backend_t<command_t> command_queue;

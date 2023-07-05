@@ -1,6 +1,5 @@
 #include "include/veloc/cache.hpp"
 #include "posix_cache.hpp"
-#include "common/config.hpp"
 #include "common/file_util.hpp"
 
 #include <deque>
@@ -9,6 +8,7 @@
 #include <condition_variable>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sched.h>
 
 //#define __DEBUG
 #include "common/debug.hpp"
@@ -26,7 +26,7 @@ struct async_command_t {
 };
 
 struct async_context_t {
-    static const int MAX_QUEUE_SIZE = 128;
+    static const int MAX_QUEUE_SIZE = 1 << 16;
     std::mutex async_mutex;
     std::condition_variable async_cond;
     std::deque<async_command_t> async_op_queue;
@@ -37,6 +37,16 @@ struct async_context_t {
 static async_context_t static_context;
 
 static void async_write() {
+    cpu_set_t cpu_mask;
+    // add all online CPUs to the CPU mask
+    CPU_ZERO(&cpu_mask);
+    long nproc = sysconf(_SC_NPROCESSORS_ONLN);
+    for (int i = 0; i < nproc; i++)
+        CPU_SET(i, &cpu_mask);
+    // schedule background thread on CPU mask and reduce its priority
+    sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
+    nice(10);
+
     while (true) {
 	std::unique_lock<std::mutex> lock(static_context.async_mutex);
 	while (static_context.async_op_queue.size() == 0 && !static_context.finished)
@@ -55,7 +65,8 @@ static void async_write() {
 	    break;
 	case async_command_t::WRITE:
 	    DBG("async write, fl = " << cmd.fl << ", fr = " << cmd.fr << ", offset = " << cmd.offset << ", size = " << cmd.size);
-	    file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size);
+	    if (!file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size))
+		ERROR("async write failed, error = " << std::strerror(errno));
 	    break;
 	default:
 	    FATAL("internal async thread error: opcode " << cmd.op << " not recognized");
@@ -74,13 +85,13 @@ static void send_command(const async_command_t &cmd) {
 }
 
 // actual client implementation
-posix_cached_file_t::posix_cached_file_t(const std::string &cfg_file) {
-    config_t cfg(cfg_file, false);
-    scratch = cfg.get("scratch");
+posix_cached_file_t::posix_cached_file_t(const std::string &scratch_path) : scratch(scratch_path) {
+    if (!check_dir(scratch))
+        FATAL("scratch directory " << scratch << " inaccessible!");
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
     if (!static_context.started) {
-        std::thread(async_write).detach();
-        static_context.started = true;
+	std::thread(async_write).detach();
+	static_context.started = true;
     }
 }
 
@@ -153,7 +164,7 @@ void posix_cached_file_t::close() {
 
 // PIMPL wrappers
 namespace veloc {
-cached_file_t::cached_file_t(const std::string &cfg_file) : ptr(new ::posix_cached_file_t(cfg_file)) {}
+cached_file_t::cached_file_t(const std::string &scratch_path) : ptr(new ::posix_cached_file_t(scratch_path)) {}
 cached_file_t::~cached_file_t() = default;
 bool cached_file_t::open(const std::string &fname, int flags, mode_t mode) {
     return ptr->open(fname, flags, mode);
@@ -172,7 +183,6 @@ void cached_file_t::flush() {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
     while (static_context.async_op_queue.size() > 0)
 	static_context.async_cond.wait(lock);
-    lock.unlock();
 }
 void cached_file_t::shutdown() {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);

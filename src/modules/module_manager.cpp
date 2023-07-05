@@ -10,7 +10,7 @@ void module_manager_t::add_default(const config_t &cfg, MPI_Comm comm) {
     add_module([this](const command_t &c) { return watchdog->process_command(c); });
     if (comm != MPI_COMM_NULL) {
 	redset = new ec_module_t(cfg, comm);
-	ec_agg = new client_aggregator_t(
+	ec_agg = new client_aggregator_t(cfg,
 	    [this](const std::vector<command_t> &cmds) {
 		return redset->process_commands(cmds);
 	    },

@@ -3,6 +3,7 @@
 
 #include "common/command.hpp"
 #include "common/status.hpp"
+#include "common/config.hpp"
 
 #include <functional>
 #include <vector>
@@ -23,8 +24,10 @@ class client_aggregator_t {
     std::map<int, std::vector<command_t> > cmds;
     std::set<int> client_set;
     std::map<int, int> res;
+    unsigned int max_parallelism;
+
 public:
-    client_aggregator_t(const agg_function_t &f, const single_function_t &g);
+    client_aggregator_t(const config_t &cfg, const agg_function_t &f, const single_function_t &g);
     int process_command(const command_t &c);
 };
 

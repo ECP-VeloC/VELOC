@@ -31,7 +31,7 @@ static void launch_backend(const std::string &cfg_file) {
 }
 
 bool client_impl_t::check_threaded() {
-    bool threaded = cfg.get_optional("threaded", false);
+    bool threaded = cfg.get_bool("threaded", false);
     if (threaded) {
 	int provided;
         MPI_Query_thread(&provided);
@@ -66,7 +66,7 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
         launch_backend(cfg_file);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &no_ranks);
-    aggregated = cfg.get_optional("aggregated", false);
+    aggregated = cfg.get_bool("aggregated", false);
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
     if (local != MPI_COMM_NULL)
