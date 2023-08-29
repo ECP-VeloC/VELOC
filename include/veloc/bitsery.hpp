@@ -1,6 +1,7 @@
 #ifndef __BITSERY_HPP
 #define __BITSERY_HPP
 
+#include <cstdint>
 #include <bitsery/bitsery.h>
 #include <bitsery/adapter/stream.h>
 
