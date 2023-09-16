@@ -1,10 +1,14 @@
 #include "include/veloc.hpp"
 #include "include/veloc/bitsery.hpp"
 #include "include/veloc/cereal.hpp"
+#include "include/veloc/boost.hpp"
 
 #include <map>
 #include <cereal/types/map.hpp>
+#include <set>
+#include <boost/serialization/set.hpp>
 #include <stdexcept>
+
 
 enum class MyEnum:uint16_t { V1,V2,V3 };
 struct MyStruct {
@@ -34,12 +38,15 @@ int main(int argc, char **argv) {
     MyStruct data{8941, MyEnum::V2, 0.045};
     std::map<int, int> map;
     map[1] = 2;
+    std::set<int> set;
+    set.insert(7);
 
     // mixing of raw (pointer, size) and serialized data structures in the same checkpoint is allowed
     // even the use of different serialization libraries is possible (e.g. bitsey and cereal)
     ckpt->mem_protect(0, &k, 1, sizeof(k));
     ckpt->mem_protect(1, veloc::bitsery::serializer(data), veloc::bitsery::deserializer(data));
     ckpt->mem_protect(2, veloc::cereal::serializer(map), veloc::cereal::deserializer(map));
+    ckpt->mem_protect(3, veloc::boost::serializer(set), veloc::boost::deserializer(set));
 
     if (!ckpt->checkpoint("serial.test", 0))
         throw std::runtime_error("checkpointing failed");
@@ -49,12 +56,16 @@ int main(int argc, char **argv) {
     data.i = 112233; data.e = MyEnum::V3; data.f = 0.01;
     map.clear();
     map[2] = 3;
+    set.clear();
+    set.insert(4);
 
     // verify the data structures were correctly restored to their original values on restart
     if (!ckpt->restart("serial.test", 0))
         throw std::runtime_error("restart failed");
 
-    if (k == 7 && data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045 && map.size() == 1 && map[1] == 2)
+    if (k == 7 && data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045
+	&& map.size() == 1 && map[1] == 2
+	&& set.size() == 1 && *(set.begin()) == 7)
         std::cout << "serialization test passed" << std::endl;
     else
         std::cout << "serialization test failed" << std::endl;
