@@ -25,7 +25,7 @@ class client_impl_t : public veloc::client_t {
 
     bool check_threaded();
     int run_blocking(const command_t &cmd);
-    bool read_header();
+    bool read_current_header();
 
 public:
     client_impl_t(unsigned int id, const std::string &cfg_file);

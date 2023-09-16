@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "common/file_util.hpp"
+#include "common/ckpt_util.hpp"
 #include "backend/work_queue.hpp"
 
 #include <fstream>
@@ -272,39 +273,14 @@ bool client_impl_t::restart_begin(const std::string &name, int version) {
 	return false;
 }
 
-bool client_impl_t::read_header() {
-    region_info.clear();
-    try {
-	std::ifstream f;
-        size_t expected_size = 0;
-
-	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
-	size_t no_regions, region_size;
-	int id;
-	f.read((char *)&no_regions, sizeof(size_t));
-	for (unsigned int i = 0; i < no_regions; i++) {
-	    f.read((char *)&id, sizeof(int));
-	    f.read((char *)&region_size, sizeof(size_t));
-	    region_info.insert(std::make_pair(id, region_size));
-            expected_size += region_size;
-	}
-	header_size = f.tellg();
-        f.seekg(0, f.end);
-        size_t file_size = (size_t)f.tellg() - header_size;
-        if (file_size != expected_size)
-            throw std::ifstream::failure("file size " + std::to_string(file_size) + " does not match expected size " + std::to_string(expected_size));
-    } catch (std::ifstream::failure &e) {
-	ERROR("cannot validate header for checkpoint " << current_ckpt << ", reason: " << e.what());
-	header_size = 0;
-	return false;
-    }
-    return true;
+bool client_impl_t::read_current_header() {
+    header_size = read_header(current_ckpt.filename(cfg.get("scratch")), region_info);
+    return header_size != 0;
 }
 
 size_t client_impl_t::recover_size(int id) {
     if (header_size == 0)
-        read_header();
+        read_current_header();
     auto it = region_info.find(id);
     if (it == region_info.end())
 	return 0;
@@ -313,7 +289,7 @@ size_t client_impl_t::recover_size(int id) {
 }
 
 bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
-    if (header_size == 0 && !read_header()) {
+    if (header_size == 0 && !read_current_header()) {
 	ERROR("cannot recover in memory mode if header unavailable or corrupted");
 	return false;
     }

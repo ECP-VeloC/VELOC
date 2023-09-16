@@ -11,7 +11,9 @@ add_library (veloc-modules SHARED
   # common code
   ${PROJECT_SOURCE_DIR}/src/common/command.cpp
   ${PROJECT_SOURCE_DIR}/src/common/config.cpp
-  ${PROJECT_SOURCE_DIR}/src/common/file_util.cpp)
+  ${PROJECT_SOURCE_DIR}/src/common/file_util.cpp
+  ${PROJECT_SOURCE_DIR}/src/common/ckpt_util.cpp
+)
 
 add_library (veloc::modules ALIAS veloc-modules)
 
