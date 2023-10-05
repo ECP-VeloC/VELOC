@@ -6,6 +6,9 @@ import wget, bs4, urllib
 import re
 import tarfile
 
+os.environ["PERSISTENT"] = '/lus/gila/projects/CSC250STDM14_CNDA/gregK/persistent'
+os.environ["SCRATCH"] = '/dev/shm/greg_scratch'
+
 # CRAY-specific compiler options
 #compiler_options = "-DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DCMAKE_CXX_COMPILER=CC -DCMAKE_CXX_FLAGS=-dynamic"
 #compiler_options = ["-DCMAKE_C_COMPILER=cc", "-DCMAKE_C_FLAGS=-dynamic", "-DCMAKE_CXX_COMPILER=CC", "-DCMAKE_CXX_FLAGS=-dynamic"]
@@ -27,7 +30,7 @@ def install_dep(git_link, dep_vers):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VeloC installation script')
-    parser.add_argument('--protocol', default='ipc_queue',
+    parser.add_argument('--protocol', default='socket_queue',
                         help='communication protocol between client and active backend (default: ipc_queue). Only for advanced users.')
     parser.add_argument('--with-pdsh', action='store_true',
                         help='add PDSH to installation (optional)')
@@ -116,6 +119,7 @@ if __name__ == "__main__":
 
     # Construct the fulls et of CMake arguments
     cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix, '-DCMAKE_BUILD_TYPE='+cmake_build_type, '-DCOMM_QUEUE='+args.protocol] + compiler_options + args.extra_cmake_args
+#    cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix, '-DCMAKE_BUILD_TYPE='+cmake_build_type, '-DCOMM_QUEUE='+args.protocol, '-DVELOC_PERSISTENT_PATH='+os.environ['persistent']] + compiler_options + args.extra_cmake_args
 
     # Configure
     print("CMake arguments: " + " ".join(cmake_args))
@@ -132,7 +136,7 @@ if __name__ == "__main__":
             print("Cannot cleanup temporary directory {0}!".format(args.temp))
             sys.exit(4)
 
-    os.system(os.path.dirname(__file__) + "/test/build_exec.sh " + os.path.dirname(__file__))
+    #os.system(os.path.dirname(__file__) + "/test/build_exec.sh " + os.path.dirname(__file__))
 
     if ret == 0:
         print("Installation successful!")

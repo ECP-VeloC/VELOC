@@ -1,4 +1,26 @@
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc.cfg DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+if( ($ENV{HOSTNAME} MATCHES "uan") OR ($ENV{NAME} MATCHES "uan") )
+        set(VELOC_PERSISTENT_PATH "/lus/gila/projects/CSC250STDM14_CNDA/gregK/persistent")
+        set(VELOC_SCRATCH_PATH "/dev/shm/greg_scratch")
+	set(MPI_EXEC "mpirun")
+	set(MPI_PARAM1 "--ppn")
+	set(MPI_PARAM2 "--np")
+endif()	
+set(THREADED "true")
+set(MODE "async")
+file(WRITE ${CMAKE_BINARY_DIR}/test/veloc.cfg "threaded = ${THREADED}\n")
+file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "persistent = ${VELOC_PERSISTENT_PATH}\n")
+file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "scratch = ${VELOC_SCRATCH_PATH}\n")
+file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "mode = ${MODE}\n")
+#add_test(
+#    NAME
+#        TestName
+#    COMMAND
+#        bash -c "mpirun -n 1 rm -rf /dev/shm/veloc; \
+#	        mpirun -n 1 ${CMAKE_CURRENT_BINARY_DIR}/run_checkpoint ; \
+#		mpirun -n 1 rm -rf /dev/shm/veloc"
+#)
+
+#FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc.cfg DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_cleanup.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
@@ -12,57 +34,42 @@ FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_simulate_second_chkpoint_loss.sh DEST
 
 ADD_EXECUTABLE(veloc_chkpt_mem_test veloc_chkpt_mem_test.c)
 TARGET_LINK_LIBRARIES(veloc_chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
-ADD_EXECUTABLE(veloc_chkpt_file_test veloc_chkpt_file_test.c)
-TARGET_LINK_LIBRARIES(veloc_chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
-ADD_EXECUTABLE(veloc_2chkpt_mem_test veloc_2chkpt_mem_test.c)
-TARGET_LINK_LIBRARIES(veloc_2chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
-ADD_EXECUTABLE(veloc_2chkpt_file_test veloc_2chkpt_file_test.c)
-TARGET_LINK_LIBRARIES(veloc_2chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
+ADD_EXECUTABLE(veloc_performance_mem_test veloc_performance_mem_test.c)
+TARGET_LINK_LIBRARIES(veloc_performance_mem_test ${MPI_C_LIBRARIES} veloc-client)
+#ADD_EXECUTABLE(veloc_chkpt_file_test veloc_chkpt_file_test.c)
+#TARGET_LINK_LIBRARIES(veloc_chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
+#ADD_EXECUTABLE(veloc_2chkpt_mem_test veloc_2chkpt_mem_test.c)
+#TARGET_LINK_LIBRARIES(veloc_2chkpt_mem_test ${MPI_C_LIBRARIES} veloc-client)
+#ADD_EXECUTABLE(veloc_2chkpt_file_test veloc_2chkpt_file_test.c)
+#TARGET_LINK_LIBRARIES(veloc_2chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
+#set(CMAKE_C_COMPILER mpicxx)
+#set(CMAKE_CPP_COMPILER mpicxx)
+#add_compile_options(-g -DNDEBUG)
+#add_executable(veloc_performance_mem_test)
+#target_sources(veloc_performance_mem_test PRIVATE "veloc_performance_mem_test.c")
+#target_link_libraries(veloc_performance_mem_test PRIVATE ${MPI_C_LIBRARIES} ../deploy/lib64 veloc-client)
+#target_include_directories(veloc_performance_mem_test PRIVATE ../deploy/include)
+message("-- HOSTNAME environment variable is set to: " $ENV{HOSTNAME})
+message(INFO "${MPIEXEC_EXECUTABLE}")
+set(num_nodes 4)
+set(ranks_per_nodes 1 2 4 8 16 32)
+#if( ($ENV{HOSTNAME} MATCHES "uan") OR ($ENV{NAME} MATCHES "uan") )
+#	set(MPI_EXEC "mpirun")
+#	set(MPI_PARAM1 "--ppn")
+#	set(MPI_PARAM2 "--np")
+#endif()	
 
-add_test("veloc_performance_mem_test" "mpirun" "--ppn" "1" "--np" "8" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "1" perf_results.csv)
-set_property(TEST veloc_performance_mem_test APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test)
-
-add_test("veloc_performance_mem_test2" "mpirun" "--ppn" "2" "--np" "16" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "2" perf_results.csv)
-set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY DEPENDS veloc_performance_mem_test_cleanup)
-set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test2 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test2_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test2_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test2)
-
-add_test("veloc_performance_mem_test4" "mpirun" "--ppn" "4" "--np" "32" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "4" perf_results.csv)
-set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY DEPENDS veloc_performance_mem_test2_cleanup)
-set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test4 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test4_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test4_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test4)
-
-add_test("veloc_performance_mem_test8" "mpirun" "--ppn" "8" "--np" "64" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "8" perf_results.csv)
-set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY DEPENDS veloc_performance_mem_test4_cleanup)
-set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test8 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test8_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test8_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test8)
-
-add_test("veloc_performance_mem_test16" "mpirun" "--ppn" "16" "--np" "128" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "16" perf_results.csv)
-set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY DEPENDS veloc_performance_mem_test8_cleanup)
-set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test16 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test16_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test16_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test16)
-
-add_test("veloc_performance_mem_test32" "mpirun" "--ppn" "32" "--np" "256" "../veloc_performance_mem_test" "256" "veloc.cfg" "128" "32" perf_results.csv)
-set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY DEPENDS veloc_performance_mem_test16_cleanup)
-set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY ENVIRONMENT VELOC_BIN=${CMAKE_INSTALL_FULL_BINDIR})
-set_property(TEST veloc_performance_mem_test32 APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="../src/lib:${CMAKE_INSTALL_FULL_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
-
-add_test("veloc_performance_mem_test32_cleanup" "mpirun" "--ppn" "1" "--np" "8" "./test_cleanup.sh")
-set_property(TEST veloc_performance_mem_test32_cleanup APPEND PROPERTY DEPENDS veloc_performance_mem_test32)
+foreach (ranks_per_node ${ranks_per_nodes})
+	math(EXPR tot_ranks "${ranks_per_node} * ${num_nodes}")
+	add_test(
+	    NAME
+	       "veloc_performance_mem_test${ranks_per_node}"
+	    COMMAND
+	       bash -c "rm -rf ${VELOC_PERSISTENT_PATH}/*; \
+	       rm -rf ${VELOC_SCRATCH_PATH}/*; \
+	       ${MPI_EXEC} ${MPI_PARAM1} ${ranks_per_node} ${MPI_PARAM2} ${tot_ranks} ${CMAKE_CURRENT_BINARY_DIR}/veloc_performance_mem_test 256 veloc.cfg 128 ${ranks_per_node} perf_results.csv"
+        )
+#	add_test("veloc_performance_mem_test${ranks_per_node}" "${MPI_EXEC}" "${MPI_PARAM1}" "${ranks_per_node}" "${MPI_PARAM2}" "${tot_ranks}" "${CMAKE_CURRENT_BINARY_DIR}/veloc_performance_mem_test" "256" "veloc.cfg" "128" "${ranks_per_node}" perf_results.csv)
+	set_property(TEST veloc_performance_mem_test${ranks_per_node} APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+endforeach ()
 
