@@ -11,14 +11,6 @@ file(WRITE ${CMAKE_BINARY_DIR}/test/veloc.cfg "threaded = ${THREADED}\n")
 file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "persistent = ${VELOC_PERSISTENT_PATH}\n")
 file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "scratch = ${VELOC_SCRATCH_PATH}\n")
 file(APPEND ${CMAKE_BINARY_DIR}/test/veloc.cfg "mode = ${MODE}\n")
-#add_test(
-#    NAME
-#        TestName
-#    COMMAND
-#        bash -c "mpirun -n 1 rm -rf /dev/shm/veloc; \
-#	        mpirun -n 1 ${CMAKE_CURRENT_BINARY_DIR}/run_checkpoint ; \
-#		mpirun -n 1 rm -rf /dev/shm/veloc"
-#)
 
 #FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/veloc.cfg DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -53,11 +45,6 @@ message("-- HOSTNAME environment variable is set to: " $ENV{HOSTNAME})
 message(INFO "${MPIEXEC_EXECUTABLE}")
 set(num_nodes 4)
 set(ranks_per_nodes 1 2 4 8 16 32)
-#if( ($ENV{HOSTNAME} MATCHES "uan") OR ($ENV{NAME} MATCHES "uan") )
-#	set(MPI_EXEC "mpirun")
-#	set(MPI_PARAM1 "--ppn")
-#	set(MPI_PARAM2 "--np")
-#endif()	
 
 foreach (ranks_per_node ${ranks_per_nodes})
 	math(EXPR tot_ranks "${ranks_per_node} * ${num_nodes}")
