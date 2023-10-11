@@ -56,7 +56,6 @@ foreach (ranks_per_node ${ranks_per_nodes})
 	       rm -rf ${VELOC_SCRATCH_PATH}/*; \
 	       ${MPI_EXEC} ${MPI_PARAM1} ${ranks_per_node} ${MPI_PARAM2} ${tot_ranks} ${CMAKE_CURRENT_BINARY_DIR}/veloc_performance_mem_test 256 veloc.cfg 128 ${ranks_per_node} perf_results.csv"
         )
-#	add_test("veloc_performance_mem_test${ranks_per_node}" "${MPI_EXEC}" "${MPI_PARAM1}" "${ranks_per_node}" "${MPI_PARAM2}" "${tot_ranks}" "${CMAKE_CURRENT_BINARY_DIR}/veloc_performance_mem_test" "256" "veloc.cfg" "128" "${ranks_per_node}" perf_results.csv)
 	set_property(TEST veloc_performance_mem_test${ranks_per_node} APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 endforeach ()
 
