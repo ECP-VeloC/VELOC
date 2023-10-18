@@ -11,13 +11,8 @@
 
 int main (int argc, char* argv[])
 {
-//        char path[256];
 	char* path = (char*)malloc(256*sizeof(char));
 	path[0] = '\0';
-	//path = "/dev/shm/";
-//        if (getcwd(path, sizeof(path)) != NULL)
-//                printf("current working directory is: %s\n", path);
-//        strcat(path,"/");
         strcat(path,"/dev/shm/");
         strcat(path,argv[5]);
 	printf("output path IS %s",path);

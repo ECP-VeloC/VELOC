@@ -8,10 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-//#include "heatdis.h"
 #include "include/veloc.h"
-// cannot include C++ file 
-//#include "src/common/config.hpp"
 
 /* reliable read from file descriptor (retries, if necessary, until hard error) */
 ssize_t reliable_read(int fd, void* buf, size_t size)
@@ -23,16 +20,12 @@ ssize_t reliable_read(int fd, void* buf, size_t size)
   while (n < size)
   {
     ssize_t rc = read(fd, (char*) buf + n, size - n);
-printf("RC=%d\n",rc);
     if (rc  > 0) { 
       n += rc;
-printf("RC>\n");
     } else if (rc == 0) {
       /* EOF */
-printf("RC=\n");
       return n;
     } else { /* (rc < 0) */
-printf("RC<\n");
       /* something worth printing an error about */
       retries--;
       if (retries) {
@@ -100,7 +93,6 @@ printf("in read_checkpoint\n");
   char ckpt_buf[7];
 
   int fd = open(file, O_RDONLY);
-//int fd = -2;
   if (fd > 0) {
     /* read the checkpoint id */
 printf("before read chepoint id\n");
@@ -181,6 +173,7 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
+sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
@@ -207,18 +200,6 @@ int main (int argc, char* argv[])
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
-// 3 lines below cannot be executed because of error trying to include  C++ file above
-//config_t cfg(argv[2]);
-//printf("persistent dir is %s\n", sfg.get("persistent");
-//printf("scratch dir is %s\n", sfg.get("scratch");
-  char com20[50];
-printf("persistent DIR rank =%d\n",rank);
-  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-  system(com20);
-  char com21[50];
-printf("scratch DIR rank =%d\n",rank);
-  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-  system(com21);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -246,9 +227,9 @@ printf("scratch DIR rank =%d\n",rank);
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
+  if(v<-1)v=-1;
   int already_initiated = atoi(argv[3]);
   printf("had already initiated = %d\n",already_initiated);
-//v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart_begin("veloc_test", v) != VELOC_SUCCESS){
@@ -256,9 +237,6 @@ printf("scratch DIR rank =%d\n",rank);
       return 1;
     }
     char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-   // sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
-   // sprintf(original,"/g/g19/kosinov/persistent/");
-   // strcat(original,fname);
     sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
     printf("ORIGINAL=%s\n", original);
     if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
@@ -285,20 +263,9 @@ printf("scratch DIR rank =%d\n",rank);
     }
     return 0;
   } 
-/*  if (rank == 0) {
-      printf("No checkpoint to restart from\n");
-  }*/
   else{
     if(already_initiated != 0){ 
       printf("Checkpoint had been initiated. Should have been found\n");
-//  char com20[50];
-//printf("persistent DIR rank =%d\n",rank);
-//  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-//  system(com20);
-//  char com21[50];
-//printf("scratch DIR rank =%d\n",rank);
-//  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-//  system(com21);
       return(1);
     }
     if (rank == 0) {

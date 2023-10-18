@@ -10,8 +10,6 @@
 
 //#include "heatdis.h"
 #include "include/veloc.h"
-// cannot include C++ file 
-//#include "src/common/config.hpp"
 
 /* reliable read from file descriptor (retries, if necessary, until hard error) */
 ssize_t reliable_read(int fd, void* buf, size_t size)
@@ -23,16 +21,12 @@ ssize_t reliable_read(int fd, void* buf, size_t size)
   while (n < size)
   {
     ssize_t rc = read(fd, (char*) buf + n, size - n);
-printf("RC=%d\n",rc);
     if (rc  > 0) { 
       n += rc;
-printf("RC>\n");
     } else if (rc == 0) {
       /* EOF */
-printf("RC=\n");
       return n;
     } else { /* (rc < 0) */
-printf("RC<\n");
       /* something worth printing an error about */
       retries--;
       if (retries) {
@@ -62,7 +56,6 @@ printf("in reliable_write \n");
   while (n < size)
   {
     ssize_t rc = write(fd, (char*) buf + n, size - n);
-printf("RC=%d\n",rc);
     if (rc > 0) {
       n += rc;
     } else if (rc == 0) {
@@ -169,9 +162,7 @@ int check_buffer(char* buf, size_t size, int rank, int ckpt)
 printf("in check_buffer, SIZE=%d\n", size);
   size_t i;
   for(i=0; i < size; i++) {
-    /*char c = 'a' + (rank+i) % 26;*/
     char c = (char) ((size_t)rank + i) % 256;
-//printf("i=%d, c=%c, buf_i=%c\n", i,c,buf[i]);
     if (buf[i] != c)  {
       return 0;
     }
@@ -181,6 +172,7 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
+sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
@@ -238,7 +230,7 @@ int v;
 if(already_initiated != 0){ 
   v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
-//v=-1;
+  if(v<-1)v=-1;
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart_begin("veloc_test", v) != VELOC_SUCCESS){
