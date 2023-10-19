@@ -37,7 +37,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
 printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 
   int rank, ranks;

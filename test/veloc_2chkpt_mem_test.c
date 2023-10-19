@@ -37,7 +37,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;

@@ -88,7 +88,6 @@ printf("in reliable_write \n");
 /* read the checkpoint data from file into buf, and return whether the read was successful */
 int read_checkpoint(char* file, int* ckpt, char* buf, size_t size)
 {
-printf("in read_checkpoint\n");
   ssize_t n;
   char ckpt_buf[7];
 
@@ -96,13 +95,10 @@ printf("in read_checkpoint\n");
 //int fd = -2;
   if (fd > 0) {
     /* read the checkpoint id */
-printf("before read chepoint id\n");
     n = reliable_read(fd, ckpt_buf, sizeof(ckpt_buf));
 
     /* read the checkpoint data, and check the file size */
-printf("before read chepoint data\n");
     n = reliable_read(fd, buf, size);
-printf("after read chepoint data\n");
     if (n != size) {
       printf("Filesize not correct. Expected %lu, got %lu\n", size, n);
       close(fd);
@@ -133,12 +129,10 @@ printf("in write_checkpoint \n");
   char ckpt_buf[7];
   sprintf(ckpt_buf, "%06d", ckpt);
   rc = reliable_write(fd, ckpt_buf, sizeof(ckpt_buf));
-printf("in write_checkpoint aftre first write \n");
   if (rc < 0) return 0;
 
   /* write the checkpoint data */
   rc = reliable_write(fd, buf, size);
-printf("in write_checkpoint aftre second write \n");
   if (rc < 0) return 0;
 
   return 1;
@@ -172,7 +166,7 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
+//sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;

@@ -56,7 +56,6 @@ printf("in reliable_write \n");
   while (n < size)
   {
     ssize_t rc = write(fd, (char*) buf + n, size - n);
-printf("RC=%d\n",rc);
     if (rc > 0) {
       n += rc;
     } else if (rc == 0) {
@@ -166,7 +165,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
