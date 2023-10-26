@@ -35,7 +35,6 @@ int check_buffer(char* buf, size_t size, int rank)
 
 int main (int argc, char* argv[])
 {
-sleep(3);
 
   int rank, ranks;
   int chkpt_version;
@@ -64,14 +63,6 @@ sleep(3);
       return 1;
   }
 printf("CONFIG FILE = %s\n", argv[2]);
-  char com20[50];
-printf("persistent DIR rank =%d\n",rank);
-  sprintf(com20, "ls -d -l /g/g19/kosinov/persistent/*");
-  system(com20);
-  char com21[50];
-printf("scratch DIR rank =%d\n",rank);
-  sprintf(com21, "ls -d -l /dev/shm/scratch/*");
-  system(com21);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -92,10 +83,6 @@ printf("scratch DIR rank =%d\n",rank);
   filesize = filesize + rank;
   char* buf = (char*) malloc(filesize);
   VELOC_Mem_protect(0, buf, filesize, sizeof(char));
-
-  /* define base name for our checkpoint files */
-  char name[256];
-  sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);

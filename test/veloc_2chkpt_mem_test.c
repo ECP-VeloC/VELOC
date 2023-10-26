@@ -37,7 +37,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
@@ -83,9 +82,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   char* buf = (char*) malloc(filesize);
   VELOC_Mem_protect(0, buf, filesize, sizeof(char));
 
-  /* define base name for our checkpoint files */
-  char name[256];
-  sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);

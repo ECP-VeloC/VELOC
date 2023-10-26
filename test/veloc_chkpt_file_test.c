@@ -55,7 +55,6 @@ printf("in reliable_write \n");
   while (n < size)
   {
     ssize_t rc = write(fd, (char*) buf + n, size - n);
-printf("RC=%d\n",rc);
     if (rc > 0) {
       n += rc;
     } else if (rc == 0) {
@@ -95,13 +94,10 @@ printf("in read_checkpoint\n");
   int fd = open(file, O_RDONLY);
   if (fd > 0) {
     /* read the checkpoint id */
-printf("before read chepoint id\n");
     n = reliable_read(fd, ckpt_buf, sizeof(ckpt_buf));
 
     /* read the checkpoint data, and check the file size */
-printf("before read chepoint data\n");
     n = reliable_read(fd, buf, size);
-printf("after read chepoint data\n");
     if (n != size) {
       printf("Filesize not correct. Expected %lu, got %lu\n", size, n);
       close(fd);
@@ -132,12 +128,10 @@ printf("in write_checkpoint \n");
   char ckpt_buf[7];
   sprintf(ckpt_buf, "%06d", ckpt);
   rc = reliable_write(fd, ckpt_buf, sizeof(ckpt_buf));
-printf("in write_checkpoint aftre first write \n");
   if (rc < 0) return 0;
 
   /* write the checkpoint data */
   rc = reliable_write(fd, buf, size);
-printf("in write_checkpoint aftre second write \n");
   if (rc < 0) return 0;
 
   return 1;
@@ -163,7 +157,6 @@ printf("in check_buffer, SIZE=%d\n", size);
   for(i=0; i < size; i++) {
     /*char c = 'a' + (rank+i) % 26;*/
     char c = (char) ((size_t)rank + i) % 256;
-//printf("i=%d, c=%c, buf_i=%c\n", i,c,buf[i]);
     if (buf[i] != c)  {
       return 0;
     }
@@ -173,7 +166,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
@@ -219,10 +211,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   /* allocate space for the checkpoint data (make filesize a function of rank for some variation) */
   filesize = filesize + rank;
   char* buf = (char*) malloc(filesize);
-
-  /* define base name for our checkpoint files */
-  char name[256];
-  sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
@@ -278,9 +266,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
     return 1;
   }
   char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-  //  sprintf(fname, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
-  //  sprintf(original,"/g/g19/kosinov/persistent/");
-  //  strcat(original,fname);
   sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
   printf("ORIGINAL=%s\n", original);
   if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
@@ -291,19 +276,11 @@ printf("CONFIG FILE = %s\n", argv[2]);
   int valid = 1;
   init_buffer(buf, filesize, rank, timestep);
   timestep++;
-  printf("trying to open file %s\n", veloc_file);
-  char com2[50];
-  sprintf(com2, "ls -l %s", veloc_file);
-  system(com2);
   int fd = open(veloc_file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd < 0) {
     perror("errror with open");
     exit(1);
   }
-  printf("printing file permissionsi\n");
-  char com1[50];
-  sprintf(com1, "ls -l %s", veloc_file);
-  system(com1);
   printf("FD=%d, timestamp=%d, filesize=%d\n", fd,timestep,filesize);
   if(!write_checkpoint(fd, timestep, buf, filesize)){
     valid = 0;

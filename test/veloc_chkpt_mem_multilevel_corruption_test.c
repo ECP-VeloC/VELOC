@@ -37,7 +37,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
 printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 
   int rank, ranks;
@@ -87,10 +86,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   filesize = filesize + rank;
   char* buf = (char*) malloc(filesize);
   VELOC_Mem_protect(0, buf, filesize, sizeof(char));
-
-  /* define base name for our checkpoint files */
-  char name[256];
-  sprintf(name, "rank_%d.ckpt", rank);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);

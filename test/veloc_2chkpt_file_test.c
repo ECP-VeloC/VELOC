@@ -88,7 +88,6 @@ printf("in reliable_write \n");
 /* read the checkpoint data from file into buf, and return whether the read was successful */
 int read_checkpoint(char* file, int* ckpt, char* buf, size_t size)
 {
-printf("in read_checkpoint\n");
   ssize_t n;
   char ckpt_buf[7];
 
@@ -96,13 +95,10 @@ printf("in read_checkpoint\n");
 //int fd = -2;
   if (fd > 0) {
     /* read the checkpoint id */
-printf("before read chepoint id\n");
     n = reliable_read(fd, ckpt_buf, sizeof(ckpt_buf));
 
     /* read the checkpoint data, and check the file size */
-printf("before read chepoint data\n");
     n = reliable_read(fd, buf, size);
-printf("after read chepoint data\n");
     if (n != size) {
       printf("Filesize not correct. Expected %lu, got %lu\n", size, n);
       close(fd);
@@ -133,12 +129,10 @@ printf("in write_checkpoint \n");
   char ckpt_buf[7];
   sprintf(ckpt_buf, "%06d", ckpt);
   rc = reliable_write(fd, ckpt_buf, sizeof(ckpt_buf));
-printf("in write_checkpoint aftre first write \n");
   if (rc < 0) return 0;
 
   /* write the checkpoint data */
   rc = reliable_write(fd, buf, size);
-printf("in write_checkpoint aftre second write \n");
   if (rc < 0) return 0;
 
   return 1;
@@ -172,7 +166,7 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-sleep(3);
+//sleep(3);
   int rank, ranks;
   int chkpt_version;
   size_t filesize = 512*1024;
@@ -219,14 +213,10 @@ printf("CONFIG FILE = %s\n", argv[2]);
   filesize = filesize + rank;
   char* buf = (char*) malloc(filesize);
 
-  /* define base name for our checkpoint files */
-  char name[256];
-  sprintf(name, "rank_%d.ckpt", rank);
-
 //*************************************************
 int already_initiated = atoi(argv[3]);
 printf("had already initiated = %d\n",already_initiated);
-int v;
+int v = -1;
 if(already_initiated != 0){ 
   v = VELOC_Restart_test("veloc_test", 0);
   printf("VVV in v = VELOC_Restart_test = %d\n",v);
@@ -287,19 +277,11 @@ else{
   int valid = 1;
   init_buffer(buf, filesize, rank, timestep);
   timestep++;
-  printf("trying to open file %s\n", veloc_file);
-  char com2[50];
-  sprintf(com2, "ls -l %s", veloc_file);
-  system(com2);
   int fd = open(veloc_file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd < 0) {
     perror("errror with open");
     exit(1);
   }
-  printf("printing file permissionsi\n");
-  char com1[50];
-  sprintf(com1, "ls -l %s", veloc_file);
-  system(com1);
   printf("FD=%d, timestamp=%d, filesize=%d\n", fd,timestep,filesize);
   if(!write_checkpoint(fd, timestep, buf, filesize)){
     valid = 0;
@@ -326,19 +308,11 @@ else{
   int valid1 = 1;
   init_buffer(buf, filesize, rank, timestep);
   timestep++;
-  printf("trying to open file %s\n", veloc_file1);
-  char com12[50];
-  sprintf(com12, "ls -l %s", veloc_file1);
-  system(com12);
   int fd1 = open(veloc_file1, O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd1 < 0) {
     perror("errror with open");
     exit(1);
   }
-  printf("printing file permissionsi\n");
-  char com11[50];
-  sprintf(com11, "ls -l %s", veloc_file1);
-  system(com11);
   printf("FD=%d, timestamp=%d, filesize=%d\n", fd1,timestep,filesize);
   if(!write_checkpoint(fd1, timestep, buf, filesize)){
     valid1 = 0;
