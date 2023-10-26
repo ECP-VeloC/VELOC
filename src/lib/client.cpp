@@ -55,6 +55,8 @@ client_impl_t::client_impl_t(unsigned int id, const std::string &cfg_file) :
 
 client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
     cfg(cfg_file, false), comm(c) {
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &no_ranks);
     if (cfg.is_sync() || check_threaded()) {
 	int provided;
         MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local);
@@ -65,8 +67,6 @@ client_impl_t::client_impl_t(MPI_Comm c, const std::string &cfg_file) :
         MPI_Barrier(local);
     } else
         launch_backend(cfg_file);
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &no_ranks);
     aggregated = cfg.get_bool("aggregated", false);
     queue = new comm_client_t<command_t>(rank);
     run_blocking(command_t(rank, command_t::INIT, 0, ""));
