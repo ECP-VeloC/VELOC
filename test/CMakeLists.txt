@@ -5,6 +5,9 @@ if( ($ENV{HOSTNAME} MATCHES "uan") OR ($ENV{NAME} MATCHES "uan") )
 	set(MPI_EXEC "mpirun")
 	set(MPI_PARAM1 "--ppn")
 	set(MPI_PARAM2 "--np")
+        set(num_nodes 4)
+	set(OneNode_OneProcess_Per_Node "${MPI_PARAM2} 1 ${MPI_PARAM1} 1")
+	set(NNodes_OneProcess_Per_Node "${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1")
 endif()	
 set(THREADED "true")
 set(MODE "async")
@@ -39,16 +42,15 @@ TARGET_LINK_LIBRARIES(veloc_2chkpt_file_test ${MPI_C_LIBRARIES} veloc-client)
 message("-- HOSTNAME environment variable is set to: " $ENV{HOSTNAME})
 message(INFO "${MPIEXEC_EXECUTABLE}")
 #set(num_nodes 4)
-set(num_nodes 2)
 set(ranks_per_nodes 1 2 4 8 16 32)
 
 add_test(
     NAME
        "serial_veloc_chkpt_restart_mem_test"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
 	)
 	set_property(TEST serial_veloc_chkpt_restart_mem_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -56,9 +58,9 @@ add_test(
     NAME
        "parallel_veloc_chkpt_restart_mem_test"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_restart_mem_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -66,9 +68,9 @@ add_test(
     NAME
        "serial_veloc_chkpt_restart_file_test"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
 	)
 	set_property(TEST serial_veloc_chkpt_restart_file_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -76,9 +78,9 @@ add_test(
     NAME
        "parallel_veloc_chkpt_restart_file_test"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_restart_file_test APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -86,10 +88,10 @@ add_test(
     NAME
        "parallel_veloc_chkpt_mem_test_simulate_node_loss"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_node_file_loss.sh ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_node_file_loss.sh ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_mem_test_simulate_node_loss APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -97,10 +99,10 @@ add_test(
     NAME
        "parallel_veloc_chkpt_file_test_simulate_node_loss"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
-       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_node_file_loss.sh ${VELOC_SCRATCH_PATH}; \
-       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
+       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_node_file_loss.sh ${VELOC_SCRATCH_PATH}; \
+       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_file_test_simulate_node_loss APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -108,10 +110,10 @@ add_test(
     NAME
        "parallel_veloc_chkpt_mem_test_xor_simulate_scratch_and_persistent_loss"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
-       ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_scratch_and_persistent_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 0; \
+       ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_scratch_and_persistent_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_mem_test_xor_simulate_scratch_and_persistent_loss APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -119,10 +121,10 @@ add_test(
     NAME
        "parallel_veloc_chkpt_file_test_xor_simulate_scratch_and_persistent_loss"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
-       ${MPI_EXEC} ${MPI_PARAM2} 1 ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_scratch_and_persistent_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 0; \
+       ${MPI_EXEC} ${OneNode_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_scratch_and_persistent_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_file_test_xor_simulate_scratch_and_persistent_loss APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -130,9 +132,9 @@ add_test(
     NAME
        "parallel_veloc_chkpt_mem_test_multi_lev_corr"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_multilevel_corruption_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_multilevel_corruption_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_multilevel_corruption_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_mem_multilevel_corruption_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_mem_test_multi_lev_corr APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -140,9 +142,9 @@ add_test(
     NAME
        "parallel_veloc_chkpt_file_test_multi_lev_corr"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_multilevel_corruption_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_multilevel_corruption_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_multilevel_corruption_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_chkpt_file_multilevel_corruption_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_file_test_multi_lev_corr APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -150,10 +152,10 @@ add_test(
     NAME
        "parallel_veloc_chkpt_mem_test_multi_chkpt_version"
     COMMAND
-    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_mem_test 256 veloc.cfg 0; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_second_chkpoint_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-    ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_mem_test 256 veloc.cfg 1"
+    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_mem_test 256 veloc.cfg 0; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_second_chkpoint_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+    ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_mem_test 256 veloc.cfg 1"
 	)
 	set_property(TEST parallel_veloc_chkpt_mem_test_multi_chkpt_version APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
 
@@ -162,9 +164,9 @@ add_test(
 #    NAME
 #       "parallel_veloc_chkpt_file_test_multi_chkpt_version"
 #    COMMAND
-#    bash -c "${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-#       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_file_test 256 veloc.cfg 0; \
-#       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/test_simulate_second_chkpoint_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
-#       ${MPI_EXEC} ${MPI_PARAM2} ${num_nodes} ${MPI_PARAM1} 1 ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_file_test 256 veloc.cfg 1"
+#    bash -c "${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_cleanup.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+#       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_file_test 256 veloc.cfg 0; \
+#       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/test_simulate_second_chkpoint_loss.sh ${VELOC_PERSISTENT_PATH} ${VELOC_SCRATCH_PATH}; \
+#       ${MPI_EXEC} ${NNodes_OneProcess_Per_Node} ${CMAKE_BINARY_DIR}/test/veloc_2chkpt_file_test 256 veloc.cfg 1"
 #	)
 #	set_property(TEST parallel_veloc_chkpt_file_test_multi_chkpt_version APPEND PROPERTY ENVIRONMENT LD_LIBRARY_PATH="${PROJECT_SOURCE_DIR}/../deploy/lib:${PROJECT_SOURCE_DIR}/../deploy/lib64:${CMAKE_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
