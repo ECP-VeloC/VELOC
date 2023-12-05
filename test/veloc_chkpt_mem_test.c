@@ -62,7 +62,6 @@ int main (int argc, char* argv[])
 
       return 1;
   }
-printf("CONFIG FILE = %s\n", argv[2]);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -73,9 +72,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   MPI_Reduce(&secs, &secsmin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secsmax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secssum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (rank == 0) {
-    printf("Init: Min %8.6f s\tMax %8.6f s\tAvg %8.6f s\n", secsmin, secsmax, secssum/ranks);
-  }
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -86,10 +82,8 @@ printf("CONFIG FILE = %s\n", argv[2]);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
-  printf("VVV in v = VELOC_Restart_test = %d\n",v);
   if(v<-1)v=-1;
   int already_initiated = atoi(argv[3]);
-  printf("had already initiated = %d\n",already_initiated);
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart("veloc_test", v) != VELOC_SUCCESS){

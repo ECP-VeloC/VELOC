@@ -15,7 +15,6 @@ int main (int argc, char* argv[])
 	path[0] = '\0';
         strcat(path,"/dev/shm/");
         strcat(path,argv[5]);
-	printf("output path IS %s",path);
 
   int rank, ranks;
   int chkpt_version;
@@ -81,8 +80,6 @@ int main (int argc, char* argv[])
     sprintf(buffer, ",%d,%8.6f,%8.6f\n", proc_per_core, ckpt_local_sum/ranks, ckpt_finish_max);
     fprintf(file_csv_f, buffer);
     fclose(file_csv_f);
-printf("buffer=%s\n",buffer);
-    printf("computed Checkpoint times are: local Avg %8.6f s\tGlobal Max %8.6f  s\n", ckpt_local_sum/ranks, ckpt_finish_max);
   }
 
   if(buf != NULL) {

@@ -48,7 +48,6 @@ ssize_t reliable_read(int fd, void* buf, size_t size)
 /* reliable write to file descriptor (retries, if necessary, until hard error) */
 ssize_t reliable_write(int fd, const void* buf, size_t size)
 {
-printf("in reliable_write \n");
   ssize_t n = 0;
   int retries = 10;
   int rank;
@@ -151,7 +150,6 @@ int init_buffer(char* buf, size_t size, int rank, int ckpt)
 /* checks buffer for expected value */
 int check_buffer(char* buf, size_t size, int rank, int ckpt)
 {
-printf("in check_buffer, SIZE=%d\n", size);
   size_t i;
   for(i=0; i < size; i++) {
     /*char c = 'a' + (rank+i) % 26;*/
@@ -190,7 +188,6 @@ int main (int argc, char* argv[])
 
       return 1;
   }
-printf("CONFIG FILE = %s\n", argv[2]);
 
   double init_end = MPI_Wtime();
   double secs = init_end - init_start;
@@ -201,9 +198,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   MPI_Reduce(&secs, &secsmin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secsmax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secssum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (rank == 0) {
-    printf("Init: Min %8.6f s\tMax %8.6f s\tAvg %8.6f s\n", secsmin, secsmax, secssum/ranks);
-  }
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -213,7 +207,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
-  printf("VVV in v = VELOC_Restart_test = %d\n",v);
   if(v<-1)v=-1;
   int already_initiated = atoi(argv[3]);
   printf("had already initiated = %d\n",already_initiated);
@@ -225,12 +218,10 @@ printf("CONFIG FILE = %s\n", argv[2]);
     }
     char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
     sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v, rank);
-    printf("ORIGINAL=%s\n", original);
     if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
       printf("VELOC_Route_file FAILED\n");
       return 1;
     }
-    printf("vvveloc_file is %s\n",veloc_file);
     /* read the data */
     int valid = 1;
     if (read_checkpoint(veloc_file, &timestep, buf, filesize)){
@@ -266,12 +257,10 @@ printf("CONFIG FILE = %s\n", argv[2]);
   }
   char original[VELOC_MAX_NAME], fname[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
   sprintf(original, "veloc_test-file-ckpt_%d_%d.dat", v+1, rank);
-  printf("ORIGINAL=%s\n", original);
   if(VELOC_Route_file(original, veloc_file) != VELOC_SUCCESS){
     printf("VELOC_Route_file FAILED\n");
     return 1;
   }
-  printf("vvveloc_file is %s\n",veloc_file);
   int valid = 1;
   init_buffer(buf, filesize, rank, timestep);
   timestep++;
@@ -280,8 +269,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
     perror("errror with open");
     exit(1);
   }
-  printf("printing file permissionsi\n");
-  printf("FD=%d, timestamp=%d, filesize=%d\n", fd,timestep,filesize);
   if(!write_checkpoint(fd, timestep, buf, filesize)){
     valid = 0;
   }

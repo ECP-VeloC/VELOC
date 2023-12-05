@@ -12,7 +12,6 @@
 /* initialize buffer with some well-known value based on rank */
 int init_buffer(char* buf, size_t size, int rank)
 {
-printf("in init_buffer, SIZE=%d\n", size);
   size_t i;
   for(i=0; i < size; i++) {
     char c = (char) ((size_t)rank + i) % 256;
@@ -24,7 +23,6 @@ printf("in init_buffer, SIZE=%d\n", size);
 /* checks buffer for expected value */
 int check_buffer(char* buf, size_t size, int rank)
 {
-printf("in check_buffer, SIZE=%d\n", size);
   size_t i;
   for(i=0; i < size; i++) {
     char c = (char) ((size_t)rank + i) % 256;
@@ -37,7 +35,6 @@ printf("in check_buffer, SIZE=%d\n", size);
 
 int main (int argc, char* argv[])
 {
-printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 
   int rank, ranks;
   int chkpt_version;
@@ -64,7 +61,6 @@ printf("LD_LIBRARY_PATH = %s\n", getenv("LD_LIBRARY_PATH"));
 
       return 1;
   }
-printf("CONFIG FILE = %s\n", argv[2]);
   char com20[50];
 
   double init_end = MPI_Wtime();
@@ -76,9 +72,6 @@ printf("CONFIG FILE = %s\n", argv[2]);
   MPI_Reduce(&secs, &secsmin, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secsmax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Reduce(&secs, &secssum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (rank == 0) {
-    printf("Init: Min %8.6f s\tMax %8.6f s\tAvg %8.6f s\n", secsmin, secsmax, secssum/ranks);
-  }
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -89,10 +82,8 @@ printf("CONFIG FILE = %s\n", argv[2]);
 
 //*************************************************
   int v = VELOC_Restart_test("veloc_test", 0);
-  printf("VVV in v = VELOC_Restart_test = %d\n",v);
   if(v<-1)v=-1;
   int already_initiated = atoi(argv[3]);
-  printf("had already initiated = %d\n",already_initiated);
   if (v >= 0) {
     printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
     if(VELOC_Restart("veloc_test", v) != VELOC_SUCCESS){
