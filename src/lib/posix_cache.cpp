@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <sstream>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sched.h>
@@ -26,7 +27,8 @@ struct async_command_t {
 };
 
 struct async_context_t {
-    static const int MAX_QUEUE_SIZE = 1 << 16;
+    static const size_t DEFAULT_QUEUE_SIZE = 1 << 16;
+    size_t MAX_QUEUE_SIZE;
     std::mutex async_mutex;
     std::condition_variable async_cond;
     std::deque<async_command_t> async_op_queue;
@@ -92,6 +94,14 @@ posix_cached_file_t::posix_cached_file_t(const std::string &scratch_path) : scra
     if (!check_dir(scratch))
         FATAL("scratch directory " << scratch << " inaccessible!");
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
+    char *env = getenv("VELOC_POSIX_CACHE_SIZE");
+    if (env != NULL) {
+	std::stringstream ss(env);
+	ss >> static_context.MAX_QUEUE_SIZE;
+	if (ss.fail())
+	    static_context.MAX_QUEUE_SIZE = static_context.DEFAULT_QUEUE_SIZE;
+    } else
+	static_context.MAX_QUEUE_SIZE = static_context.DEFAULT_QUEUE_SIZE;
     if (!static_context.started) {
 	std::thread(async_write).detach();
 	static_context.started = true;
