@@ -31,7 +31,7 @@ struct async_context_t {
     std::condition_variable async_cond;
     std::deque<async_command_t> async_op_queue;
     std::thread async_thread;
-    bool started = false, finished = false;
+    bool started = false, finished = false, fail_status = false;
 };
 
 static async_context_t static_context;
@@ -65,8 +65,11 @@ static void async_write() {
 	    break;
 	case async_command_t::WRITE:
 	    DBG("async write, fl = " << cmd.fl << ", fr = " << cmd.fr << ", offset = " << cmd.offset << ", size = " << cmd.size);
-	    if (!file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size))
+	    if (!file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size)) {
 		ERROR("async write failed, error = " << std::strerror(errno));
+		std::unique_lock<std::mutex> lock(static_context.async_mutex);
+		static_context.fail_status = true;
+	    }
 	    break;
 	default:
 	    FATAL("internal async thread error: opcode " << cmd.op << " not recognized");
@@ -178,11 +181,14 @@ bool cached_file_t::pwrite(const void *buf, size_t count, off_t offset) {
 void cached_file_t::close() {
     ptr->close();
 }
-void cached_file_t::flush() {
+bool cached_file_t::flush() {
     // wait for background thread to finish async operations
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
     while (static_context.async_op_queue.size() > 0)
 	static_context.async_cond.wait(lock);
+    bool ret = static_context.fail_status;
+    static_context.fail_status = false;
+    return ret;
 }
 void cached_file_t::shutdown() {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
