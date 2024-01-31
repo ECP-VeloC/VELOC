@@ -18,8 +18,7 @@
 struct async_command_t {
     static const int WRITE = 1, CLOSE = 2;
     int op, fl, fr;
-    size_t offset, size;
-    async_command_t(int _op) : op(_op) { }
+    size_t offset = 0, size = 0;
     async_command_t(int _op, int _fl, int _fr) :
         op(_op), fl(_fl), fr(_fr) { }
     async_command_t(int _op, int _fl, int _fr, size_t _offset, size_t _size) :
@@ -28,7 +27,7 @@ struct async_command_t {
 
 struct async_context_t {
     static const size_t DEFAULT_QUEUE_SIZE = 1 << 16;
-    size_t MAX_QUEUE_SIZE;
+    size_t MAX_QUEUE_SIZE, async_op_size = 0;
     std::mutex async_mutex;
     std::condition_variable async_cond;
     std::deque<async_command_t> async_op_queue;
@@ -51,40 +50,39 @@ static void async_write() {
 
     while (true) {
 	std::unique_lock<std::mutex> lock(static_context.async_mutex);
-	while (static_context.async_op_queue.size() == 0 && !static_context.finished)
+	while (!static_context.finished && static_context.async_op_queue.size() == 0)
 	    static_context.async_cond.wait(lock);
-        if (static_context.async_op_queue.size() == 0 && static_context.finished)
+        if (static_context.finished && static_context.async_op_queue.size() == 0)
             break;
 	auto cmd = static_context.async_op_queue.front();
 	static_context.async_op_queue.pop_front();
 	lock.unlock();
-	static_context.async_cond.notify_all();
-	switch (cmd.op) {
-        case async_command_t::CLOSE:
+	if (cmd.op == async_command_t::CLOSE) {
             DBG("close, fl = " << cmd.fl << ", fr = " << cmd.fr);
 	    close(cmd.fl);
 	    close(cmd.fr);
-	    break;
-	case async_command_t::WRITE:
+	} else if (cmd.op == async_command_t::WRITE) {
 	    DBG("async write, fl = " << cmd.fl << ", fr = " << cmd.fr << ", offset = " << cmd.offset << ", size = " << cmd.size);
-	    if (!file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size)) {
+	    bool result = file_transfer_loop(cmd.fl, cmd.offset, cmd.fr, cmd.offset, cmd.size);
+	    if (!result)
 		ERROR("async write failed, error = " << std::strerror(errno));
-		std::unique_lock<std::mutex> lock(static_context.async_mutex);
-		static_context.fail_status = true;
-	    }
-	    break;
-	default:
+	    std::unique_lock<std::mutex> lock(static_context.async_mutex);
+	    static_context.fail_status |= result;
+	    static_context.async_op_size -= cmd.size;
+	} else
 	    FATAL("internal async thread error: opcode " << cmd.op << " not recognized");
-	}
+	static_context.async_cond.notify_all();
     }
 }
 
 static void send_command(const async_command_t &cmd) {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
-    while (static_context.async_op_queue.size() > static_context.MAX_QUEUE_SIZE)
+    while (!static_context.finished && static_context.async_op_size + cmd.size > static_context.MAX_QUEUE_SIZE)
 	static_context.async_cond.wait(lock);
-    if (!static_context.finished)
-        static_context.async_op_queue.push_back(cmd);
+    if (static_context.finished)
+	return;
+    static_context.async_op_queue.push_back(cmd);
+    static_context.async_op_size += cmd.size;
     lock.unlock();
     static_context.async_cond.notify_all();
 }
