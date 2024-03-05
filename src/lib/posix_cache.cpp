@@ -194,7 +194,7 @@ bool cached_file_t::flush() {
     std::unique_lock<std::mutex> lock(static_context.async_mutex);
     while (static_context.async_op_queue.size() > 0)
 	static_context.async_cond.wait(lock);
-    bool ret = static_context.fail_status;
+    bool ret = !static_context.fail_status;
     static_context.fail_status = false;
     return ret;
 }
