@@ -36,7 +36,8 @@ extern "C" int VELOC_Init_single(unsigned int id, const char *cfg_file) {
 #define CLIENT_CALL(x) (veloc_client != NULL && (x)) ? VELOC_SUCCESS : VELOC_FAILURE;
 
 extern "C" int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size) {
-    return CLIENT_CALL(veloc_client->mem_protect(id, ptr, count, base_size));
+    veloc_client->mem_protect(id, ptr, count, base_size);
+    return VELOC_SUCCESS;
 }
 
 extern "C" int VELOC_Mem_unprotect(int id) {

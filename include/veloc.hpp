@@ -29,10 +29,10 @@ protected:
     regions_t mem_regions;
 public:
     virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size) {
-        return mem_regions.insert(std::make_pair(id, region_t(ptr, count * base_size))).second;
+        return mem_regions.insert_or_assign(id, region_t(ptr, count * base_size)).second;
     }
     virtual bool mem_protect(int id, const serializer_t &s, const deserializer_t &d) {
-        return mem_regions.insert(std::make_pair(id, region_t(s, d))).second;
+        return mem_regions.insert_or_assign(id, region_t(s, d)).second;
     }
     virtual bool mem_unprotect(int id) {
         return mem_regions.erase(id) > 0;
