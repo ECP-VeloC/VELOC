@@ -28,6 +28,7 @@ static bool chksum_file(const std::string &source, unsigned char *result) {
     }
     size_t size = lseek(fd, 0, SEEK_END);
     unsigned char *buff = (unsigned char *)mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    madvise(buff, size, MADV_SEQUENTIAL);
     close(fd);
     if (buff == MAP_FAILED) {
         ERROR("cannot mmap " << source << ", error = " << std::strerror(errno));
@@ -44,8 +45,7 @@ int chksum_module_t::process_command(const command_t &c) {
 
     const unsigned int HASH_SIZE = 32;
     unsigned char chksum[HASH_SIZE], orig_chksum[HASH_SIZE];
-    std::string meta = c.filename(cfg.get("meta")) + ".md5",
-        local = c.filename(cfg.get("scratch"));
+    std::string meta = c.meta_filename(cfg.get("meta")), local = c.filename(cfg.get("scratch"));
     bool match;
 
     switch (c.command) {
