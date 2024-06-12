@@ -16,6 +16,7 @@ class client_t {
 protected:
     typedef std::function<void (std::ostream &)> serializer_t;
     typedef std::function<bool (std::istream &)> deserializer_t;
+    typedef std::function<void (const std::string &name, int version)> observer_t;
     struct region_t {
         void *ptr;
         size_t size;
@@ -25,8 +26,10 @@ protected:
         region_t(const serializer_t &_s, const deserializer_t &_d) : ptr(NULL), s(_s), d(_d) { }
     };
     typedef std::map<int, region_t> regions_t;
+    typedef std::map<int, observer_t> observers_t;
 
     regions_t mem_regions;
+    observers_t observers;
 public:
     virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size) {
         return mem_regions.insert_or_assign(id, region_t(ptr, count * base_size)).second;
@@ -36,6 +39,9 @@ public:
     }
     virtual bool mem_unprotect(int id) {
         return mem_regions.erase(id) > 0;
+    }
+    virtual bool register_observer(int type, const observer_t &obs) {
+	return observers.insert_or_assign(type, obs).second;
     }
 
     virtual std::string route_file(const std::string &original) = 0;

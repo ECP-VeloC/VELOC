@@ -1,7 +1,7 @@
-#include "include/veloc.hpp"
-#include "include/veloc/bitsery.hpp"
-#include "include/veloc/cereal.hpp"
-#include "include/veloc/boost.hpp"
+#include "veloc.hpp"
+#include "veloc/bitsery.hpp"
+#include "veloc/cereal.hpp"
+#include "veloc/boost.hpp"
 
 #include <map>
 #include <cereal/types/map.hpp>
@@ -24,6 +24,10 @@ template <typename S> void serialize(S &s, MyStruct &o) {
     s.value8b(o.f);
 }
 
+void ckpt_callback(const std::string &ckpt_name, int version) {
+    std::cout << "VELOC_OBSERVE_CKPT_END callback, name = " << ckpt_name << ", version = " << version << std::endl;
+}
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <veloc_cfg>" << std::endl;
@@ -33,6 +37,7 @@ int main(int argc, char **argv) {
     // for MPI applications, pass the MPI communicator to use the rank as id automatically
     const unsigned int id = 0;
     veloc::client_t *ckpt = veloc::get_client(id, argv[1]);
+    ckpt->register_observer(VELOC_OBSERVE_CKPT_END, ckpt_callback);
 
     int k = 7;
     MyStruct data{8941, MyEnum::V2, 0.045};
@@ -58,6 +63,10 @@ int main(int argc, char **argv) {
     map[2] = 3;
     set.clear();
     set.insert(4);
+
+    // wait for the checkpoint to finish
+    if (!ckpt->checkpoint_wait())
+        throw std::runtime_error("checkpoint wait failed");
 
     // verify the data structures were correctly restored to their original values on restart
     if (!ckpt->restart("serial.test", 0))

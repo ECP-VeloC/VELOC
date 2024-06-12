@@ -211,6 +211,9 @@ bool client_impl_t::checkpoint_end(bool /*success*/) {
     }
     checkpoint_in_progress = false;
     queue->enqueue(current_ckpt);
+    auto it = observers.find(VELOC_OBSERVE_CKPT_END);
+    if (it != observers.end())
+	it->second(current_ckpt.name, current_ckpt.version);
     return cfg.is_sync() ? queue->wait_completion() == VELOC_SUCCESS : true;
 }
 

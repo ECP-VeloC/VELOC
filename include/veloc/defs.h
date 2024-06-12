@@ -25,4 +25,6 @@
 #define VELOC_CKPT_SOME (1)
 #define VELOC_CKPT_REST (2)
 
+#define VELOC_OBSERVE_CKPT_END (0)
+
 #endif //__DEFS_H
