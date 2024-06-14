@@ -24,6 +24,7 @@ versioning_module_t::versioning_module_t(const config_t &c) : cfg(c) {
         scratch_versions = 0;
         INFO("caching last " << scratch_versions << " checkpoints to " << cfg.get("scratch") << " (0 means all), change using 'scratch_versions'");
     }
+    cfg.get_optional("meta", meta);
 }
 
 int versioning_module_t::process_command(const command_t &c) {
@@ -60,6 +61,8 @@ int versioning_module_t::process_command(const command_t &c) {
                 command_t old = c;
                 old.version = *it;
                 cfg.storage()->remove(old);
+                if (!meta.empty())
+                    unlink(old.meta_filename(meta).c_str());
                 it = ph.erase(it);
             }
         }

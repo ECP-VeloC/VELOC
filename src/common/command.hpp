@@ -24,6 +24,7 @@ public:
     void assign_path(const std::string &src);
     std::string stem() const;
     std::string filename(const std::string &prefix) const;
+    std::string meta_filename(const std::string &prefix) const;
     std::string agg_filename(const std::string &prefix) const;
     friend std::ostream &operator<<(std::ostream &output, const command_t &c);
     template<typename A> void save(A& ar);
