@@ -40,6 +40,9 @@ public:
     virtual bool mem_unprotect(int id) {
         return mem_regions.erase(id) > 0;
     }
+    virtual void mem_clear() {
+	mem_regions.clear();
+    }
     virtual bool register_observer(int type, const observer_t &obs) {
 	return observers.insert_or_assign(type, obs).second;
     }
