@@ -42,8 +42,8 @@ public:
     virtual bool checkpoint_finished();
 
     virtual int restart_test(const std::string &name, int version);
-    virtual bool restart(const std::string &name, int version);
-    virtual bool restart_begin(const std::string &name, int version);
+    virtual bool restart(const std::string &name, int version, int target_rank);
+    virtual bool restart_begin(const std::string &name, int version, int target_rank);
     virtual size_t recover_size(int id);
     virtual bool recover_mem(int mode, const std::set<int> &ids);
     virtual bool restart_end(bool success);

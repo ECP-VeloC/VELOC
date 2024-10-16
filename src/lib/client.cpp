@@ -246,13 +246,13 @@ std::string client_impl_t::route_file(const std::string &original) {
     return current_ckpt.filename(cfg.get("scratch"));
 }
 
-bool client_impl_t::restart(const std::string &name, int version) {
-    return restart_begin(name, version)
+bool client_impl_t::restart(const std::string &name, int version, int target_rank) {
+    return restart_begin(name, version, target_rank)
         && recover_mem(VELOC_CKPT_ALL, {})
         && restart_end(true);
 }
 
-bool client_impl_t::restart_begin(const std::string &name, int version) {
+bool client_impl_t::restart_begin(const std::string &name, int version, int target_rank) {
     if (checkpoint_in_progress) {
 	INFO("cannot restart while checkpoint in progress");
 	return false;
@@ -263,7 +263,7 @@ bool client_impl_t::restart_begin(const std::string &name, int version) {
     }
 
     int result, end_result;
-    current_ckpt = command_t(rank, command_t::RESTART, version, name.c_str());
+    current_ckpt = command_t(target_rank == -1 ? rank : target_rank, command_t::RESTART, version, name.c_str());
     result = run_blocking(current_ckpt);
     if (comm != MPI_COMM_NULL)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);
