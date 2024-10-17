@@ -222,12 +222,12 @@ int client_impl_t::run_blocking(const command_t &cmd) {
     return queue->wait_completion();
 }
 
-int client_impl_t::restart_test(const std::string &name, int needed_version) {
+int client_impl_t::restart_test(const std::string &name, int needed_version, int target_rank) {
     if (!validate_name(name) || needed_version < 0) {
 	ERROR("checkpoint name and/or version incorrect: name can only include [a-zA-Z0-9_] characters, version needs to be non-negative integer");
 	return VELOC_FAILURE;
     }
-    int version = run_blocking(command_t(rank, command_t::TEST, needed_version, name.c_str()));
+    int version = run_blocking(command_t(check_rank(target_rank), command_t::TEST, needed_version, name.c_str()));
     DBG(name << ": latest version = " << version);
     if (comm != MPI_COMM_NULL) {
 	int max_version;
@@ -263,7 +263,7 @@ bool client_impl_t::restart_begin(const std::string &name, int version, int targ
     }
 
     int result, end_result;
-    current_ckpt = command_t(target_rank == -1 ? rank : target_rank, command_t::RESTART, version, name.c_str());
+    current_ckpt = command_t(check_rank(target_rank), command_t::RESTART, version, name.c_str());
     result = run_blocking(current_ckpt);
     if (comm != MPI_COMM_NULL)
 	MPI_Allreduce(&result, &end_result, 1, MPI_INT, MPI_LOR, comm);

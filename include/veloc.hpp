@@ -57,7 +57,7 @@ public:
     virtual bool checkpoint_wait() = 0;
     virtual bool checkpoint_finished() = 0;
 
-    virtual int restart_test(const std::string &name, int version) = 0;
+    virtual int restart_test(const std::string &name, int version, int target_rank = -1) = 0;
     virtual bool restart(const std::string &name, int version, int target_rank = -1) = 0;
     virtual bool restart_begin(const std::string &name, int version, int target_rank = -1) = 0;
     virtual size_t recover_size(int id) = 0;

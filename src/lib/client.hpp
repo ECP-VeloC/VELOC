@@ -26,6 +26,9 @@ class client_impl_t : public veloc::client_t {
     bool check_threaded();
     int run_blocking(const command_t &cmd);
     bool read_current_header();
+    inline int check_rank(int target_rank) {
+	return target_rank == -1 ? rank : target_rank;
+    }
 
 public:
     client_impl_t(unsigned int id, const std::string &cfg_file);
@@ -41,7 +44,7 @@ public:
     virtual bool checkpoint_wait();
     virtual bool checkpoint_finished();
 
-    virtual int restart_test(const std::string &name, int version);
+    virtual int restart_test(const std::string &name, int version, int target_rank);
     virtual bool restart(const std::string &name, int version, int target_rank);
     virtual bool restart_begin(const std::string &name, int version, int target_rank);
     virtual size_t recover_size(int id);
