@@ -7,6 +7,13 @@
 #include <dirent.h>
 #include <unistd.h>
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0) || (__GLIBC__ >= 2 && __GLIBC_MINOR__ >= 27)
+    #define COPY_FILE_RANGE_AVAIL
+#else
+    #include <sys/sendfile.h>
+#endif
+
 #include <cerrno>
 #include <cstring>
 
@@ -71,7 +78,15 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
 bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
     bool success = true;
     while (remaining > 0) {
+#if COPY_FILE_RANGE_AVAIL
 	ssize_t transferred = copy_file_range(fs, (off64_t *)&soff, fd, (off64_t *)&doff, remaining, 0);
+#else
+        //Some bookkeping to maintain copy_file_range semantics.
+        off64_t fd_offset_prev = lseek(fd, 0, SEEK_CUR);
+        lseek(fd, (off64_t)doff, SEEK_SET);
+        ssize_t transferred = sendfile(fd, fs, (off64_t*)&soff, remaining);
+        lseek(fs, fd_offset_prev, SEEK_SET);
+#endif
         if (transferred == -1) {
             success = false;
             break;
