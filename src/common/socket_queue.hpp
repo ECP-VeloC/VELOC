@@ -125,7 +125,7 @@ template<typename T> class comm_backend_t {
 
     void enqueue(const command_t &e, int sock) {
         std::unique_lock<std::mutex> lock(map_mutex);
-        container_t *q = &client_map[e.unique_id];
+        container_t *q = &client_map[sock];
         q->fd = sock;
         if (e.command == command_t::STATUS) {
             q->waiting = true;

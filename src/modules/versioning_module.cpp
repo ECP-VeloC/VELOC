@@ -42,7 +42,6 @@ int versioning_module_t::process_command(const command_t &c) {
         scratch_version_set(cfg.get("scratch"), c.name, c.unique_id, sh);
         std::set_union(ph.begin(), ph.end(), sh.begin(), sh.end(),
                        std::inserter(versions, versions.begin()));
-
         if (versions.size() == 0)
             return VELOC_IGNORED;
         if (c.version == 0)
