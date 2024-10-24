@@ -27,7 +27,7 @@ class client_impl_t : public veloc::client_t {
     int run_blocking(const command_t &cmd);
     bool read_current_header();
     inline int check_rank(int target_rank) {
-	return target_rank == -1 ? rank : target_rank;
+	return target_rank < 0 ? rank : target_rank;
     }
 
 public:

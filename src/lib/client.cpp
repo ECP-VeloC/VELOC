@@ -229,7 +229,7 @@ int client_impl_t::restart_test(const std::string &name, int needed_version, int
     }
     int version = run_blocking(command_t(check_rank(target_rank), command_t::TEST, needed_version, name.c_str()));
     DBG(name << ": latest version = " << version);
-    if (comm != MPI_COMM_NULL) {
+    if (comm != MPI_COMM_NULL && target_rank < 0) {
 	int max_version;
         MPI_Allreduce(&version, &max_version, 1, MPI_INT, MPI_MAX, comm);
 	return max_version;
