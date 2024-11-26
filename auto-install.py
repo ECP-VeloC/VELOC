@@ -2,7 +2,6 @@
 
 import sys, os.path, shutil, subprocess
 import argparse
-import wget, bs4, urllib
 import re
 import tarfile
 
@@ -57,12 +56,15 @@ if __name__ == "__main__":
         sys.exit(3)
 
     print("Installing VeloC in {0}...".format(args.prefix))
+
     if (args.debug):
         cmake_build_type="Debug"
+    compiler_options = compiler_options + args.extra_cmake_args;
 
     # Boost
     if (args.protocol == "ipc_queue" and not args.without_boost):
         print("Downloading Boost...")
+        import wget, bs4, urllib
         try:
             req = urllib.request.Request('https://www.boost.org/users/download', headers={'User-Agent': 'Mozilla/5.0'})
             soup = bs4.BeautifulSoup(urllib.request.urlopen(req), 'html.parser')
@@ -78,7 +80,7 @@ if __name__ == "__main__":
             print("Error installing Boost: {0}! Try to install it manually and use --without-boost. Alternatively, use --protocol=socket_queue".format(err))
             sys.exit(3)
 
-    # Other depenencies
+    # Other dependencies
     if (not args.without_deps):
         install_dep('https://github.com/ECP-VeloC/KVTree.git', 'v1.4.0')
         install_dep('https://github.com/ECP-VeloC/AXL.git', 'v0.8.0')
@@ -101,7 +103,7 @@ if __name__ == "__main__":
     cmake_args= ['-DCMAKE_INSTALL_PREFIX='+args.prefix,
                  '-DCMAKE_BUILD_TYPE='+cmake_build_type,
                  '-DCOMM_QUEUE='+args.protocol,
-                 '-DPOSIX_IO='+args.posix_io] + compiler_options + args.extra_cmake_args
+                 '-DPOSIX_IO='+args.posix_io] + compiler_options
     # Configure
     print("CMake arguments: " + " ".join(cmake_args))
     ret = subprocess.call(['cmake'] + cmake_args + [os.getcwd()], cwd=veloc_build,)
