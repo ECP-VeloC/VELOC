@@ -37,8 +37,8 @@ sphinx:
 
 # We recommend specifying your dependencies to enable reproducible builds:
 # https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-python:
-  install:
+# python:
+#   install:
   # If needing to update for pinning a new reproducible build, then overwrite with
   # results of `pip-compile` command above.
 #  - requirements: docs/requirements.txt
