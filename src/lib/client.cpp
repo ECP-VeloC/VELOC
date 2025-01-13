@@ -192,12 +192,8 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
 
 bool client_impl_t::checkpoint_end(bool /*success*/) {
     if (aggregated) {
-        long offset = 0, next_offset = file_size(current_ckpt.filename(cfg.get("scratch")));
-        if (rank > 0)
-            MPI_Recv(&offset, 1, MPI_LONG, rank - 1, 0, comm, MPI_STATUS_IGNORE);
-        next_offset += offset;
-        if (rank + 1 < no_ranks)
-            MPI_Send(&next_offset, 1, MPI_LONG, rank + 1, 0, comm);
+        long offset = 0, ckpt_size = file_size(current_ckpt.filename(cfg.get("scratch")));
+	MPI_Exscan(&ckpt_size, &offset, 1, MPI_LONG, MPI_SUM, comm);
         DBG("Rank " << rank << ", offset = " << offset);
         if (rank == 0) {
             long offset_map[no_ranks + 1];
