@@ -86,6 +86,26 @@ client_impl_t::~client_impl_t() {
     DBG("VELOC finalized");
 }
 
+bool client_impl_t::mem_protect(int id, void *ptr, size_t count, size_t base_size, const std::string &name) {
+    return mem_regions[name].insert_or_assign(id, region_t(ptr, count * base_size)).second;
+}
+
+bool client_impl_t::mem_protect(int id, const serializer_t &s, const deserializer_t &d, const std::string &name) {
+    return mem_regions[name].insert_or_assign(id, region_t(s, d)).second;
+}
+
+bool client_impl_t::mem_unprotect(int id, const std::string &name) {
+    return mem_regions[name].erase(id) > 0;
+}
+
+void client_impl_t::mem_clear(const std::string &name) {
+    mem_regions[name].clear();
+}
+
+bool client_impl_t::register_observer(int type, const observer_t &obs) {
+    return observers.insert_or_assign(type, obs).second;
+}
+
 bool client_impl_t::cleanup(const std::string &name) {
     parse_dir(cfg.get("scratch"), name, [](const std::string &fname, int, int) {
         remove(fname.c_str());
@@ -139,17 +159,12 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
 	ERROR("must call checkpoint_begin() first");
 	return false;
     }
-    regions_t ckpt_regions;
-    if (mode == VELOC_CKPT_ALL)
-        ckpt_regions = mem_regions;
-    else if (mode == VELOC_CKPT_SOME) {
-        for (auto it = ids.begin(); it != ids.end(); it++) {
-            auto found = mem_regions.find(*it);
-            if (found != mem_regions.end())
-                ckpt_regions.insert(*found);
-        }
+    regions_t ckpt_regions = get_current_ckpt_regions();
+    if (mode == VELOC_CKPT_SOME) {
+	for (auto it = ckpt_regions.begin(); it != ckpt_regions.end(); it++)
+	    if (ids.count(it->first) == 0)
+		ckpt_regions.erase(it);
     } else if (mode == VELOC_CKPT_REST) {
-        ckpt_regions = mem_regions;
         for (auto it = ids.begin(); it != ids.end(); it++)
             ckpt_regions.erase(*it);
     }
@@ -292,6 +307,7 @@ bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
 	ERROR("cannot recover in memory mode if header unavailable or corrupted");
 	return false;
     }
+    regions_t &ckpt_regions = get_current_ckpt_regions();
     try {
 	std::ifstream f;
 	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -303,8 +319,8 @@ bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
 		f.seekg(e.second, std::ifstream::cur);
 		continue;
 	    }
-            auto it = mem_regions.find(e.first);
-            if (it == mem_regions.end()) {
+            auto it = ckpt_regions.find(e.first);
+            if (it == ckpt_regions.end()) {
 		ERROR("no protected memory region defined for id " << e.first);
 		return false;
 	    }
