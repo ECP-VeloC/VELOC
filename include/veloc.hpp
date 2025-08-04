@@ -14,15 +14,16 @@ namespace veloc {
 
 class client_t {
 protected:
-    typedef std::function<void (std::ostream &)> serializer_t;
-    typedef std::function<bool (std::istream &)> deserializer_t;
-    typedef std::function<void (const std::string &name, int version)> observer_t;
+    static constexpr char default_mem_group[] = "default";
+    using serializer_t = std::function<void (std::ostream &)>;
+    using deserializer_t = std::function<bool (std::istream &)>;
+    using observer_t = std::function<void (const std::string &name, int version)>;
 
 public:
-    virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size, const std::string &name = "") = 0;
-    virtual bool mem_protect(int id, const serializer_t &s, const deserializer_t &d, const std::string &name = "") = 0;
-    virtual bool mem_unprotect(int id, const std::string &name = "") = 0;
-    virtual void mem_clear(const std::string &name = "") = 0;
+    virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size, const std::string &name = default_mem_group) = 0;
+    virtual bool mem_protect(int id, const serializer_t &s, const deserializer_t &d, const std::string &name = default_mem_group) = 0;
+    virtual bool mem_unprotect(int id, const std::string &name = default_mem_group) = 0;
+    virtual void mem_clear(const std::string &name = default_mem_group) = 0;
     virtual bool register_observer(int type, const observer_t &obs) = 0;
 
     virtual std::string route_file(const std::string &original) = 0;

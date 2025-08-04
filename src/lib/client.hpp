@@ -49,7 +49,7 @@ class client_impl_t : public veloc::client_t {
     regions_t &get_current_ckpt_regions() {
 	regions_t &ckpt_regions = mem_regions[current_ckpt.name];
 	if (ckpt_regions.empty())
-	    ckpt_regions = mem_regions[""];
+	    ckpt_regions = mem_regions[default_mem_group];
 	return ckpt_regions;
     }
 
