@@ -60,7 +60,7 @@ public:
     virtual bool mem_protect(int id, void *ptr, size_t count, size_t base_size, const std::string &name);
     virtual bool mem_protect(int id, const serializer_t &s, const deserializer_t &d, const std::string &name);
     virtual bool mem_unprotect(int id, const std::string &name);
-    virtual bool mem_clear(const std::string &name);
+    virtual void mem_clear(const std::string &name);
     virtual bool register_observer(int type, const observer_t &obs);
 
     virtual std::string route_file(const std::string &original);
