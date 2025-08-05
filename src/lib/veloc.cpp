@@ -40,8 +40,25 @@ extern "C" int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_si
     return VELOC_SUCCESS;
 }
 
+extern "C" int VELOC_Region_protect(int id, void *ptr, size_t count, size_t base_size, const char *name) {
+    veloc_client->mem_protect(id, ptr, count, base_size, name);
+    return VELOC_SUCCESS;
+}
+
 extern "C" int VELOC_Mem_unprotect(int id) {
     return CLIENT_CALL(veloc_client->mem_unprotect(id));
+}
+
+extern "C" int VELOC_Region_unprotect(int id, const char *name) {
+    return CLIENT_CALL(veloc_client->mem_unprotect(id, name));
+}
+
+extern "C" int VELOC_Mem_clear() {
+    return CLIENT_CALL(veloc_client->mem_clear());
+}
+
+extern "C" int VELOC_Region_clear(const char *name) {
+    return CLIENT_CALL(veloc_client->mem_clear(name));
 }
 
 extern "C" int VELOC_Checkpoint_begin(const char *name, int version) {

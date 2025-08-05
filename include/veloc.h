@@ -51,11 +51,17 @@ int VELOC_Finalize(int cleanup);
 //   IN ptr       - pointer to start of memory region
 //   IN count     - number of consecutive elements in memory region
 //   IN base_size - size of each element in memory region
+//   IN name      - attach to a named region (separate checkpoint file)
 int VELOC_Mem_protect(int id, void *ptr, size_t count, size_t base_size);
+int VELOC_Region_protect(int id, void *ptr, size_t count, size_t base_size, const char *name);
 
 // unregisters a memory region
 //   IN id        - application defined integer label for memory region
+//   IN name      - attach to a named region
 int VELOC_Mem_unprotect(int id);
+int VELOC_Mem_clear();
+int VELOC_Region_unprotect(int id, const char *name);
+int VELOC_Region_clear(const char *name);
 
 /**************************
  * File registration

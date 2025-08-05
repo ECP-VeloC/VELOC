@@ -98,8 +98,9 @@ bool client_impl_t::mem_unprotect(int id, const std::string &name) {
     return mem_regions[name].erase(id) > 0;
 }
 
-void client_impl_t::mem_clear(const std::string &name) {
+bool client_impl_t::mem_clear(const std::string &name) {
     mem_regions[name].clear();
+    return true;
 }
 
 bool client_impl_t::register_observer(int type, const observer_t &obs) {
