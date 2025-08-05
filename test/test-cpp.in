@@ -16,12 +16,9 @@ mkdir -p $SCRATCH $PERSISTENT $META
 
 $VELOC_BIN/veloc-backend $CFG --disable-ec
 echo "First run (expected to fail):"
-mpirun $MPI_OPT -np 2 $TEST_DIR/heatdis_fault 256 $CFG
-rm -rf $SCRATCH
-
-echo "Second run (expected to succeed):"
-mpirun $MPI_OPT -np 2 $TEST_DIR/heatdis_fault 256 $CFG
+$TEST_DIR/cpp_test $CFG
 EXIT_CODE=$?
+rm -rf $SCRATCH
 killall veloc-backend
 
 echo "Log of backend:"

@@ -48,13 +48,16 @@ int main(int argc, char **argv) {
 
     // mixing of raw (pointer, size) and serialized data structures in the same checkpoint is allowed
     // even the use of different serialization libraries is possible (e.g. bitsey and cereal)
-    ckpt->mem_protect(0, &k, 1, sizeof(k));
-    ckpt->mem_protect(1, veloc::bitsery::serializer(data), veloc::bitsery::deserializer(data));
-    ckpt->mem_protect(2, veloc::cereal::serializer(map), veloc::cereal::deserializer(map));
-    ckpt->mem_protect(3, veloc::boost::serializer(set), veloc::boost::deserializer(set));
+    // protected regions can be attached to different checkpoints
+    ckpt->mem_protect(0, &k, 1, sizeof(k), "checkpoint_1");
+    ckpt->mem_protect(1, veloc::bitsery::serializer(data), veloc::bitsery::deserializer(data), "checkpoint_1");
+    ckpt->mem_protect(2, veloc::cereal::serializer(map), veloc::cereal::deserializer(map), "checkpoint_2");
+    ckpt->mem_protect(3, veloc::boost::serializer(set), veloc::boost::deserializer(set), "checkpoint_2");
 
-    if (!ckpt->checkpoint("serial.test", 0))
-        throw std::runtime_error("checkpointing failed");
+    if (!ckpt->checkpoint("checkpoint_1", 0))
+        throw std::runtime_error("capture checkpoint_1 failed");
+    if (!ckpt->checkpoint("checkpoint_2", 0))
+        throw std::runtime_error("capture checkpoint_2 failed");
 
     // change the data structures after taking the checkpoint
     k = 0;
@@ -64,20 +67,22 @@ int main(int argc, char **argv) {
     set.clear();
     set.insert(4);
 
-    // wait for the checkpoint to finish
+    // wait for the checkpoints to finish flushing
     if (!ckpt->checkpoint_wait())
         throw std::runtime_error("checkpoint wait failed");
 
     // verify the data structures were correctly restored to their original values on restart
-    if (!ckpt->restart("serial.test", 0))
-        throw std::runtime_error("restart failed");
+    if (!ckpt->restart("checkpoint_1", 0))
+        throw std::runtime_error("restart checkpoint_1 failed");
+    if (!ckpt->restart("checkpoint_2", 0))
+        throw std::runtime_error("restart checkpoint_2 failed");
 
     if (k == 7 && data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045
 	&& map.size() == 1 && map[1] == 2
 	&& set.size() == 1 && *(set.begin()) == 7)
-        std::cout << "serialization test passed" << std::endl;
+        std::cout << "C++ test passed" << std::endl;
     else
-        std::cout << "serialization test failed" << std::endl;
+        std::cout << "C++ test failed" << std::endl;
 
     return 0;
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.14)
-project (VELOC VERSION 1.6)
+project(VELOC VERSION 1.8)
 
 ##### Global settings
 include(GNUInstallDirs)
@@ -8,8 +8,6 @@ add_definitions(-O2 -g -Wall -D__BENCHMARK -D__ASSERT -D__INFO)
 set(CMAKE_CXX_STANDARD 17)
 
 ##### Configuration setting
-set(VELOC_RESOURCE_MANAGER "LSF" CACHE STRING "Resource Manager for CLI (SLURM LSF ALPS NONE)")
-set_property(CACHE VELOC_RESOURCE_MANAGER PROPERTY STRINGS SLURM LSF ALPS NONE)
 set(COMM_QUEUE "ipc_queue" CACHE STRING "Communication protocol between client library and active backend")
 set_property(CACHE COMM_QUEUE PROPERTY STRINGS ipc_queue socket_queue thallium_queue)
 set(POSIX_IO "posix_io" CACHE STRING "POSIX transfer method between scratch and persistent")
@@ -31,8 +29,8 @@ set(COMM_QUEUE_LIBRARIES Threads::Threads)
 # Communication protocol
 if (${COMM_QUEUE} STREQUAL "ipc_queue")
     # Boost is required for ipc_queue
-    find_package(Boost 1.40 REQUIRED)
-    list(APPEND COMM_QUEUE_LIBRARIES rt Boost::boost)
+    find_package(Boost CONFIG REQUIRED)
+    list(APPEND COMM_QUEUE_LIBRARIES Boost::boost)
 elseif (${COMM_QUEUE} STREQUAL "thallium_queue")
     # Thallium is required for thallium_queue
     find_package(thallium REQUIRED)
@@ -65,12 +63,26 @@ if(DAOS_FOUND)
 endif()
 
 # -----------------------------------------------------------------------------------
-add_subdirectory (src)
+# Main source code
+add_subdirectory(src)
 
 # -----------------------------------------------------------------------------------
-enable_testing()
-add_subdirectory (test)
+# Testing infrastructure
 
+find_package(cereal)
+find_package(Bitsery CONFIG)
+find_package(Boost CONFIG COMPONENTS serialization)
+if (cereal_FOUND AND Bitsery_FOUND AND Boost_FOUND)
+  set(SERIALIZATION_LIBRARIES Boost::serialization)
+  message(STATUS "Building with the following serialization libraries: cereal bitsery boost")
+else()
+  message(STATUS "Some or all serialization libraries (cereal, bitsery, boost) required for C++ tests not found, skipping")
+endif()
+
+enable_testing()
+add_subdirectory(test)
+
+# -----------------------------------------------------------------------------------
 # Install export sets and configs
 install(EXPORT velocTargets
         FILE velocTargets.cmake

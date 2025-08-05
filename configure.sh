@@ -1,5 +1,5 @@
 #!/bin/bash
 
 INSTALL_PREFIX=$HOME/deploy
-export CMAKE_PREFIX_PATH=$INSTALL_PREFIX/share/cmake
+export CMAKE_PREFIX_PATH=$INSTALL_PREFIX/share/cmake:$INSTALL_PREFIX/lib/cmake
 cmake -DCOMM_QUEUE=socket_queue -DPOSIX_IO=direct -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX $1
