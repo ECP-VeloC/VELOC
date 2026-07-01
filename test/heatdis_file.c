@@ -125,21 +125,16 @@ int main(int argc, char *argv[]) {
         size_t count = (size_t)M * nbLines;
         FILE *fd = fopen(veloc_file, "rb");
         if (fd != NULL) {
-            if (fread(&i, sizeof(int), 1, fd) != 1) {
+            if (fread(&i, sizeof(int), 1, fd) != 1)
                 valid = false;
-            }
-            if (fread(h, sizeof(double), count, fd) != count) {
+            if (fread(h, sizeof(double), count, fd) != count)
                 valid = false;
-            }
-            if (fread(g, sizeof(double), count, fd) != count) {
+            if (fread(g, sizeof(double), count, fd) != count)
                 valid = false;
-            }
             fclose(fd);
-        } else {
+        } else
             // failed to open file
             valid = false;
-        }
-
         check_result(VELOC_Restart_end(valid));
     } else
         i = 0;
@@ -165,21 +160,16 @@ int main(int argc, char *argv[]) {
             size_t count = (size_t)M * nbLines;
             FILE *fd = fopen(veloc_file, "wb");
             if (fd != NULL) {
-                if (fwrite(&i, sizeof(int), 1, fd) != 1) {
+                if (fwrite(&i, sizeof(int), 1, fd) != 1)
                     valid = false;
-                }
-                if (fwrite(h, sizeof(double), count, fd) != count) {
+                if (fwrite(h, sizeof(double), count, fd) != count)
                     valid = false;
-                }
-                if (fwrite(g, sizeof(double), count, fd) != count) {
+                if (fwrite(g, sizeof(double), count, fd) != count)
                     valid = false;
-                }
                 fclose(fd);
-            } else {
+            } else
                 // failed to open file
                 valid = false;
-            }
-
             check_result(VELOC_Checkpoint_end(valid));
         }
     }
