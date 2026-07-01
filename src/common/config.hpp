@@ -23,10 +23,10 @@ public:
     bool get_bool(const std::string &param, bool def) const;
 
     bool is_sync() const {
-	return sync_mode;
+        return sync_mode;
     }
     const std::string &get_cfg_file() const {
-	return cfg_file;
+        return cfg_file;
     }
     storage_module_t *storage() const {
         return sm;

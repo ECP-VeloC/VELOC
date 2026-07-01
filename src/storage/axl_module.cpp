@@ -37,7 +37,7 @@ bool axl_module_t::axl_transfer_file(const std::string &source, const std::strin
     if ((result = AXL_Free(id)))
         goto err;
     return true;
-  err:
+err:
     ERROR("AXL transfer from " << source << " to " << dest << " failed, error code: " << result);
     return false;
 }

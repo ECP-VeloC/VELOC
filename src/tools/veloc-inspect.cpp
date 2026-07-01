@@ -69,9 +69,9 @@ int main(int argc, char **argv) {
     }
 
     try {
-	std::ifstream f;
-	f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	f.open(ckpt_name, std::ifstream::in | std::ifstream::binary);
+        std::ifstream f;
+        f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        f.open(ckpt_name, std::ifstream::in | std::ifstream::binary);
         size_t seek_offset = header_size;
         bool found = false;
         for (const auto &e: region_info) {
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
         if (region_info[id] < size)
             throw std::ifstream::failure("region " + std::to_string(id) + " is of size " + std::to_string(region_info[id]) +
                                          ", which is smaller than requested size " + std::to_string(size));
-	f.seekg(seek_offset);
+        f.seekg(seek_offset);
         if (size == 0)
             size = region_info[id];
         std::vector<char> region(size);

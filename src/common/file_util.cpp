@@ -17,7 +17,7 @@ bool parse_dir(const std::string &p, const std::string &cname, dir_callback_t f)
     DIR *dir;
     dir = opendir(p.c_str());
     if (dir == NULL)
-	return false;
+        return false;
     std::regex e = command_t::regex(cname);
     dirent *dentry;
     while ((dentry = readdir(dir)) != NULL) {
@@ -71,7 +71,7 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
 bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
     bool success = true;
     while (remaining > 0) {
-	ssize_t transferred = copy_file_range(fs, (off64_t *)&soff, fd, (off64_t *)&doff, remaining, 0);
+        ssize_t transferred = copy_file_range(fs, (off64_t *)&soff, fd, (off64_t *)&doff, remaining, 0);
         if (transferred == -1) {
             success = false;
             break;
@@ -86,14 +86,14 @@ bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaini
     bool success = true;
     char *buff = new char[MAX_BUFF_SIZE];
     while (remaining > 0) {
-	ssize_t transferred = pread(fs, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining), soff);
+        ssize_t transferred = pread(fs, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining), soff);
         if (transferred == -1 || pwrite(fd, buff, transferred, doff) != transferred) {
             success = false;
             break;
         }
         remaining -= transferred;
-	soff += transferred;
-	doff += transferred;
+        soff += transferred;
+        doff += transferred;
     }
     delete []buff;
     return success;
@@ -106,14 +106,14 @@ bool posix_transfer_file(const std::string &source, const std::string &dest, siz
     TIMER_START(io_timer);
     int fs = open(source.c_str(), O_RDONLY);
     if (fs == -1) {
-	ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
-	return false;
+        ERROR("cannot open source " << source << "; error = " << std::strerror(errno));
+        return false;
     }
     int fd = open(dest.c_str(), O_CREAT | O_WRONLY, 0644);
     if (fd == -1) {
-	close(fs);
-	ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
-	return false;
+        close(fs);
+        ERROR("cannot open destination " << dest << "; error = " << std::strerror(errno));
+        return false;
     }
     ssize_t remaining = std::min(size, file_size(source.c_str()) - soffset);
     bool success = file_transfer_loop(fs, soffset, fd, doffset, remaining);

@@ -8,7 +8,7 @@
 
 static void scratch_version_set(const std::string &p, const char *cname, int req_id, std::set<int> &result) {
     parse_dir(p, cname,
-              [&](const std::string &f, int id, int v) {
+              [&](const std::string &, int id, int v) {
                   if (id == command_t::ID_EC || id == req_id)
                       result.insert(v);
               });
@@ -16,7 +16,7 @@ static void scratch_version_set(const std::string &p, const char *cname, int req
 
 versioning_module_t::versioning_module_t(const config_t &c) : cfg(c) {
     if (cfg.storage() && !cfg.get_optional("max_versions", max_versions)) {
-	max_versions = 0;
+        max_versions = 0;
         INFO("persisting last " << max_versions << " checkpoints to " << cfg.get("persistent") << " (0 means all), change using 'max_versions'");
     }
 

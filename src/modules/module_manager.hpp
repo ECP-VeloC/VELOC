@@ -31,7 +31,7 @@ public:
     ~module_manager_t();
     void add_default(const config_t &cfg, MPI_Comm comm = MPI_COMM_NULL);
     void add_module(const method_t &m) {
-	modules.push_back(m);
+        modules.push_back(m);
     }
     int notify_command(const command_t &c);
 };

@@ -43,14 +43,14 @@ class client_impl_t : public veloc::client_t {
     bool read_current_header();
 
     int check_rank(int target_rank) {
-	return target_rank < 0 ? rank : target_rank;
+        return target_rank < 0 ? rank : target_rank;
     }
 
     regions_t &get_current_ckpt_regions() {
-	regions_t &ckpt_regions = mem_regions[current_ckpt.name];
-	if (ckpt_regions.empty())
-	    ckpt_regions = mem_regions[default_mem_group];
-	return ckpt_regions;
+        regions_t &ckpt_regions = mem_regions[current_ckpt.name];
+        if (ckpt_regions.empty())
+            ckpt_regions = mem_regions[default_mem_group];
+        return ckpt_regions;
     }
 
 public:

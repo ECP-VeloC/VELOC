@@ -15,21 +15,21 @@ void __attribute__ ((destructor)) veloc_destructor() {
 
 extern "C" int VELOC_Init(MPI_Comm comm, const char *cfg_file) {
     try {
-	veloc_client = veloc::get_client(comm, cfg_file);
-	return VELOC_SUCCESS;
+        veloc_client = veloc::get_client(comm, cfg_file);
+        return VELOC_SUCCESS;
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
-	return VELOC_FAILURE;
+        return VELOC_FAILURE;
     }
 }
 
 extern "C" int VELOC_Init_single(unsigned int id, const char *cfg_file) {
     try {
-	veloc_client = veloc::get_client(id, cfg_file);
-	return VELOC_SUCCESS;
+        veloc_client = veloc::get_client(id, cfg_file);
+        return VELOC_SUCCESS;
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
-	return VELOC_FAILURE;
+        return VELOC_FAILURE;
     }
 }
 
@@ -72,7 +72,7 @@ extern "C" int VELOC_Checkpoint_mem() {
 extern "C" int VELOC_Checkpoint_selective(int mode, int *ids, int no_ids) {
     std::set<int> id_set = {};
     for (int i = 0; i < no_ids; i++)
-	id_set.insert(ids[i]);
+        id_set.insert(ids[i]);
     return BOOL_CALL(veloc_client->checkpoint_mem(mode, id_set));
 }
 
@@ -115,7 +115,7 @@ extern "C" int VELOC_Recover_mem() {
 extern "C" int VELOC_Recover_selective(int mode, int *ids, int no_ids) {
     std::set<int> id_set = {};
     for (int i = 0; i < no_ids; i++)
-	id_set.insert(ids[i]);
+        id_set.insert(ids[i]);
     return BOOL_CALL(veloc_client->recover_mem(mode, id_set));
 }
 
@@ -138,13 +138,13 @@ extern "C" int VELOC_Checkpoint(const char *name, int version) {
 extern "C" int VELOC_Finalize(int drain) {
     if (veloc_client != NULL) {
         int ret = VELOC_SUCCESS;
-	if (drain)
-	    ret = VELOC_Checkpoint_wait();
-	delete veloc_client;
-	return ret;
+        if (drain)
+            ret = VELOC_Checkpoint_wait();
+        delete veloc_client;
+        return ret;
     } else {
-	ERROR("Attempting to finalize VELOC before it was initialized");
-	return VELOC_FAILURE;
+        ERROR("Attempting to finalize VELOC before it was initialized");
+        return VELOC_FAILURE;
     }
 }
 

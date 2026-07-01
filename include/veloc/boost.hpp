@@ -8,8 +8,8 @@ namespace veloc::boost {
 using namespace ::boost;
 template <typename T> std::function<void (std::ostream &)> serializer(T &data) {
     return [&data](std::ostream &out) {
-	archive::binary_oarchive ar(out);
-	ar << data;
+        archive::binary_oarchive ar(out);
+        ar << data;
     };
 }
 

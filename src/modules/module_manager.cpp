@@ -9,15 +9,15 @@ void module_manager_t::add_default(const config_t &cfg, MPI_Comm comm) {
     watchdog = new client_watchdog_t(cfg);
     add_module([this](const command_t &c) { return watchdog->process_command(c); });
     if (comm != MPI_COMM_NULL) {
-	redset = new ec_module_t(cfg, comm);
-	ec_agg = new client_aggregator_t(cfg,
-	    [this](const std::vector<command_t> &cmds) {
-		return redset->process_commands(cmds);
-	    },
-	    [this](const command_t &c) {
-		return redset->process_command(c);
-	    });
-	add_module([this](const command_t &c) { return ec_agg->process_command(c); });
+        redset = new ec_module_t(cfg, comm);
+        ec_agg = new client_aggregator_t(cfg,
+            [this](const std::vector<command_t> &cmds) {
+                return redset->process_commands(cmds);
+            },
+            [this](const command_t &c) {
+                return redset->process_command(c);
+            });
+        add_module([this](const command_t &c) { return ec_agg->process_command(c); });
     }
     transfer = new transfer_module_t(cfg);
     add_module([this](const command_t &c) { return transfer->process_command(c); });
@@ -39,7 +39,7 @@ module_manager_t::~module_manager_t() {
 int module_manager_t::notify_command(const command_t &c) {
     int ret = VELOC_IGNORED;
     for (auto &f : modules) {
-	int mod_ret = f(c);
+        int mod_ret = f(c);
         // if any module failed, stop early
         if (mod_ret == VELOC_FAILURE)
             return VELOC_FAILURE;

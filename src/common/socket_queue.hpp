@@ -70,14 +70,14 @@ public:
     }
 
     bool check_completion() {
-	ERROR("not yet implemented, use ipc_queue instead");
-	return false;
+        ERROR("not yet implemented, use ipc_queue instead");
+        return false;
     }
 
     void enqueue(const command_t &c) {
         if (write(fd, &c, sizeof(c)) != sizeof(c))
             fatal_comm();
-	DBG("enqueued element " << c);
+        DBG("enqueued element " << c);
     }
 };
 
@@ -91,23 +91,23 @@ template<typename T> class comm_backend_t {
 
     container_t *find_non_empty_pending() {
         // find first client with pending requests
-	for (auto it = client_map.begin(); it != client_map.end(); ++it) {
-	    container_t *result = &it->second;
-	    if (!result->pending.empty())
-		return result;
-	}
-	return NULL;
+        for (auto it = client_map.begin(); it != client_map.end(); ++it) {
+            container_t *result = &it->second;
+            if (!result->pending.empty())
+                return result;
+        }
+        return NULL;
     }
 
     void set_completion(container_t *q, const list_iterator_t &it, int status) {
-	// delete the element from the progress queue and notify the producer
+        // delete the element from the progress queue and notify the producer
         std::unique_lock<std::mutex> lock(map_mutex);
         DBG("completed element " << *it << ", status: " << status << ", waiting = " << q->waiting);
-	q->progress.erase(it);
-	if (q->status < 0 || status < 0)
-	    q->status = std::min(q->status, status);
-	else
-	    q->status = std::max(q->status, status);
+        q->progress.erase(it);
+        if (q->status < 0 || status < 0)
+            q->status = std::min(q->status, status);
+        else
+            q->status = std::max(q->status, status);
         send_wait_reply(q);
     }
 
@@ -175,7 +175,7 @@ template<typename T> class comm_backend_t {
         }
     }
 
-  public:
+public:
     comm_backend_t() {
         sockaddr_un addr;
         if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
@@ -192,17 +192,17 @@ template<typename T> class comm_backend_t {
     }
 
     completion_t dequeue_any(T &e) {
-	// wait until at least one pending queue has at least one element
-	container_t *first_found;
+        // wait until at least one pending queue has at least one element
+        container_t *first_found;
         std::unique_lock<std::mutex> lock(map_mutex);
-	while ((first_found = find_non_empty_pending()) == NULL)
-	    map_cond.wait(lock);
-	// remove the head of the pending queue and move it to the progress queue
-	e = first_found->pending.front();
-	first_found->pending.pop_front();
-	first_found->progress.push_back(e);
-	DBG("dequeued element " << e);
-	return std::bind(&comm_backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
+        while ((first_found = find_non_empty_pending()) == NULL)
+            map_cond.wait(lock);
+        // remove the head of the pending queue and move it to the progress queue
+        e = first_found->pending.front();
+        first_found->pending.pop_front();
+        first_found->progress.push_back(e);
+        DBG("dequeued element " << e);
+        return std::bind(&comm_backend_t<T>::set_completion, this, first_found, std::prev(first_found->progress.end()), _1);
     }
 };
 

@@ -32,7 +32,7 @@ static bool chksum_file(const std::string &source, unsigned char *result) {
     close(fd);
     if (buff == MAP_FAILED) {
         ERROR("cannot mmap " << source << ", error = " << std::strerror(errno));
-	return false;
+        return false;
     }
     SHA256(buff, size, result);
     munmap(buff, size);

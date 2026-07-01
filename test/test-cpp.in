@@ -15,7 +15,6 @@ rm -rf $SCRATCH $PERSISTENT $META
 mkdir -p $SCRATCH $PERSISTENT $META
 
 $VELOC_BIN/veloc-backend $CFG --disable-ec
-echo "First run (expected to fail):"
 $TEST_DIR/cpp_test $CFG
 EXIT_CODE=$?
 rm -rf $SCRATCH

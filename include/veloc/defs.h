@@ -7,13 +7,8 @@
 
 /** Defines */
 
-#ifndef VELOC_SUCCESS
 #define VELOC_SUCCESS (0)
-#endif
-
-#ifndef VELOC_FAILURE
 #define VELOC_FAILURE (-1)
-#endif
 
 #define VELOC_MAX_NAME (1024)
 

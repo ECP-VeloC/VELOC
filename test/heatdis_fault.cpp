@@ -76,15 +76,15 @@ int main(int argc, char *argv[]) {
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
     if (argc < 2) {
-	printf("Usage: %s <mem_in_mb> [<cfg_file>]\n", argv[0]);
-	exit(1);
+        printf("Usage: %s <mem_in_mb> [<cfg_file>]\n", argv[0]);
+        exit(1);
     }
 
     int provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     if (provided != MPI_THREAD_MULTIPLE) {
-	printf("MPI Init failed to provide MPI_THREAD_MULTIPLE");
-	exit (2);
+        printf("MPI Init failed to provide MPI_THREAD_MULTIPLE");
+        exit (2);
     }
 
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
@@ -92,11 +92,11 @@ int main(int argc, char *argv[]) {
 
     if (sscanf(argv[1], "%d", &arg) != 1) {
         printf("Wrong memory size! See usage\n");
-	exit(3);
+        exit(3);
     }
     if (VELOC_Init(MPI_COMM_WORLD, argc > 2 ? argv[2] : "") != VELOC_SUCCESS) {
-	printf("Error initializing VELOC! Aborting...\n");
-	exit(2);
+        printf("Error initializing VELOC! Aborting...\n");
+        exit(2);
     }
 
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
@@ -107,11 +107,11 @@ int main(int argc, char *argv[]) {
     memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
 
     if (rank == 0)
-	printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
+        printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
     if (rank == 0)
-	printf("Target precision : %f \n", PRECISION);
+        printf("Target precision : %f \n", PRECISION);
     if (rank == 0)
-	printf("Maximum number of iterations : %d \n", ITER_TIMES);
+        printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     VELOC_Mem_protect(0, &i, 1, sizeof(int));
     VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
@@ -120,33 +120,33 @@ int main(int argc, char *argv[]) {
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
-	if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
+        if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
             printf("Error restarting from checkpoint! Aborting...\n");
             exit(2);
         }
-	if (rank == 0)
+        if (rank == 0)
             printf("Restart from iteration %d finished in %.2lf seconds\n", v, MPI_Wtime() - wtime);
     } else
-	i = 0;
+        i = 0;
     while(i < ITER_TIMES) {
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))
-	    printf("Step : %d, error = %f\n", i, globalerror);
+            printf("Step : %d, error = %f\n", i, globalerror);
         if ((i % REDUCE) == 0)
-	    MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+            MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         if (globalerror < PRECISION)
-	    break;
-	i++;
-	if (i % CKPT_FREQ == 0)
-	    if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
+            break;
+        i++;
+        if (i % CKPT_FREQ == 0)
+            if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
                 printf("Error checkpointing! Aborting...\n");
                 exit(2);
             }
-	if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1)
+        if (v <= 0 && i > ITER_TIMES / 2 && rank == nbProcs - 1)
             MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (rank == 0)
-	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
+        printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
     free(h);
     free(g);

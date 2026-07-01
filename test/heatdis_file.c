@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "heatdis.h"
 #include "include/veloc.h"
@@ -79,8 +80,8 @@ int main(int argc, char *argv[]) {
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
     if (argc < 3) {
-	printf("Usage: %s <mem_in_mb> <cfg_file>\n", argv[0]);
-	exit(1);
+        printf("Usage: %s <mem_in_mb> <cfg_file>\n", argv[0]);
+        exit(1);
     }
 
     MPI_Init(&argc, &argv);
@@ -89,11 +90,11 @@ int main(int argc, char *argv[]) {
 
     if (sscanf(argv[1], "%d", &arg) != 1) {
         printf("Wrong memory size! See usage\n");
-	exit(3);
+        exit(3);
     }
     if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
-	printf("Error initializing VELOC! Aborting...\n");
-	exit(2);
+        printf("Error initializing VELOC! Aborting...\n");
+        exit(2);
     }
 
     M = (int)sqrt((double)(arg * 1024.0 * 1024.0 * nbProcs) / (2 * sizeof(double))); // two matrices needed
@@ -104,70 +105,86 @@ int main(int argc, char *argv[]) {
     memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
 
     if (rank == 0)
-	printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
+        printf("Local data size is %d x %d = %f MB (%d).\n", M, nbLines, memSize, arg);
     if (rank == 0)
-	printf("Target precision : %f \n", PRECISION);
+        printf("Target precision : %f \n", PRECISION);
     if (rank == 0)
-	printf("Maximum number of iterations : %d \n", ITER_TIMES);
+        printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     wtime = MPI_Wtime();
     int v = VELOC_Restart_test("heatdis", 0);
     if (v > 0) {
-	printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
-	check_result(VELOC_Restart_begin("heatdis", v));
+        printf("Previous checkpoint found at iteration %d, initiating restart...\n", v);
+        check_result(VELOC_Restart_begin("heatdis", v));
 
-	char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-	sprintf(original, "heatdis-file-ckpt-%d_%d.dat", v, rank);
-	check_result(VELOC_Route_file(original, veloc_file));
+        char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+        sprintf(original, "heatdis-file-ckpt-%d_%d.dat", v, rank);
+        check_result(VELOC_Route_file(original, veloc_file));
 
-	int valid = 1;
-        FILE* fd = fopen(veloc_file, "rb");
+        bool valid = true;
+        size_t count = (size_t)M * nbLines;
+        FILE *fd = fopen(veloc_file, "rb");
         if (fd != NULL) {
-            if (fread(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
-            if (fread( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
-            if (fread( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+            if (fread(&i, sizeof(int), 1, fd) != 1) {
+                valid = false;
+            }
+            if (fread(h, sizeof(double), count, fd) != count) {
+                valid = false;
+            }
+            if (fread(g, sizeof(double), count, fd) != count) {
+                valid = false;
+            }
             fclose(fd);
-        } else
+        } else {
             // failed to open file
-            valid = 0;
+            valid = false;
+        }
 
-	check_result(VELOC_Restart_end(valid));
+        check_result(VELOC_Restart_end(valid));
     } else
-	i = 0;
+        i = 0;
 
     while(i < ITER_TIMES) {
         localerror = doWork(nbProcs, rank, M, nbLines, g, h);
         if (((i % ITER_OUT) == 0) && (rank == 0))
-	    printf("Step : %d, error = %f\n", i, globalerror);
+            printf("Step : %d, error = %f\n", i, globalerror);
         if ((i % REDUCE) == 0)
-	    MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+            MPI_Allreduce(&localerror, &globalerror, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         if (globalerror < PRECISION)
-	    break;
-	i++;
-	if (i % CKPT_FREQ == 0) {
-	    check_result(VELOC_Checkpoint_wait());
-	    check_result(VELOC_Checkpoint_begin("heatdis", i));
+            break;
+        i++;
+        if (i % CKPT_FREQ == 0) {
+            check_result(VELOC_Checkpoint_wait());
+            check_result(VELOC_Checkpoint_begin("heatdis", i));
 
-	    char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
-	    sprintf(original, "heatdis-file-ckpt_%d_%d.dat", i, rank);
-	    check_result(VELOC_Route_file(original, veloc_file));
+            char original[VELOC_MAX_NAME], veloc_file[VELOC_MAX_NAME];
+            sprintf(original, "heatdis-file-ckpt_%d_%d.dat", i, rank);
+            check_result(VELOC_Route_file(original, veloc_file));
 
-            int valid = 1;
-            FILE* fd = fopen(veloc_file, "wb");
+            bool valid = true;
+            size_t count = (size_t)M * nbLines;
+            FILE *fd = fopen(veloc_file, "wb");
             if (fd != NULL) {
-                if (fwrite(&i, sizeof(int),            1, fd) != 1)         { valid = 0; }
-                if (fwrite( h, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
-                if (fwrite( g, sizeof(double), M*nbLines, fd) != M*nbLines) { valid = 0; }
+                if (fwrite(&i, sizeof(int), 1, fd) != 1) {
+                    valid = false;
+                }
+                if (fwrite(h, sizeof(double), count, fd) != count) {
+                    valid = false;
+                }
+                if (fwrite(g, sizeof(double), count, fd) != count) {
+                    valid = false;
+                }
                 fclose(fd);
-            } else
+            } else {
                 // failed to open file
-                valid = 0;
+                valid = false;
+            }
 
-	    check_result(VELOC_Checkpoint_end(valid));
-	}
+            check_result(VELOC_Checkpoint_end(valid));
+        }
     }
     if (rank == 0)
-	printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
+        printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
     free(h);
     free(g);

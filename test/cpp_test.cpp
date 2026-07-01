@@ -78,8 +78,8 @@ int main(int argc, char **argv) {
         throw std::runtime_error("restart checkpoint_2 failed");
 
     if (k == 7 && data.i == 8941 && data.e == MyEnum::V2 && data.f == 0.045
-	&& map.size() == 1 && map[1] == 2
-	&& set.size() == 1 && *(set.begin()) == 7)
+        && map.size() == 1 && map[1] == 2
+        && set.size() == 1 && *(set.begin()) == 7)
         std::cout << "C++ test passed" << std::endl;
     else
         std::cout << "C++ test failed" << std::endl;

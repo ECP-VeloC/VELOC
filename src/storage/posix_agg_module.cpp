@@ -14,7 +14,7 @@ posix_agg_module_t::posix_agg_module_t(const std::string &s, const std::string &
 
 void posix_agg_module_t::get_versions(const command_t &cmd, std::set<int> &result) {
     parse_dir(persistent, cmd.name,
-              [&](const std::string &f, int id, int v) {
+              [&](const std::string &, int id, int v) {
                   if (id == command_t::ID_AGG)
                       result.insert(v);
               });
@@ -34,8 +34,8 @@ bool posix_agg_module_t::restore(const command_t &cmd) {
     std::string meta_file = cmd.agg_filename(meta);
     int fi = open(meta_file.c_str(), O_RDONLY);
     if (fi == -1) {
-	ERROR("cannot open aggregated header " << meta_file << "; error = " << std::strerror(errno));
-	return false;
+        ERROR("cannot open aggregated header " << meta_file << "; error = " << std::strerror(errno));
+        return false;
     }
     long offset[2], num_ranks;
     ssize_t res = pread(fi, &num_ranks, sizeof(long), 0);

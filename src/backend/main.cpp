@@ -10,7 +10,7 @@
 static const std::string ready_file = "/dev/shm/veloc-backend-ready-" + std::to_string(getuid());
 bool ec_active = true;
 
-void user_handler(int signum) {
+void user_handler(int) {
     _exit(0);
 }
 
@@ -24,8 +24,8 @@ void exit_handler(int signum) {
 
 int main(int argc, char *argv[]) {
     if (argc > 3) {
-	std::cout << "Usage: " << argv[0] << " [<veloc_config>] [--disable-ec]" << std::endl;
-	return -1;
+        std::cout << "Usage: " << argv[0] << " [<veloc_config>] [--disable-ec]" << std::endl;
+        return -1;
     }
 
     // check if there is another instance running
@@ -50,20 +50,20 @@ int main(int argc, char *argv[]) {
     parent_id = getpid();
     config_t cfg(argc > 1 && strcmp(argv[1], "--disable-ec") != 0 ? argv[1] : "", true);
     if (cfg.is_sync())
-	FATAL("configuration requests sync mode, backend is not needed");
+        FATAL("configuration requests sync mode, backend is not needed");
 
     // disable EC on request
     for (int i = 1; i < argc; i++) {
-	if (strcmp(argv[i], "--disable-ec") == 0) {
-	    INFO("EC module disabled by commmand line switch");
-	    ec_active = false;
-	    break;
-	}
+        if (strcmp(argv[i], "--disable-ec") == 0) {
+            INFO("EC module disabled by commmand line switch");
+            ec_active = false;
+            break;
+        }
     }
 
     // start main loop: initialize MPI or fork into deamon mode if EC disabled
     if (ec_active) {
-	MPI_Init(&argc, &argv);
+        MPI_Init(&argc, &argv);
         start_main_loop(cfg, MPI_COMM_WORLD);
     } else {
         pid_t child_id = fork();
