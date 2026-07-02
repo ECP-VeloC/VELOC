@@ -4,12 +4,16 @@
 #include "backend/work_queue.hpp"
 
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <regex>
 #include <future>
 #include <queue>
+#include <vector>
+#include <cstring>
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -118,6 +122,10 @@ bool client_impl_t::checkpoint_wait() {
         ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
         return false;
     }
+    // Drain the local (client-side) stage first; this also runs the deferred
+    // backend enqueue registered in checkpoint_end().
+    if (!current_group.wait_completion())
+        return false;
     return queue->wait_completion() == VELOC_SUCCESS;
 }
 
@@ -128,7 +136,9 @@ bool client_impl_t::checkpoint_finished() {
         ERROR("need to finalize local checkpoint first by calling checkpoint_end()");
         return false;
     }
-    return queue->check_completion();
+    // local_durable becomes true only once the local stage completed and the
+    // command was handed to the backend queue.
+    return local_durable && queue->check_completion();
 }
 
 bool client_impl_t::checkpoint(const std::string &name, int version) {
@@ -173,41 +183,81 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
         return false;
     }
 
-    std::ofstream f;
-    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-    try {
-        f.open(current_ckpt.filename(cfg.get("scratch")), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-        size_t regions_size = ckpt_regions.size();
-        size_t header_size = sizeof(size_t) + regions_size * (sizeof(int) + sizeof(size_t));
-        // write data and determine serialized sizes
-        f.seekp(header_size);
-        for (auto &e : ckpt_regions) {
-            region_t &info = e.second;
-            if (info.ptr != NULL)
-                f.write((char *)info.ptr, info.size);
-            else {
-                size_t start = f.tellp();
-                info.s(f);
-                info.size = (size_t)f.tellp() - start;
-            }
-        }
-        // write header
-        f.seekp(0);
-        f.write((char *)&regions_size, sizeof(size_t));
-        for (auto &e : ckpt_regions) {
-            f.write((char *)&(e.first), sizeof(int));
-            f.write((char *)&(e.second.size), sizeof(size_t));
-        }
-    } catch (std::ofstream::failure &f) {
-        ERROR("cannot write to checkpoint file: " << current_ckpt << ", reason: " << f.what());
+    std::string fname = current_ckpt.filename(cfg.get("scratch"));
+    int fd = open(fname.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd == -1) {
+        ERROR("cannot open checkpoint file " << fname << ", reason: " << strerror(errno));
         return false;
     }
-    return true;
+
+    auto &engine = transfer_engine_t::instance(cfg);
+    current_group = engine.group();
+    current_group.adopt_fd(fd);
+
+    size_t regions_size = ckpt_regions.size();
+    size_t header_size = sizeof(size_t) + regions_size * (sizeof(int) + sizeof(size_t));
+
+    // Determine each region's payload and size. Serialized regions are captured
+    // into group-owned buffers now, so their size is known up front and their
+    // lifetime extends past this call (writes complete in the background).
+    std::vector<int> ids_ord;
+    std::vector<size_t> sizes;
+    std::vector<const void *> srcs;
+    ids_ord.reserve(regions_size);
+    sizes.reserve(regions_size);
+    srcs.reserve(regions_size);
+    for (auto &e : ckpt_regions) {
+        region_t &info = e.second;
+        ids_ord.push_back(e.first);
+        if (info.ptr != NULL) {
+            sizes.push_back(info.size);
+            srcs.push_back(info.ptr);
+        } else {
+            std::ostringstream oss(std::ios::out | std::ios::binary);
+            info.s(oss);
+            std::string s = oss.str();
+            void *buf = current_group.alloc(s.size());
+            memcpy(buf, s.data(), s.size());
+            info.size = s.size();
+            sizes.push_back(s.size());
+            srcs.push_back(buf);
+        }
+    }
+
+    // Build the header (region count + per-region id/size) with the same on-disk
+    // layout as before, into a group-owned buffer.
+    void *hbuf = current_group.alloc(header_size);
+    char *hp = (char *)hbuf;
+    memcpy(hp, &regions_size, sizeof(size_t));
+    hp += sizeof(size_t);
+    for (size_t k = 0; k < regions_size; k++) {
+        memcpy(hp, &ids_ord[k], sizeof(int));
+        hp += sizeof(int);
+        memcpy(hp, &sizes[k], sizeof(size_t));
+        hp += sizeof(size_t);
+    }
+
+    // Submit header then each region at its computed offset. The engine detects
+    // device vs host pointers and inserts the GPU->host bounce transparently.
+    current_ckpt_size = header_size;
+    current_group.submit(mem(hbuf), file(fd, 0), header_size);
+    size_t off = header_size;
+    for (size_t k = 0; k < regions_size; k++) {
+        current_group.submit(mem(const_cast<void *>(srcs[k])), file(fd, off), sizes[k]);
+        off += sizes[k];
+        current_ckpt_size += sizes[k];
+    }
+
+    // Block only until the application's memory has been captured (device D2H
+    // done, host writes done); staging->file writes continue in the background.
+    return current_group.wait_sources();
 }
 
 bool client_impl_t::checkpoint_end(bool /*success*/) {
     if (aggregated) {
-        long offset = 0, ckpt_size = file_size(current_ckpt.filename(cfg.get("scratch")));
+        // Use the logical checkpoint size (known from the layout) instead of
+        // stat()-ing the file, which may still be written in the background.
+        long offset = 0, ckpt_size = (long)current_ckpt_size;
         MPI_Exscan(&ckpt_size, &offset, 1, MPI_LONG, MPI_SUM, comm);
         DBG("Rank " << rank << ", offset = " << offset);
         if (rank == 0) {
@@ -221,11 +271,30 @@ bool client_impl_t::checkpoint_end(bool /*success*/) {
         current_ckpt.offset = offset;
     }
     checkpoint_in_progress = false;
-    queue->enqueue(current_ckpt);
-    auto it = observers.find(VELOC_OBSERVE_CKPT_END);
-    if (it != observers.end())
-        it->second(current_ckpt.name, current_ckpt.version);
-    return cfg.is_sync() ? queue->wait_completion() == VELOC_SUCCESS : true;
+
+    auto notify_observer = [this]() {
+        auto it = observers.find(VELOC_OBSERVE_CKPT_END);
+        if (it != observers.end())
+            it->second(current_ckpt.name, current_ckpt.version);
+    };
+
+    if (cfg.is_sync()) {
+        bool ok = current_group.wait_completion();
+        queue->enqueue(current_ckpt);
+        notify_observer();
+        return ok && queue->wait_completion() == VELOC_SUCCESS;
+    }
+
+    // Async: hand the checkpoint to the backend the moment the local file is
+    // durable (on the engine progress thread), preserving compute/flush overlap.
+    local_durable = false;
+    command_t cmd = current_ckpt;
+    current_group.on_completion([this, cmd]() {
+        queue->enqueue(cmd);
+        local_durable = true;
+    });
+    notify_observer();
+    return true;
 }
 
 int client_impl_t::run_blocking(const command_t &cmd) {
@@ -308,41 +377,64 @@ bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
         return false;
     }
     regions_t &ckpt_regions = get_current_ckpt_regions();
-    try {
-        std::ifstream f;
-        f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        f.open(current_ckpt.filename(cfg.get("scratch")), std::ifstream::in | std::ifstream::binary);
-        f.seekg(header_size);
-        for (auto &e : region_info) {
-            bool found = ids.find(e.first) != ids.end();
-            if ((mode == VELOC_RECOVER_SOME && !found) || (mode == VELOC_RECOVER_REST && found)) {
-                f.seekg(e.second, std::ifstream::cur);
-                continue;
-            }
-            auto it = ckpt_regions.find(e.first);
-            if (it == ckpt_regions.end()) {
-                ERROR("no protected memory region defined for id " << e.first);
+
+    std::string fname = current_ckpt.filename(cfg.get("scratch"));
+    int fd = open(fname.c_str(), O_RDONLY);
+    if (fd == -1) {
+        ERROR("cannot open checkpoint file " << fname << ", reason: " << strerror(errno));
+        return false;
+    }
+
+    auto &engine = transfer_engine_t::instance(cfg);
+    xfer_group_t g = engine.group();
+    g.adopt_fd(fd);
+
+    // Serialized regions are read into group-owned buffers first, then
+    // deserialized from host memory once all reads complete.
+    struct deser_t { void *buf; size_t size; region_t *info; int id; };
+    std::vector<deser_t> deser;
+
+    size_t off = header_size;
+    for (auto &e : region_info) {
+        bool found = ids.find(e.first) != ids.end();
+        if ((mode == VELOC_RECOVER_SOME && !found) || (mode == VELOC_RECOVER_REST && found)) {
+            off += e.second;
+            continue;
+        }
+        auto it = ckpt_regions.find(e.first);
+        if (it == ckpt_regions.end()) {
+            ERROR("no protected memory region defined for id " << e.first);
+            return false;
+        }
+        region_t &info = it->second;
+        if (info.ptr != NULL) { // direct read of raw data (host or device, engine decides)
+            if (info.size < e.second) {
+                ERROR("protected memory region " << e.first << " is too small ("
+                      << info.size << ") to hold required size ("
+                      << e.second << ")");
                 return false;
             }
-            region_t &info = it->second;
-            if (info.ptr != NULL) { // direct read of raw data
-                if (info.size < e.second) {
-                    ERROR("protected memory region " << e.first << " is too small ("
-                          << info.size << ") to hold required size ("
-                          << e.second << ")");
-                    return false;
-                }
-                f.read((char *)info.ptr, e.second);
-            } else { // deserialize
-                if (!info.d(f)) {
-                    ERROR("protected data structure " << e.first << " could not be deserialized");
-                    return false;
-                }
-            }
+            g.submit(file(fd, off), mem(info.ptr), e.second);
+        } else { // read raw bytes into a host buffer, deserialize after completion
+            void *buf = g.alloc(e.second);
+            g.submit(file(fd, off), mem(buf), e.second);
+            deser.push_back({buf, e.second, &info, e.first});
         }
-    } catch (std::ifstream::failure &e) {
-        ERROR("cannot read checkpoint file " << current_ckpt << ", reason: " << e.what());
+        off += e.second;
+    }
+
+    if (!g.wait_completion()) {
+        ERROR("cannot read checkpoint file " << current_ckpt);
         return false;
+    }
+
+    for (auto &d : deser) {
+        std::string s((const char *)d.buf, d.size);
+        std::istringstream iss(s, std::ios::in | std::ios::binary);
+        if (!d.info->d(iss)) {
+            ERROR("protected data structure " << d.id << " could not be deserialized");
+            return false;
+        }
     }
     return true;
 }

@@ -13,6 +13,9 @@ add_library (veloc-modules SHARED
   ${PROJECT_SOURCE_DIR}/src/common/config.cpp
   ${PROJECT_SOURCE_DIR}/src/common/file_util.cpp
   ${PROJECT_SOURCE_DIR}/src/common/ckpt_util.cpp
+  # unified transfer engine (host/device memory <-> file), shared by client and backend
+  ${PROJECT_SOURCE_DIR}/src/common/file_provider.cpp
+  ${PROJECT_SOURCE_DIR}/src/common/transfer_engine.cpp
 )
 
 add_library (veloc::modules ALIAS veloc-modules)
@@ -26,6 +29,17 @@ endif()
 if (DAOS_FOUND)
   target_sources (veloc-modules PRIVATE  ${PROJECT_SOURCE_DIR}/src/storage/daos_module.cpp)
   target_link_libraries (veloc-modules PUBLIC ${DAOS_LIBRARIES})
+endif()
+
+# io_uring file backend (FILE_IO=uring)
+if (${FILE_IO} STREQUAL "uring")
+  target_link_libraries (veloc-modules PUBLIC PkgConfig::URING)
+endif()
+
+# CUDA GPU staging provider (only compiled when CUDA is available)
+if (CUDAToolkit_FOUND)
+  target_sources (veloc-modules PRIVATE ${PROJECT_SOURCE_DIR}/src/common/gpu/cuda_provider.cpp)
+  target_link_libraries (veloc-modules PUBLIC CUDA::cudart)
 endif()
 
 target_include_directories (veloc-modules PUBLIC

@@ -6,6 +6,10 @@ add_executable (heatdis_fault heatdis_fault.cpp)
 if (SERIALIZATION_LIBRARIES)
   add_executable (cpp_test cpp_test.cpp)
 endif()
+if (CUDAToolkit_FOUND)
+  add_executable (heatdis_gpu heatdis_gpu.cu)
+  target_link_libraries (heatdis_gpu PRIVATE veloc::client CUDA::cudart)
+endif()
 
 # Link the executable to the necessary libraries.
 target_link_libraries (heatdis_original PRIVATE m MPI::MPI_C)

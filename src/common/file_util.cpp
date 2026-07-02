@@ -1,5 +1,6 @@
 #include "file_util.hpp"
 #include "command.hpp"
+#include "file_provider.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -67,40 +68,12 @@ bool read_file(const std::string &source, unsigned char *buffer, ssize_t size) {
     return ret;
 }
 
-#ifdef WITH_POSIX_DIRECT
+// File-to-file transfer now delegates to the shared file_provider, so the same
+// mechanism (POSIX direct/rw or io_uring, selected by FILE_IO) is used by both
+// the backend flush path and the client transfer engine.
 bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
-    bool success = true;
-    while (remaining > 0) {
-        ssize_t transferred = copy_file_range(fs, (off64_t *)&soff, fd, (off64_t *)&doff, remaining, 0);
-        if (transferred == -1) {
-            success = false;
-            break;
-        }
-        remaining -= transferred;
-    }
-    return success;
+    return file_provider::copy_range(fs, soff, fd, doff, remaining);
 }
-#elif WITH_POSIX_RW
-bool file_transfer_loop(int fs, size_t soff, int fd, size_t doff, size_t remaining) {
-    const size_t MAX_BUFF_SIZE = 1 << 24;
-    bool success = true;
-    char *buff = new char[MAX_BUFF_SIZE];
-    while (remaining > 0) {
-        ssize_t transferred = pread(fs, buff, std::min(MAX_BUFF_SIZE, (size_t)remaining), soff);
-        if (transferred == -1 || pwrite(fd, buff, transferred, doff) != transferred) {
-            success = false;
-            break;
-        }
-        remaining -= transferred;
-        soff += transferred;
-        doff += transferred;
-    }
-    delete []buff;
-    return success;
-}
-#else
-#error Invalid POSIX IO transfer method selected. Valid choices: WITH_POSIX_DIRECT, WITH_POSIX_RW
-#endif
 
 bool posix_transfer_file(const std::string &source, const std::string &dest, size_t soffset, size_t doffset, size_t size) {
     TIMER_START(io_timer);

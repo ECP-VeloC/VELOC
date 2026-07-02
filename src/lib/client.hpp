@@ -6,10 +6,12 @@
 #include "common/config.hpp"
 #include "common/command.hpp"
 #include "common/comm_queue.hpp"
+#include "common/transfer_engine.hpp"
 #include "modules/module_manager.hpp"
 
 #include <unordered_map>
 #include <map>
+#include <atomic>
 
 class client_impl_t : public veloc::client_t {
     struct region_t {
@@ -33,6 +35,10 @@ class client_impl_t : public veloc::client_t {
 
     command_t current_ckpt;
     bool checkpoint_in_progress = false, aggregated = false;
+
+    xfer_group_t current_group;              // in-flight checkpoint's transfers
+    std::atomic<bool> local_durable{true};   // set by the engine when the local checkpoint is durable
+    size_t current_ckpt_size = 0;            // logical checkpoint size (for aggregated mode)
 
     std::map<int, size_t> region_info;
     size_t header_size = 0;

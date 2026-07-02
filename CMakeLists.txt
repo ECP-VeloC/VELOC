@@ -12,14 +12,20 @@ set(CMAKE_CXX_STANDARD 17)
 ##### Configuration setting
 set(COMM_QUEUE "ipc_queue" CACHE STRING "Communication protocol between client library and active backend")
 set_property(CACHE COMM_QUEUE PROPERTY STRINGS ipc_queue socket_queue thallium_queue)
-set(POSIX_IO "posix_io" CACHE STRING "POSIX transfer method between scratch and persistent")
-set_property(CACHE POSIX_IO PROPERTY STRINGS direct rw)
+set(FILE_IO "direct" CACHE STRING "File transfer method between scratch and persistent")
+set_property(CACHE FILE_IO PROPERTY STRINGS direct rw uring)
 
 ##### Set preprocessor definitions
-if (${POSIX_IO} STREQUAL "direct")
+if (${FILE_IO} STREQUAL "direct")
     add_definitions(-DWITH_POSIX_DIRECT)
-else()
+elseif (${FILE_IO} STREQUAL "rw")
     add_definitions(-DWITH_POSIX_RW)
+elseif (${FILE_IO} STREQUAL "uring")
+    add_definitions(-DWITH_URING)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(URING REQUIRED IMPORTED_TARGET liburing)
+else()
+    message(FATAL_ERROR "Invalid FILE_IO value '${FILE_IO}'. Valid choices: direct, rw, uring")
 endif()
 
 ##### Find dependencies
@@ -62,6 +68,18 @@ find_package(DAOS)
 if(DAOS_FOUND)
   include_directories(${DAOS_INCLUDE_DIRS})
   add_definitions(-DWITH_DAOS)
+endif()
+
+# CUDA (optional): enables GPU checkpointing (device staging) and .cu tests
+find_package(CUDAToolkit)
+if(CUDAToolkit_FOUND)
+  add_definitions(-DWITH_CUDA)
+  include(CheckLanguage)
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  endif()
+  message(STATUS "CUDA found: GPU checkpointing support enabled")
 endif()
 
 # -----------------------------------------------------------------------------------
