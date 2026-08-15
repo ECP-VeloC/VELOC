@@ -25,6 +25,21 @@ struct gpu_provider_t {
     virtual bool copy_d2h(void *host_dst, const void *dev_src, size_t size) = 0;
     virtual bool copy_h2d(void *dev_dst, const void *host_src, size_t size) = 0;
 
+    // Device-side staging pool: `slots` buffers of `slot_size` bytes allocated (per client/rank)
+    // once at engine init (single GPU, no cross-GPU D2D for now).
+    // rank of issuing process, used to determine device id in multi-GPU environment
+    // 
+    // expected pattern in mult-GPU env. is rank `N` uses GPU `N`, 
+    // and if there are `N` GPUs, there are `N` ranks
+    // this is expected to allocate GPU buffer always in device which the MPI rank is using
+    virtual bool init_device_buffer(size_t slot_size, int slots, int rank) = 0;
+    virtual void *acquire_device_slot() = 0;   // nullptr when all slots busy
+    virtual void release_device_slot(void *ptr) = 0;
+    virtual size_t free_device_slots() = 0;
+
+    // Blocking device<->device copy within the same GPU.
+    virtual bool copy_d2d(void *dst, const void *src, size_t size) = 0;
+
     virtual ~gpu_provider_t() { }
 };
 

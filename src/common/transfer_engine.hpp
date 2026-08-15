@@ -57,12 +57,12 @@ public:
 
 private:
     std::unique_ptr<impl_t> pimpl;
-    explicit transfer_engine_t(const config_t &cfg);
+    explicit transfer_engine_t(const config_t &cfg, const int rank);
 
 public:
     ~transfer_engine_t();
     // Process-wide singleton (one engine, one progress thread per process).
-    static transfer_engine_t &instance(const config_t &cfg);
+    static transfer_engine_t &instance(const config_t &cfg, const int rank);
     // Begin a new group of related transfers.
     xfer_group_t group();
 };

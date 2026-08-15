@@ -190,7 +190,7 @@ bool client_impl_t::checkpoint_mem(int mode, const std::set<int> &ids) {
         return false;
     }
 
-    auto &engine = transfer_engine_t::instance(cfg);
+    auto &engine = transfer_engine_t::instance(cfg, rank);
     current_group = engine.group();
     current_group.adopt_fd(fd);
 
@@ -385,7 +385,7 @@ bool client_impl_t::recover_mem(int mode, const std::set<int> &ids) {
         return false;
     }
 
-    auto &engine = transfer_engine_t::instance(cfg);
+    auto &engine = transfer_engine_t::instance(cfg, rank);
     xfer_group_t g = engine.group();
     g.adopt_fd(fd);
 

@@ -1,6 +1,7 @@
 #include "transfer_engine.hpp"
 #include "file_provider.hpp"
 #include "common/gpu/gpu_provider.hpp"
+#include "common/config.hpp"
 
 #include <thread>
 #include <mutex>
@@ -9,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <chrono>
 #include <cstring>
 #include <cstdlib>
 #include <unistd.h>
@@ -16,12 +18,15 @@
 //#define __DEBUG
 #include "common/debug.hpp"
 
-// Compile-time tunables (overridable via -D).
+// Compile-time tunables (overridable via -D or the gpu_stage_slots config key).
 #ifndef VELOC_XFER_CHUNK
-#define VELOC_XFER_CHUNK (8UL << 20)   // 8 MiB per staged chunk
+#define VELOC_XFER_CHUNK (64UL << 20)   // 64 MiB per staged chunk
 #endif
-#ifndef VELOC_GPU_STAGE_SLOTS
-#define VELOC_GPU_STAGE_SLOTS 8        // bounded pinned pool: SLOTS * CHUNK bytes
+#ifndef VELOC_HOST_STAGE_SLOTS
+#define VELOC_HOST_STAGE_SLOTS 16        // bounded pinned pool: SLOTS * CHUNK bytes
+#endif
+#ifndef VELOC_GPU_BUFFER_SLOTS
+#define VELOC_GPU_BUFFER_SLOTS 8        // GPU HBM staging slots: SLOTS * CHUNK bytes
 #endif
 
 // Fallback factory when no GPU support is compiled in: everything is host memory.
@@ -44,6 +49,7 @@ struct xfer_group_impl_t {
 
     size_t src_total = 0, src_done = 0;
     size_t all_total = 0, all_done = 0;
+    size_t pending_writes = 0;                    // in-flight pinned->file writes (writer thread)
     bool queued = false, work_done = false, completion_ran = false, failed = false;
     std::function<void()> completion;
 
@@ -59,32 +65,81 @@ struct transfer_engine_t::impl_t {
     size_t chunk = VELOC_XFER_CHUNK;
     std::vector<void *> slots_all;   // every allocated slot (for teardown)
     std::vector<bool> slots_pinned;
-    std::vector<void *> free_slots;  // touched only by the worker thread
+    std::vector<void *> free_slots;  // available pinned slots (mutex-guarded)
+
+    std::mutex slot_mtx;             // guards free_slots (worker pops, writer pushes)
+    std::condition_variable slot_cv;
+
+    struct write_job_t { xfer_group_impl_t *g; int fd; size_t off; void *buf; size_t n; };
+    std::mutex wq_mtx;
+    std::condition_variable wq_cv;
+    std::deque<write_job_t> write_q; // pinned->file writes, consumed by the writer thread
 
     std::mutex mtx;
     std::condition_variable app_cv;  // application waiters (wait_sources/wait_completion)
     std::condition_variable work_cv; // progress thread
     std::deque<std::shared_ptr<xfer_group_impl_t>> ready;
     std::thread worker;
+    std::thread writer;
     bool stop = false;
 
-    impl_t() {
+
+    impl_t(const config_t &cfg, const int rank) {
+        int num_host_stage_slots = VELOC_HOST_STAGE_SLOTS;
+        cfg.get_optional<int>("host_stage_slots", num_host_stage_slots);
+        INFO(
+            "Initiating host staging pool: " << num_host_stage_slots << " slots of " << 
+            chunk << " bytes on rank " << rank
+        );
+
         gpu = create_gpu_provider();
         if (gpu != nullptr) {
-            for (int i = 0; i < VELOC_GPU_STAGE_SLOTS; i++) {
-                void *s = gpu->alloc_pinned(chunk);
-                bool pinned = (s != nullptr);
+            int num_gpu_buffer_slots = VELOC_GPU_BUFFER_SLOTS;
+            cfg.get_optional<int>("gpu_buffer_slots", num_gpu_buffer_slots);
+            // expected pattern is that one rank uses one client
+            // and one rank occupies one GPU
+            INFO(
+                "Initiating GPU staging pool: " << num_gpu_buffer_slots << " slots of " << 
+                chunk << " bytes on rank " << rank
+            );
+            if (gpu->init_device_buffer(chunk, num_gpu_buffer_slots, rank)) {
+                DBG("GPU device buffer: " << num_gpu_buffer_slots << " slots of " << chunk << " bytes");
+            }
+            else {
+                DBG(
+                    "GPU device buffer initiation failed: " << num_gpu_buffer_slots << " slots of " << 
+                    chunk << " bytes"
+                );
+                // assume GPU not available
+                gpu = nullptr;
+            }
+        }
+
+        for (int i = 0; i < num_host_stage_slots; i++) {
+            void *s;
+            bool pinned;
+            if (gpu != nullptr) {
+                s = gpu->alloc_pinned(chunk);
+                pinned = (s != nullptr);
                 if (s == nullptr)
                     s = ::malloc(chunk);
                 if (s == nullptr)
                     break;
-                slots_all.push_back(s);
-                slots_pinned.push_back(pinned);
-                free_slots.push_back(s);
             }
-            DBG("GPU staging pool: " << slots_all.size() << " slots of " << chunk << " bytes");
+            else {
+                s = ::malloc(chunk);
+                pinned = false;
+                if (s == nullptr)
+                    break;
+            }
+
+            slots_all.push_back(s);
+            slots_pinned.push_back(pinned);
+            free_slots.push_back(s);
         }
+
         worker = std::thread([this] { run(); });
+        writer = std::thread([this] { writer_run(); });
     }
 
     ~impl_t() {
@@ -93,8 +148,19 @@ struct transfer_engine_t::impl_t {
             stop = true;
             work_cv.notify_all();
         }
+        {
+            std::unique_lock<std::mutex> lk(wq_mtx);
+            stop = true;
+            wq_cv.notify_all();
+        }
+        {
+            std::unique_lock<std::mutex> lk(slot_mtx);
+            slot_cv.notify_all();
+        }
         if (worker.joinable())
             worker.join();
+        if (writer.joinable())
+            writer.join();
         for (size_t i = 0; i < slots_all.size(); i++) {
             if (slots_pinned[i])
                 gpu->free_pinned(slots_all[i]);
@@ -102,6 +168,71 @@ struct transfer_engine_t::impl_t {
                 ::free(slots_all[i]);
         }
         delete gpu;
+    }
+
+    void *take_pinned_slot() {
+        std::unique_lock<std::mutex> lk(slot_mtx);
+        slot_cv.wait(lk, [&] { return stop || !free_slots.empty(); });
+        if (free_slots.empty())
+            return nullptr;
+        void *s = free_slots.back();
+        free_slots.pop_back();
+        return s;
+    }
+
+    void *try_take_pinned_slot() {
+        std::unique_lock<std::mutex> lk(slot_mtx);
+        if (free_slots.empty())
+            return nullptr;
+        void *s = free_slots.back();
+        free_slots.pop_back();
+        return s;
+    }
+
+    void putback_pinned_slot(void *s) {
+        std::unique_lock<std::mutex> lk(slot_mtx);
+        free_slots.push_back(s);
+        slot_cv.notify_one();
+    }
+
+    void enqueue_write(const std::shared_ptr<xfer_group_impl_t> &g, void *pinned, const dchunk_t &c) {
+        {
+            std::unique_lock<std::mutex> lk(mtx);
+            g->pending_writes++;
+        }
+        {
+            std::unique_lock<std::mutex> lk(wq_mtx);
+            write_q.push_back({g.get(), c.fd, c.foff, pinned, c.n});
+            wq_cv.notify_one();
+        }
+    }
+
+    void writer_run() {
+        while (true) {
+            write_job_t job;
+            {
+                std::unique_lock<std::mutex> lk(wq_mtx);
+                wq_cv.wait(lk, [&] { return stop || !write_q.empty(); });
+                if (write_q.empty()) {
+                    if (stop)
+                        break;
+                    continue;
+                }
+                job = write_q.front();
+                write_q.pop_front();
+            }
+            bool ok = file_provider::write_range(job.fd, job.off, job.buf, job.n);
+            {
+                std::unique_lock<std::mutex> lk(mtx);
+                job.g->pending_writes--;
+                if (ok)
+                    job.g->all_done += job.n;
+                else
+                    job.g->failed = true;
+                app_cv.notify_all();
+            }
+            putback_pinned_slot(job.buf);
+        }
     }
 
     int classify(const endpoint_t &e) {
@@ -151,42 +282,95 @@ struct transfer_engine_t::impl_t {
     }
 
     void run_device_out(const std::shared_ptr<xfer_group_impl_t> &g, std::vector<dchunk_t> &chunks) {
-        // Greedy device->host staging: drain all D2H copies (releasing the
-        // application's device memory) as fast as the bounded pool allows; the
-        // host->file writes proceed in the background afterwards.
-        std::deque<std::pair<void *, dchunk_t>> staged;
+        // Greedy device->staging drain: copy the application's device memory
+        // into a GPU HBM slot first (fast D2D, releases the app memory so
+        // wait_sources() returns immediately). Once the GPU buffer is exhausted,
+        // drain one staged GPU slot into pinned (D2H) to recycle the slot; when
+        // even that is not possible, stage straight into pinned. Every filled
+        // pinned slot is enqueued on the writer thread immediately, so pinned
+        // slots flow back as the writer drains them and this worker never blocks
+        // on file I/O.
+        std::deque<std::pair<void *, dchunk_t>> gpu_staged;
+        auto now = std::chrono::steady_clock::now;
         for (auto &c : chunks) {
             if (g->failed)
                 break;
-            while (free_slots.empty()) {
-                auto st = staged.front();
-                staged.pop_front();
-                if (!file_provider::write_range(st.second.fd, st.second.foff, st.first, st.second.n))
-                    fail(g);
-                else
-                    add_progress(g, 0, st.second.n);
-                free_slots.push_back(st.first);
+            // 1) Fast path: capture into a free GPU HBM slot.
+            void *gslot = (gpu != nullptr) ? gpu->acquire_device_slot() : nullptr;
+            if (gslot != nullptr) {
+                auto t0 = now();
+                if (gpu->copy_d2d(gslot, c.dev, c.n)) {
+                    add_progress(g, c.n, 0); // device source released
+                    gpu_staged.emplace_back(gslot, c);
+                    continue;
+                }
+                gpu->release_device_slot(gslot);
             }
-            void *slot = free_slots.back();
-            free_slots.pop_back();
+            // 2) GPU buffer full: recycle one staged GPU slot through pinned so
+            //    this chunk can take the freed GPU slot immediately.
+            if (!gpu_staged.empty()) {
+                auto gs = gpu_staged.front();
+                gpu_staged.pop_front();
+                void *slot = take_pinned_slot();
+                if (slot == nullptr) {
+                    fail(g);
+                    break;
+                }
+                auto t0 = now();
+                if (gpu->copy_d2h(slot, gs.first, gs.second.n)) {
+                    enqueue_write(g, slot, gs.second);
+                } else {
+                    fail(g);
+                    putback_pinned_slot(slot);
+                }
+                gpu->release_device_slot(gs.first);
+                // Re-acquire the just-freed slot and capture this chunk into it.
+                gslot = gpu->acquire_device_slot();
+                if (gslot != nullptr) {
+                    t0 = now();
+                    if (gpu->copy_d2d(gslot, c.dev, c.n)) {
+                        add_progress(g, c.n, 0); // device source released
+                        gpu_staged.emplace_back(gslot, c);
+                        continue;
+                    }
+                    gpu->release_device_slot(gslot);
+                }
+                // Fall through to pinned fallback if the D2D capture failed.
+            }
+            // 3) Fallback: stage straight into pinned (freed by the writer).
+            void *slot = take_pinned_slot();
+            if (slot == nullptr) {
+                fail(g);
+                break;
+            }
+            auto t0 = now();
             if (!gpu->copy_d2h(slot, c.dev, c.n)) {
                 fail(g);
-                free_slots.push_back(slot);
+                putback_pinned_slot(slot);
                 break;
             }
             add_progress(g, c.n, 0); // device source released
-            staged.emplace_back(slot, c);
+            enqueue_write(g, slot, c);
         }
-        while (!staged.empty()) {
-            auto st = staged.front();
-            staged.pop_front();
-            if (!g->failed) {
-                if (!file_provider::write_range(st.second.fd, st.second.foff, st.first, st.second.n))
-                    fail(g);
-                else
-                    add_progress(g, 0, st.second.n);
+        // Drain any GPU slots still staged (e.g. on early failure or end of input).
+        while (!gpu_staged.empty()) {
+            if (g->failed)
+                break;
+            auto gs = gpu_staged.front();
+            gpu_staged.pop_front();
+            void *slot = take_pinned_slot();
+            if (slot == nullptr) {
+                fail(g);
+                break;
             }
-            free_slots.push_back(st.first);
+            auto t0 = now();
+            if (gpu->copy_d2h(slot, gs.first, gs.second.n)) {
+                enqueue_write(g, slot, gs.second);
+            } else {
+                fail(g);
+                putback_pinned_slot(slot);
+            }
+            gpu->release_device_slot(gs.first);
         }
     }
 
@@ -214,19 +398,20 @@ struct transfer_engine_t::impl_t {
             } else if (kf == K_FILE && kt == K_DEVICE) {
                 for (size_t o = 0; o < t.len && !g->failed; o += chunk) {
                     size_t n = std::min(chunk, t.len - o);
-                    void *slot = free_slots.empty() ? nullptr : free_slots.back();
+                    void *slot = try_take_pinned_slot();
                     if (slot == nullptr) {
                         ERROR("no staging slot available for device restore");
                         fail(g);
                         break;
                     }
-                    free_slots.pop_back();
+                    auto t0 = std::chrono::steady_clock::now();
                     if (!file_provider::read_range(t.from.fd, t.from.off + o, slot, n) ||
-                        !gpu->copy_h2d((char *)t.to.ptr + o, slot, n))
+                        !gpu->copy_h2d((char *)t.to.ptr + o, slot, n)) {
                         fail(g);
-                    else
-                        add_progress(g, n, n);
-                    free_slots.push_back(slot);
+                        break;
+                    }
+                    add_progress(g, n, n);
+                    putback_pinned_slot(slot);
                 }
             } else if (kf == K_FILE && kt == K_FILE) {
                 if (!file_provider::copy_range(t.from.fd, t.from.off, t.to.fd, t.to.off, t.len))
@@ -250,9 +435,13 @@ struct transfer_engine_t::impl_t {
         std::function<void()> cb;
         {
             std::unique_lock<std::mutex> lk(mtx);
+            // Wait until every enqueued pinned->file write is durable; the writer
+            // thread drains them and notifies. wait_sources() is unaffected.
+            app_cv.wait(lk, [&] { return g->pending_writes == 0; });
             g->src_done = g->src_total; // ensure waiters wake even after an early failure
             g->all_done = g->all_total;
             g->work_done = true;
+        
             for (int fd : g->fds)
                 if (fd >= 0)
                     ::close(fd);
@@ -339,11 +528,11 @@ void xfer_group_t::on_completion(std::function<void()> cont) {
 
 // ---- transfer_engine_t -----------------------------------------------------
 
-transfer_engine_t::transfer_engine_t(const config_t &) : pimpl(new impl_t()) { }
+transfer_engine_t::transfer_engine_t(const config_t &cfg, const int rank) : pimpl(new impl_t(cfg, rank)) { }
 transfer_engine_t::~transfer_engine_t() = default;
 
-transfer_engine_t &transfer_engine_t::instance(const config_t &cfg) {
-    static transfer_engine_t engine(cfg);
+transfer_engine_t &transfer_engine_t::instance(const config_t &cfg, const int rank) {
+    static transfer_engine_t engine(cfg, rank);
     return engine;
 }
 
