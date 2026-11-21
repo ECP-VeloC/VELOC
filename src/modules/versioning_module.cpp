@@ -2,6 +2,7 @@
 #include "common/file_util.hpp"
 
 #include <unistd.h>
+#include <vector>
 
 //#define __DEBUG
 #include "common/debug.hpp"
@@ -51,34 +52,56 @@ int versioning_module_t::process_command(const command_t &c) {
             return it != versions.end() ? *it : VELOC_IGNORED;
         }
 
-    case command_t::CHECKPOINT:
-        // delete old versions on persistent mount point
+    case command_t::CHECKPOINT: {
+        // Pick the old versions under the lock, then release it before deleting.
+        // One module instance serves all ranks of a node (sync: local rank 0's
+        // main loop; async: veloc-backend). Holding the lock during unlink made
+        // the ranks delete one after another.
+        std::vector<int> old_p, old_s;
         if (cfg.storage() && max_versions > 0) {
             ph.insert(c.version);
             auto it = ph.begin();
             while (it != ph.end() && ph.size() > (unsigned int)max_versions) {
-                command_t old = c;
-                old.version = *it;
-                cfg.storage()->remove(old);
-                if (!meta.empty())
-                    unlink(old.meta_filename(meta).c_str());
+                old_p.push_back(*it);
                 it = ph.erase(it);
             }
         }
-        // delete old versions on scratch mount point
         if (scratch_versions > 0) {
             sh.insert(c.version);
             auto it = sh.begin();
             while (it != sh.end() && sh.size() > (unsigned int)scratch_versions) {
-                parse_dir(cfg.get("scratch"), c.name,
-                          [&](const std::string &f, int, int v) {
-                              if (v == *it)
-                                  remove(f.c_str());
-                          });
+                old_s.push_back(*it);
                 it = sh.erase(it);
             }
         }
+        lock.unlock();
+
+        // delete old versions on persistent mount point
+        if (!old_p.empty()) {
+            TIMER_START(del_persistent);
+            for (int v : old_p) {
+                command_t old = c;
+                old.version = v;
+                cfg.storage()->remove(old);
+                if (!meta.empty())
+                    unlink(old.meta_filename(meta).c_str());
+            }
+            TIMER_STOP(del_persistent, "deleted " << old_p.size() << " old version(s) of " << c.name << " id " << c.unique_id << " on persistent (new v" << c.version << ")");
+        }
+        // delete old versions on scratch mount point: only this rank's files
+        // (and shared EC files), as in scratch_version_set
+        if (!old_s.empty()) {
+            TIMER_START(del_scratch);
+            for (int v : old_s)
+                parse_dir(cfg.get("scratch"), c.name,
+                          [&](const std::string &f, int id, int fv) {
+                              if (fv == v && (id == c.unique_id || id == command_t::ID_EC))
+                                  remove(f.c_str());
+                          });
+            TIMER_STOP(del_scratch, "deleted " << old_s.size() << " old version(s) of " << c.name << " id " << c.unique_id << " on scratch (new v" << c.version << ")");
+        }
         return VELOC_SUCCESS;
+    }
 
     case command_t::RESTART:
         if (cfg.storage() && cfg.storage()->exists(c))
